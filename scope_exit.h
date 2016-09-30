@@ -61,6 +61,8 @@ namespace stdex
     }
 }
 
-#define STDEX_ON_BLOCK_EXIT(...) ::stdex::scope_guard sg##__LINE__ = ::stdex::make_guard(::std::bind(__VA_ARGS__))
+#define STDEX_BLOCK_EXIT_CONN_(s, t)     s##t
+#define STDEX_BLOCK_EXIT_CONN(s, t)      STDEX_BLOCK_EXIT_CONN_(s, t)
+#define STDEX_ON_BLOCK_EXIT(...) ::stdex::scope_guard STDEX_BLOCK_EXIT_CONN(sg, __LINE__) = ::stdex::make_guard(::std::bind(__VA_ARGS__))
 
 #endif // #ifndef __SCOPE_EXIT_H_0B6274B9_A726_481D_BC4F_66C571E352FF_INCLUDED__

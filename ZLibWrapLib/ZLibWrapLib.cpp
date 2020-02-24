@@ -30,7 +30,7 @@ BOOL ZipAddFile(zipFile zf, LPCTSTR lpszFileNameInZip, LPCTSTR lpszFilePath, boo
 
     if (dwFileAttr == INVALID_FILE_ATTRIBUTES)
     {
-        return false;
+        return FALSE;
     }
 
     DWORD dwOpenAttr = (dwFileAttr & FILE_ATTRIBUTE_DIRECTORY) != 0 ? FILE_FLAG_BACKUP_SEMANTICS : 0;
@@ -262,7 +262,7 @@ BOOL ZipExtractCurrentFile(unzFile uf, LPCTSTR lpszDestFolder)
 
     if (hFile == INVALID_HANDLE_VALUE)
     {
-         return FALSE;
+        return FALSE;
     }
 
     LOKI_ON_BLOCK_EXIT(CloseHandle, hFile);

@@ -1,0 +1,8 @@
+static_library("client_sdk") {
+  configs += [ "//build_config:project_common" ]
+
+  sources = [
+    "../include/selfupdate/selfupdate.h",
+    "client_sdk.cc",
+  ]
+}

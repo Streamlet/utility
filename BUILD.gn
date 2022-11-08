@@ -1,0 +1,6 @@
+group("all") {
+  deps = [
+    "//src/client_sdk",
+    "//src/server",
+  ]
+}

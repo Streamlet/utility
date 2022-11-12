@@ -5,3 +5,9 @@ DEPS:
   build:
     GIT_REPOSITORY: https://github.com/Streamlet/gn_toolchain.git
     GIT_TAG: master
+
+  thirdparty/boost:
+    URL: https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz
+    ROOT_DIR: boost_1_80_0
+    URL_HASH:
+      SHA256: 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847

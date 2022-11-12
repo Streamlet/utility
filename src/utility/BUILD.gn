@@ -1,0 +1,21 @@
+source_set("utility") {
+  configs += [ "//build_config:project_common" ]
+  sources = [
+    "url.cc",
+    "url.h",
+  ]
+}
+
+executable("utility_test") {
+  configs += [
+    "//build_config:project_common",
+    "//build/config/win:static_runtime",
+  ]
+
+  sources = [
+    "test.cc",
+    "url_test.cc",
+  ]
+
+  deps = [ ":utility" ]
+}

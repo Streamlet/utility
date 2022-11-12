@@ -4,3 +4,7 @@ group("all") {
     "//src/server",
   ]
 }
+
+group("test") {
+  deps = [ "//src/utility:utility_test" ]
+}

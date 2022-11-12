@@ -5,4 +5,6 @@ static_library("client_sdk") {
     "../include/selfupdate/selfupdate.h",
     "client_sdk.cc",
   ]
+
+  deps = [ "//src/utility:utility" ]
 }

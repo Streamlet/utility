@@ -13,7 +13,7 @@ enum UrlPart : unsigned int {
   Password = 3,
   Domain = 4,
   Port = 5,
-  PathWithQueryAndFragment = 6,
+  FullPath = 6,
   Path = 7,
   Query = 8,
   Fragment = 9,
@@ -21,7 +21,7 @@ enum UrlPart : unsigned int {
 
 } // namespace
 
-bool Url::parse(const std::string_view &url_string, Url &url) {
+bool Url::parse(const std::string_view &url_string) {
   static std::regex re(URL_PATTERN);
 
   std::match_results<std::string_view::const_iterator> m;
@@ -29,25 +29,33 @@ bool Url::parse(const std::string_view &url_string, Url &url) {
     return false;
   }
 
-  url.protocol = std::string_view(&*m[UrlPart::Protocol].first,
-                                  m[UrlPart::Protocol].length());
-  url.username = std::string_view(&*m[UrlPart::Username].first,
-                                  m[UrlPart::Username].length());
-  url.password = std::string_view(&*m[UrlPart::Password].first,
-                                  m[UrlPart::Password].length());
-  url.domain =
-      std::string_view(&*m[UrlPart::Domain].first, m[UrlPart::Domain].length());
-  url.port =
-      std::string_view(&*m[UrlPart::Port].first, m[UrlPart::Port].length());
-  url.path_with_query_and_fragment =
-      std::string_view(&*m[UrlPart::PathWithQueryAndFragment].first,
-                       m[UrlPart::PathWithQueryAndFragment].length());
-  url.path =
-      std::string_view(&*m[UrlPart::Path].first, m[UrlPart::Path].length());
-  url.query =
-      std::string_view(&*m[UrlPart::Query].first, m[UrlPart::Query].length());
-  url.fragment = std::string_view(&*m[UrlPart::Fragment].first,
-                                  m[UrlPart::Fragment].length());
+  protocol = m[Protocol].length() == 0
+                 ? ""
+                 : std::string_view(&*m[Protocol].first, m[Protocol].length());
+  username = m[Username].length() == 0
+                 ? ""
+                 : std::string_view(&*m[Username].first, m[Username].length());
+  password = m[Password].length() == 0
+                 ? ""
+                 : std::string_view(&*m[Password].first, m[Password].length());
+  domain = m[Domain].length() == 0
+               ? ""
+               : std::string_view(&*m[Domain].first, m[Domain].length());
+  port = m[Port].length() == 0
+             ? ""
+             : std::string_view(&*m[Port].first, m[Port].length());
+  full_path = m[FullPath].length() == 0
+                  ? ""
+                  : std::string_view(&*m[FullPath].first, m[FullPath].length());
+  path = m[Path].length() == 0
+             ? ""
+             : std::string_view(&*m[Path].first, m[Path].length());
+  query = m[Query].length() == 0
+              ? ""
+              : std::string_view(&*m[Query].first, m[Query].length());
+  fragment = m[Fragment].length() == 0
+                 ? ""
+                 : std::string_view(&*m[Fragment].first, m[Fragment].length());
 
   return true;
 }

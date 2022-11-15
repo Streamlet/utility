@@ -19,9 +19,9 @@ def cmd(cmd):
 
 
 def main():
-    if not os.path.exists('.srcdep/repo'):
+    if not os.path.exists(os.path.join('.srcdep', 'repo')):
         cmd('git clone https://github.com/Streamlet/srcdep.git .srcdep/repo')
-    cmd('.srcdep/repo/srcdep update')
+    cmd(os.path.join('.srcdep', 'repo', 'srcdep') + ' update')
 
 
 if __name__ == '__main__':

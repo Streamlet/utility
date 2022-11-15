@@ -4,12 +4,31 @@ config("project_common") {
     cflags_cc = [
       "/std:c++17",
       "/EHsc",
+      "/bigobj",
     ]
   } else {
     cflags_c = [ "-std=c17" ]
     cflags_cc = [ "-std=c++17" ]
   }
-  defines = [ "BOOST_AUTO_LINK_SYSTEM" ]
-  include_dirs = [ "//thirdparty/boost/build/include" ]
-  lib_dirs = [ "//thirdparty/boost/build/lib" ]
+  defines = [
+    "BOOST_AUTO_LINK_SYSTEM",
+    "BOOST_TEST_NO_MAIN",
+    "BOOST_TEST_ALTERNATIVE_INIT_API",
+    "BOOST_BEAST_USE_STD_STRING_VIEW",
+  ]
+  if (is_win) {
+    defines += [
+      "_WIN32_WINNT=0x0501",
+      "_WIN32_WINDOWS=0x0501",
+    ]
+  }
+  include_dirs = [
+    "//thirdparty/boost/build/include",
+    "//thirdparty/openssl/include",
+    "//src",
+  ]
+  lib_dirs = [
+    "//thirdparty/boost/build/lib",
+    "//thirdparty/openssl",
+  ]
 }

@@ -11,3 +11,7 @@ DEPS:
     ROOT_DIR: boost_1_80_0
     URL_HASH:
       SHA256: 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847
+
+  thirdparty/openssl:
+    GIT_REPOSITORY: git://git.openssl.org/openssl.git
+    GIT_TAG: OpenSSL_1_1_1s

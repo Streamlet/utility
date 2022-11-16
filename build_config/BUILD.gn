@@ -3,8 +3,6 @@ config("project_common") {
     cflags_c = [ "/std:c17" ]
     cflags_cc = [
       "/std:c++17",
-      "/EHsc",
-      "/bigobj",
     ]
   } else {
     cflags_c = [ "-std=c17" ]
@@ -22,13 +20,25 @@ config("project_common") {
       "_WIN32_WINDOWS=0x0501",
     ]
   }
-  include_dirs = [
-    "//thirdparty/boost/build/include",
-    "//thirdparty/openssl/include",
-    "//src",
-  ]
-  lib_dirs = [
-    "//thirdparty/boost/build/lib",
-    "//thirdparty/openssl",
-  ]
+  include_dirs = [ "//src" ]
+  lib_dirs = []
+  if (is_debug) {
+    include_dirs += [
+      "//thirdparty/boost/build/debug/include",
+      "//thirdparty/openssl/build/debug/include",
+    ]
+    lib_dirs += [
+      "//thirdparty/boost/build/debug/lib",
+      "//thirdparty/openssl/build/debug/lib",
+    ]
+  } else {
+    include_dirs += [
+      "//thirdparty/boost/build/release/include",
+      "//thirdparty/openssl/build/release/include",
+    ]
+    lib_dirs += [
+      "//thirdparty/boost/build/release/lib",
+      "//thirdparty/openssl/build/release/lib",
+    ]
+  }
 }

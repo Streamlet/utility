@@ -10,28 +10,21 @@ def cmd(cmd):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT,
                                shell=True)
-    terminated = False
     ret_code = 0
-    while not terminated:
-        ret_code = process.poll()
-        if ret_code is not None:
-            terminated = True
-        buffer = b''
-        while True:
-            try:
-                chunk = os.read(process.stdout.fileno(), 1024)
-                if len(chunk) == 0:
-                    break
-                buffer += chunk
-            except OSError:
-                break
-        print(buffer)
+    while True:
+        nextline = process.stdout.readline()
+        if nextline == '' and process.poll() is not None:
+            break
+        sys.stdout.write(nextline)
+        sys.stdout.flush()
+
+    ret_code = process.returncode
     return ret_code
 
 
 def build_boost(debug):
     os.chdir('boost')
-    variant = 'debug' if debug else 'release'
+    config = 'debug' if debug else 'release'
     boost_libs = '--with-test'
     if sys.platform == 'win32':
         b2 = 'b2.exe'
@@ -44,15 +37,17 @@ def build_boost(debug):
             cmd('bootstrap.bat')
         else:
             cmd('./bootstrap.sh')
-    cmd('%s install %s link=static runtime-link=static threading=multi address-model=64 variant=%s --layout=system --prefix=build %s'
-        % (b2, platform_args, variant, boost_libs))
+    cmd('%s install %s link=static runtime-link=static threading=multi address-model=64 variant=%s --layout=system --prefix=build/%s %s'
+        % (b2, platform_args, config, config, boost_libs))
     os.chdir('..')
 
 def build_openssl(debug):
     os.chdir('openssl')
-    debug = ' --debug' if debug else ''
-    cmd('perl Configure VC-WIN64A threads no-shared' + debug)
+    config = 'debug' if debug else 'release'
+    prefix = os.path.abspath(os.path.join('build', config))
+    cmd('perl Configure VC-WIN64A threads no-shared --%s --prefix=%s' % (config, prefix))
     cmd('nmake')
+    cmd('nmake install')
     os.chdir('..')
 
 

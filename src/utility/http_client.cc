@@ -32,9 +32,8 @@ public:
               http::verb method, HttpClient::HttpHeader header,
               std::string body, HttpClient::HttpResponseHandler on_response,
               HttpClient::HttpErrorNotifier on_error, unsigned timeout)
-      : ioc_(ioc), user_agent_(std::move(user_agent)), url_(std::move(url)),
-        method_(method), header_(std::move(header)), body_(std::move(body)),
-        on_response_(std::move(on_response)), on_error_(std::move(on_error)),
+      : ioc_(ioc), url_(std::move(url)), on_response_(std::move(on_response)),
+        on_error_(std::move(on_error)),
         timeout_(timeout), ctx_{ssl::context::tlsv12_client},
         resolver_(net::make_strand(ioc_)), tcp_stream_(net::make_strand(ioc_)),
         ssl_stream_(net::make_strand(ioc_), ctx_) {
@@ -42,64 +41,102 @@ public:
     // load_root_certificates(ctx_);
     // Verify the remote server's certificate
     ctx_.set_verify_mode(ssl::verify_peer);
+
+    url_parts_.parse(url_);
+    request_.method(method);
+    request_.target(!url_parts_.full_path.empty() ? url_parts_.full_path : "/");
+    request_.version(HTTP_VERSION);
+    request_.set(http::field::host, url_parts_.domain);
+    request_.set(http::field::user_agent, !user_agent.empty()
+                                              ? std::move(user_agent)
+                                              : BOOST_BEAST_VERSION_STRING);
+    for (auto &h : header) {
+      request_.set(h.first, h.second);
+    }
+    request_.body() = std::move(body);
   }
   ~HttpSession() {}
 
   bool start() {
-    if (!url_parts_.parse(url_))
-      return false;
-
-    if (url_parts_.protocol != PROTOCOL_HTTPS &&
-        url_parts_.protocol != PROTOCOL_HTTP) {
+    if (url_parts_.protocol == PROTOCOL_HTTPS) {
+      return resolve_ssl();
+    } else if (url_parts_.protocol == PROTOCOL_HTTP) {
+      resolve();
+    } else {
       return false;
     }
 
-    is_ssl_ = url_parts_.protocol == PROTOCOL_HTTPS;
+    return true;
+  }
 
+private:
+  bool resolve_ssl() {
     // Set SNI Hostname (many hosts need this to handshake successfully)
-    if (is_ssl_ && !SSL_set_tlsext_host_name(ssl_stream_.native_handle(),
-                                             url_parts_.domain.data())) {
+    if (!SSL_set_tlsext_host_name(ssl_stream_.native_handle(),
+                                  url_parts_.domain.data())) {
       return false;
     }
 
     // Look up the domain name
     std::string_view port =
-        !url_parts_.port.empty()
-            ? url_parts_.port
-            : (is_ssl_ ? DEFAULT_PORT_HTTPS : DEFAULT_PORT_HTTP);
+        !url_parts_.port.empty() ? url_parts_.port : DEFAULT_PORT_HTTPS;
+    resolver_.async_resolve(
+        url_parts_.domain, port,
+        beast::bind_front_handler(&HttpSession::on_resolve_ssl,
+                                  shared_from_this()));
+    return true;
+  }
+  void resolve() {
+    // Look up the domain name
+    std::string_view port =
+        !url_parts_.port.empty() ? url_parts_.port : DEFAULT_PORT_HTTP;
     resolver_.async_resolve(url_parts_.domain, port,
                             beast::bind_front_handler(&HttpSession::on_resolve,
                                                       shared_from_this()));
-    return true;
   }
 
-private:
+  void on_resolve_ssl(beast::error_code ec,
+                      tcp::resolver::results_type results) {
+    if (ec)
+      return error(ec, "resolve");
+
+    // Set a timeout on the operation
+    if (timeout_ > 0) {
+      beast::get_lowest_layer(ssl_stream_)
+          .expires_after(std::chrono::milliseconds(timeout_));
+    }
+    // Make the connection on the IP address we get from a lookup
+    beast::get_lowest_layer(ssl_stream_)
+        .async_connect(results,
+                       beast::bind_front_handler(&HttpSession::on_connect_ssl,
+                                                 shared_from_this()));
+  }
   void on_resolve(beast::error_code ec, tcp::resolver::results_type results) {
     if (ec)
       return error(ec, "resolve");
 
     // Set a timeout on the operation
     if (timeout_ > 0) {
-      if (is_ssl_) {
-        beast::get_lowest_layer(ssl_stream_)
-            .expires_after(std::chrono::milliseconds(timeout_));
-      } else {
-        beast::get_lowest_layer(ssl_stream_)
-            .expires_after(std::chrono::milliseconds(timeout_));
-      }
+      beast::get_lowest_layer(ssl_stream_)
+          .expires_after(std::chrono::milliseconds(timeout_));
     }
     // Make the connection on the IP address we get from a lookup
-    if (is_ssl_) {
-      beast::get_lowest_layer(ssl_stream_)
-          .async_connect(results,
-                         beast::bind_front_handler(&HttpSession::on_connect,
-                                                   shared_from_this()));
-    } else {
-      beast::get_lowest_layer(tcp_stream_)
-          .async_connect(results,
-                         beast::bind_front_handler(&HttpSession::on_connect,
-                                                   shared_from_this()));
-    }
+    beast::get_lowest_layer(tcp_stream_)
+        .async_connect(results,
+                       beast::bind_front_handler(&HttpSession::on_connect,
+                                                 shared_from_this()));
+  }
+
+  void on_connect_ssl(beast::error_code ec,
+                      tcp::resolver::results_type::endpoint_type) {
+    if (ec)
+      return error(ec, "connect");
+
+    // Perform the SSL handshake
+    ssl_stream_.async_handshake(
+        ssl::stream_base::client,
+        beast::bind_front_handler(&HttpSession::on_ssl_handshake,
+                                  shared_from_this()));
   }
 
   void on_connect(beast::error_code ec,
@@ -107,112 +144,90 @@ private:
     if (ec)
       return error(ec, "connect");
 
-    if (is_ssl_) {
-      // Perform the SSL handshake
-      ssl_stream_.async_handshake(
-          ssl::stream_base::client,
-          beast::bind_front_handler(&HttpSession::on_handshake,
-                                    shared_from_this()));
-
-    } else {
-      send_request();
+    // Set a timeout on the operation
+    if (timeout_ > 0) {
+      beast::get_lowest_layer(tcp_stream_)
+          .expires_after(std::chrono::milliseconds(timeout_));
     }
+
+    // Send the HTTP request to the remote host
+    http::async_write(
+        tcp_stream_, request_,
+        beast::bind_front_handler(&HttpSession::on_write, shared_from_this()));
   }
 
-  void on_handshake(beast::error_code ec) {
+  void on_ssl_handshake(beast::error_code ec) {
     if (ec)
       return error(ec, "handshake");
 
-    // Send the HTTP request to the remote host
-    send_request();
-  }
-
-  void send_request() {
-    request_.method(method_);
-    request_.target(!url_parts_.full_path.empty() ? url_parts_.full_path : "/");
-    request_.version(HTTP_VERSION);
-    request_.set(http::field::host, url_parts_.domain);
-    request_.set(http::field::user_agent, !user_agent_.empty()
-                                              ? user_agent_
-                                              : BOOST_BEAST_VERSION_STRING);
-    std::cout << request_ << std::endl;
-
     // Set a timeout on the operation
     if (timeout_ > 0) {
-      if (is_ssl_) {
-        beast::get_lowest_layer(ssl_stream_)
-            .expires_after(std::chrono::milliseconds(timeout_));
-      } else {
-        beast::get_lowest_layer(tcp_stream_)
-            .expires_after(std::chrono::milliseconds(timeout_));
-      }
+      beast::get_lowest_layer(ssl_stream_)
+          .expires_after(std::chrono::milliseconds(timeout_));
     }
 
-    if (is_ssl_) {
-      http::async_write(ssl_stream_, request_,
-                        beast::bind_front_handler(&HttpSession::on_write,
-                                                  shared_from_this()));
-    } else {
-      http::async_write(tcp_stream_, request_,
-                        beast::bind_front_handler(&HttpSession::on_write,
-                                                  shared_from_this()));
-    }
+    // Send the HTTP request to the remote host
+    http::async_write(ssl_stream_, request_,
+                      beast::bind_front_handler(&HttpSession::on_write_ssl,
+                                                shared_from_this()));
   }
 
+  void on_write_ssl(beast::error_code ec, std::size_t bytes_transferred) {
+    boost::ignore_unused(bytes_transferred);
+
+    if (ec)
+      return error(ec, "write");
+
+    // Receive the HTTP response
+    http::async_read(ssl_stream_, buffer_, response_parser_,
+                     beast::bind_front_handler(&HttpSession::on_read_ssl,
+                                               shared_from_this()));
+  }
   void on_write(beast::error_code ec, std::size_t bytes_transferred) {
     boost::ignore_unused(bytes_transferred);
 
     if (ec)
       return error(ec, "write");
 
-    read_response();
-  }
-
-  void read_response() {
     // Receive the HTTP response
-    if (is_ssl_) {
-      http::async_read(
-          ssl_stream_, buffer_, response_parser_,
-          beast::bind_front_handler(&HttpSession::on_read, shared_from_this()));
-    } else {
-      http::async_read(
-          tcp_stream_, buffer_, response_parser_,
-          beast::bind_front_handler(&HttpSession::on_read, shared_from_this()));
-    }
+    http::async_read(
+        tcp_stream_, buffer_, response_parser_,
+        beast::bind_front_handler(&HttpSession::on_read, shared_from_this()));
   }
 
+  void on_read_ssl(beast::error_code ec, std::size_t bytes_transferred) {
+    boost::ignore_unused(bytes_transferred);
+    if (ec)
+      return error(ec, "read_body");
+
+    response_ = response_parser_.get();
+
+    // Set a timeout on the operation
+    beast::get_lowest_layer(ssl_stream_)
+        .expires_after(std::chrono::milliseconds(
+            timeout_ > 0 && timeout_ < CLOSE_CONNECTION_MAX_TIMEOUT
+                ? timeout_
+                : CLOSE_CONNECTION_MAX_TIMEOUT));
+    // Gracefully close the stream
+    ssl_stream_.async_shutdown(beast::bind_front_handler(
+        &HttpSession::on_shutdown, shared_from_this()));
+  }
   void on_read(beast::error_code ec, std::size_t bytes_transferred) {
     boost::ignore_unused(bytes_transferred);
     if (ec)
       return error(ec, "read_body");
-    if (!response_parser_.is_done()) {
-      return read_response();
-    }
 
     response_ = response_parser_.get();
-    std::cout << response_ << std::endl;
 
-    if (is_ssl_) {
-      // Set a timeout on the operation
-      beast::get_lowest_layer(ssl_stream_)
-          .expires_after(std::chrono::milliseconds(
-              timeout_ > 0 && timeout_ < CLOSE_CONNECTION_MAX_TIMEOUT
-                  ? timeout_
-                  : CLOSE_CONNECTION_MAX_TIMEOUT));
-      // Gracefully close the stream
-      ssl_stream_.async_shutdown(beast::bind_front_handler(
-          &HttpSession::on_shutdown, shared_from_this()));
-    } else {
-      // Set a timeout on the operation
-      beast::get_lowest_layer(tcp_stream_)
-          .expires_after(std::chrono::milliseconds(
-              timeout_ > 0 && timeout_ < CLOSE_CONNECTION_MAX_TIMEOUT
-                  ? timeout_
-                  : CLOSE_CONNECTION_MAX_TIMEOUT));
-      // Gracefully close the stream
-      tcp_stream_.socket().shutdown(tcp::socket::shutdown_both, ec);
-      HttpSession::on_shutdown(ec);
-    }
+    // Set a timeout on the operation
+    beast::get_lowest_layer(tcp_stream_)
+        .expires_after(std::chrono::milliseconds(
+            timeout_ > 0 && timeout_ < CLOSE_CONNECTION_MAX_TIMEOUT
+                ? timeout_
+                : CLOSE_CONNECTION_MAX_TIMEOUT));
+    // Gracefully close the stream
+    tcp_stream_.socket().shutdown(tcp::socket::shutdown_both, ec);
+    HttpSession::on_shutdown(ec);
   }
 
   void on_shutdown(beast::error_code ec) {
@@ -229,7 +244,6 @@ private:
   }
 
   void error(beast::error_code ec, const char *what) {
-    std::cerr << what << " error: " << ec.message() << "\n";
     if (!on_error_)
       return;
     on_error_(ec, what);
@@ -238,29 +252,30 @@ private:
   void callback() {
     if (!on_response_)
       return;
+    HttpClient::HttpHeader header;
+    for (auto &h : response_) {
+      header.insert({h.name_string(), h.value()});
+    }
+    on_response_(response_.result_int(), std::move(header), response_.body());
   }
 
 private:
-  std::string user_agent_;
   unsigned timeout_ = 0;
   std::string url_;
-  http::verb method_;
-  HttpClient::HttpHeader header_;
-  std::string body_;
   HttpClient::HttpResponseHandler on_response_;
   HttpClient::HttpErrorNotifier on_error_;
 
   Url url_parts_;
-  bool is_ssl_ = false;
+  http::request<http::string_body> request_;
+
   net::io_context &ioc_;
   ssl::context ctx_;
   tcp::resolver resolver_;
   beast::ssl_stream<beast::tcp_stream> ssl_stream_;
   beast::tcp_stream tcp_stream_;
   beast::flat_buffer buffer_; // (Must persist between reads)
-  http::request<http::string_body> request_;
-  http::response<http::string_body> response_;
   http::response_parser<http::string_body> response_parser_;
+  http::response<http::string_body> response_;
 };
 
 bool start_session(net::io_context &ioc, std::string user_agent,

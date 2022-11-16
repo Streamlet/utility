@@ -11,10 +11,10 @@ public:
 
   typedef std::map<std::string_view, std::string_view> HttpHeader;
 
-  typedef std::function<void(int status, HttpHeader header,
+  typedef std::function<void(unsigned status, HttpHeader header,
                              std::string_view body)>
       HttpResponseHandler;
-  typedef std::function<void(std::error_code, const char *what)>
+  typedef std::function<void(std::error_code ec, const char *what)>
       HttpErrorNotifier;
 
   bool Get(std::string url, HttpHeader header, HttpResponseHandler on_response,

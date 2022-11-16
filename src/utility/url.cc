@@ -21,11 +21,16 @@ enum UrlPart : unsigned int {
 
 } // namespace
 
-bool Url::parse(const std::string_view &url_string) {
+bool Url::parse(std::string url) {
+  this->url = std::move(url);
+  return parse(std::string_view(this->url));
+}
+
+bool Url::parse(const std::string_view &url) {
   static std::regex re(URL_PATTERN);
 
   std::match_results<std::string_view::const_iterator> m;
-  if (!std::regex_match(url_string.cbegin(), url_string.cend(), m, re)) {
+  if (!std::regex_match(url.cbegin(), url.cend(), m, re)) {
     return false;
   }
 

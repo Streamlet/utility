@@ -1,8 +1,10 @@
 #include <string_view>
 
 struct Url {
-  bool parse(const std::string_view &url_string);
+  bool parse(std::string url);
+  bool parse(const std::string_view &url);
 
+  std::string url;
   std::string_view protocol;
   std::string_view username;
   std::string_view password;

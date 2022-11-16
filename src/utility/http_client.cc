@@ -32,7 +32,7 @@ public:
               http::verb method, HttpClient::HttpHeader header,
               std::string body, HttpClient::HttpResponseHandler on_response,
               HttpClient::HttpErrorNotifier on_error, unsigned timeout)
-      : ioc_(ioc), url_(std::move(url)), on_response_(std::move(on_response)),
+      : ioc_(ioc), on_response_(std::move(on_response)),
         on_error_(std::move(on_error)),
         timeout_(timeout), ctx_{ssl::context::tlsv12_client},
         resolver_(net::make_strand(ioc_)), tcp_stream_(net::make_strand(ioc_)),
@@ -42,7 +42,7 @@ public:
     // Verify the remote server's certificate
     ctx_.set_verify_mode(ssl::verify_peer);
 
-    url_parts_.parse(url_);
+    url_parts_.parse(std::move(url));
     request_.method(method);
     request_.target(!url_parts_.full_path.empty() ? url_parts_.full_path : "/");
     request_.version(HTTP_VERSION);
@@ -261,7 +261,6 @@ private:
 
 private:
   unsigned timeout_ = 0;
-  std::string url_;
   HttpClient::HttpResponseHandler on_response_;
   HttpClient::HttpErrorNotifier on_error_;
 

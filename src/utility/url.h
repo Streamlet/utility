@@ -1,7 +1,9 @@
+#include <string>
 #include <string_view>
 
 struct Url {
   bool parse(std::string url);
+  bool parse(const char* url);
   bool parse(const std::string_view &url);
 
   std::string url;

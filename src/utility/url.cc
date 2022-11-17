@@ -26,6 +26,10 @@ bool Url::parse(std::string url) {
   return parse(std::string_view(this->url));
 }
 
+bool Url::parse(const char* url) {
+  return parse(std::string_view(url));
+}
+
 bool Url::parse(const std::string_view &url) {
   static std::regex re(URL_PATTERN);
 

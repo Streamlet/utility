@@ -28,26 +28,31 @@ def build_boost(debug):
     boost_libs = '--with-test'
     if sys.platform == 'win32':
         b2 = 'b2.exe'
-        platform_args = 'cxxflags="/std:c++17" define=BOOST_AUTO_LINK_SYSTEM define=BOOST_TEST_NO_MAIN define=BOOST_TEST_ALTERNATIVE_INIT_API define=BOOST_BEAST_USE_STD_STRING_VIEW'
+        platform_args = 'cxxflags="/std:c++17" runtime-link=static'
     else:
         b2 = './b2'
-        platform_args = 'cxxflags="-std=c++17"'
+        platform_args = 'cxxflags="-std=c++17" runtime-link=shared'
     if not os.path.exists(b2):
         if sys.platform == 'win32':
             cmd('bootstrap.bat')
         else:
             cmd('./bootstrap.sh')
-    cmd('%s install %s link=static runtime-link=static threading=multi address-model=64 variant=%s --layout=system --prefix=build/%s %s'
-        % (b2, platform_args, config, config, boost_libs))
+    cmd('%s install %s link=static threading=multi address-model=64 variant=%s  define=BOOST_AUTO_LINK_SYSTEM define=BOOST_TEST_NO_MAIN define=BOOST_TEST_ALTERNATIVE_INIT_API define=BOOST_BEAST_USE_STD_STRING_VIEW --layout=system --prefix=build/%s --build_dir=build/%s %s'
+        % (b2, platform_args, config, config, config, boost_libs))
     os.chdir('..')
 
 def build_openssl(debug):
     os.chdir('openssl')
     config = 'debug' if debug else 'release'
     prefix = os.path.abspath(os.path.join('build', config))
-    cmd('perl Configure VC-WIN64A threads no-shared --%s --prefix=%s' % (config, prefix))
-    cmd('nmake')
-    cmd('nmake install')
+    if sys.platform == 'win32':
+        cmd('perl Configure VC-WIN64A threads no-shared --%s --prefix=%s --openssldir=%s' % (config, prefix, prefix))
+        cmd('nmake')
+        cmd('nmake install')
+    else:
+        cmd('./config threads shared --%s --prefix=%s --openssldir=%s' % (config, prefix, prefix))
+        cmd('make')
+        cmd('make install')
     os.chdir('..')
 
 

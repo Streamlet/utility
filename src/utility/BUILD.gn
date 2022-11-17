@@ -1,25 +1,32 @@
 source_set("utility") {
   configs += [ "//build_config:project_common" ]
   sources = [
+    "http_client.cc",
+    "http_client.h",
     "url.cc",
     "url.h",
-    "http_client.h",
-    "http_client.cc",
   ]
-  libs = [
-    "user32.lib",
-    "advapi32.lib",
-    "crypt32.lib",
-    "libssl.lib",
-    "libcrypto.lib",
-  ]
+  if (is_win) {
+    libs = [
+      "user32.lib",
+      "advapi32.lib",
+      "crypt32.lib",
+      "libssl.lib",
+      "libcrypto.lib",
+    ]
+  } else {
+    libs = [
+      "ssl",
+      "crypto",
+    ]
+  }
 }
 
 executable("utility_test") {
-  configs += [
-    "//build_config:project_common",
-    "//build/config/win:static_runtime",
-  ]
+  configs += [ "//build_config:project_common" ]
+  if (is_win) {
+    configs += [ "//build/config/win:static_runtime" ]
+  }
 
   sources = [
     "test.cc",
@@ -27,17 +34,19 @@ executable("utility_test") {
   ]
 
   deps = [ ":utility" ]
+
+  if (!is_win) {
+    libs = [ "boost_unit_test_framework" ]
+  }
 }
 
 executable("http_cmd") {
-  configs += [
-    "//build_config:project_common",
-    "//build/config/win:static_runtime",
-  ]
+  configs += [ "//build_config:project_common" ]
+  if (is_win) {
+    configs += [ "//build/config/win:static_runtime" ]
+  }
 
-  sources = [
-    "http_cmd.cc",
-  ]
+  sources = [ "http_cmd.cc" ]
 
   deps = [ ":utility" ]
 }

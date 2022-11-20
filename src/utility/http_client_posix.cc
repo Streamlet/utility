@@ -1,5 +1,3 @@
-#include "http_client.h"
-#include "url.h"
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -10,6 +8,9 @@
 #include <boost/beast/version.hpp>
 #include <iostream>
 #include <memory>
+
+#include "http_client.h"
+#include "url.h"
 
 namespace beast = boost::beast; // from <boost/beast.hpp>
 namespace http = beast::http;   // from <boost/beast/http.hpp>
@@ -246,7 +247,7 @@ private:
   void error(beast::error_code ec, const char *what) {
     if (!on_error_)
       return;
-    on_error_(ec, what);
+    on_error_(ec.message().c_str());
   }
 
   void callback() {

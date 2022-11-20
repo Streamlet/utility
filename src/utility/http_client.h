@@ -9,12 +9,12 @@ public:
   HttpClient(std::string user_agent = "");
   ~HttpClient();
 
-  typedef std::map<std::string_view, std::string_view> HttpHeader;
+  typedef std::multimap<std::string_view, std::string_view> HttpHeader;
 
   typedef std::function<void(unsigned status, HttpHeader header,
                              std::string_view body)>
       HttpResponseHandler;
-  typedef std::function<void(std::error_code ec, const char *what)>
+  typedef std::function<void(const char *error)>
       HttpErrorNotifier;
 
   bool Get(std::string url, HttpHeader header, HttpResponseHandler on_response,

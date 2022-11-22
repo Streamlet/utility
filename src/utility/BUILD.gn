@@ -1,24 +1,35 @@
+declare_args() {
+  winhttp = true
+}
+
 source_set("utility") {
   configs += [ "//build_config:project_common" ]
   sources = [
+    "http_client.cc",
+    "http_client.h",
     "url.cc",
     "url.h",
   ]
   if (is_win) {
-    sources += [
-      "encoding.h",
-      "encoding_win.cc",
-      "http_client.h",
-      "http_client_win.cc",
-    ]
-    libs = [
-      "winhttp.lib",
-    ]
+    if (winhttp) {
+      sources += [
+        "encoding.h",
+        "encoding_win.cc",
+        "http_client_win.cc",
+      ]
+      libs = [ "winhttp.lib" ]
+    } else {
+      sources += [ "http_client_posix.cc" ]
+      libs = [
+        "user32.lib",
+        "advapi32.lib",
+        "crypt32.lib",
+        "libssl.lib",
+        "libcrypto.lib",
+      ]
+    }
   } else {
-    sources += [
-      "http_client.h",
-      "http_client_posix.cc",
-    ]
+    sources += [ "http_client_posix.cc" ]
     libs = [
       "ssl",
       "crypto",

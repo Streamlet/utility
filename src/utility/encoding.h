@@ -1,5 +1,5 @@
-#include <Windows.h>
 #include <string_view>
+#include <Windows.h>
 
 namespace encoding {
 
@@ -12,4 +12,5 @@ std::string UCS2ToUTF8(const std::wstring &ucs2);
 std::string UCS2ToUTF8(const std::wstring_view &ucs2);
 std::string UCS2ToUTF8(const wchar_t *ucs2);
 std::string UCS2ToUTF8(const wchar_t *ucs2, size_t length);
+
 } // namespace encoding

@@ -4,6 +4,7 @@
 #include "encoding.h"
 #include "http_client.h"
 #include "url.h"
+#include <boost/scope_exit.hpp>
 #include <charconv>
 #include <memory>
 #include <sstream>
@@ -11,301 +12,258 @@
 
 namespace {
 
-class HttpSession : public std::enable_shared_from_this<HttpSession> {
-public:
-  HttpSession(HANDLE event, std::string user_agent, std::string url,
-              std::string method, HttpClient::HttpHeader header,
-              std::string body, HttpClient::HttpResponseHandler on_response,
-              HttpClient::HttpErrorNotifier on_error, unsigned timeout)
-      : event_(event), method_(std::move(method)),
-        request_header_(std::move(header)), request_body_(std::move(body)),
-        on_response_(std::move(on_response)), on_error_(std::move(on_error)),
-        timeout_(timeout) {
-    url_parts_.parse(std::move(url));
-    std::wstring user_agent_w = encoding::UTF8ToUCS2(user_agent);
-    session_ = ::WinHttpOpen(
-        user_agent_w.c_str(), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, WINHTTP_FLAG_ASYNC);
-    ::WinHttpSetStatusCallback(session_,
-                               HttpSession::StaticWinHttpStatusCallback,
-                               WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS, 0);
-  }
-  ~HttpSession() { ::WinHttpCloseHandle(session_); }
+const unsigned HTTP_VERSION = 11;
+const char *PROTOCOL_HTTPS  = "https";
+const char *PROTOCOL_HTTP   = "http";
 
-  bool Start() {
-    if (!Connect())
-      return false;
-    if (!SendRequest())
-      return false;
-    return true;
-  }
-
-private:
-  bool Connect() {
-    std::wstring host = encoding::UTF8ToUCS2(url_parts_.domain);
-    INTERNET_PORT port = INTERNET_DEFAULT_PORT;
-    if (url_parts_.port.length() > 0) {
-      std::from_chars(url_parts_.port.data(),
-                      url_parts_.port.data() + url_parts_.port.length(), port);
-    }
-    connection_ = ::WinHttpConnect(session_, host.c_str(), port, 0);
-    if (connection_ == nullptr) {
-      return false;
-    }
-    return true;
-  }
-
-  bool SendRequest() {
-    std::wstring verb = encoding::UTF8ToUCS2(method_);
-    std::wstring path = encoding::UTF8ToUCS2(
-        !url_parts_.full_path.empty() ? url_parts_.full_path : "/");
-
-    request_ = ::WinHttpOpenRequest(
-        connection_, verb.c_str(), path.c_str(), NULL, WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_REFRESH);
-
-    if (request_ == nullptr) {
-      return false;
-    }
-
-    std::stringstream ss;
-    for (const auto &h : request_header_) {
-      ss << h.first << ": " << h.second << "\r\n";
-    }
-    std::wstring header_string_w = encoding::UTF8ToUCS2(ss.str());
-
-    if (!::WinHttpSendRequest(
-            request_, header_string_w.c_str(), header_string_w.length(),
-            static_cast<LPVOID>(request_body_.data()), request_body_.length(),
-            request_body_.length(), (DWORD_PTR)this)) {
-      return false;
-    }
-
-    keep_this_ = shared_from_this();
-
-    return true;
-  }
-
-  bool OnSendRequestComplete() {
-    if (!::WinHttpReceiveResponse(request_, nullptr)) {
-      return false;
-    }
-    return true;
-  }
-
-  bool OnHeadersAvailable() {
-    std::wstring status_code;
-    status_code.resize(3);
-    DWORD dwStatusCodeSize = (status_code.size() + 1) * sizeof(wchar_t);
-    ::WinHttpQueryHeaders(request_, WINHTTP_QUERY_STATUS_CODE,
-                          WINHTTP_HEADER_NAME_BY_INDEX, status_code.data(),
-                          &dwStatusCodeSize, WINHTTP_NO_HEADER_INDEX);
-    status_code_ = _wtoi(status_code.c_str());
-
-    DWORD dwHeaderSize = 0;
-    ::WinHttpQueryHeaders(
-        request_, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX,
-        WINHTTP_NO_OUTPUT_BUFFER, &dwHeaderSize, WINHTTP_NO_HEADER_INDEX);
-
-    std::wstring buffer;
-    buffer.resize(dwHeaderSize - 1);
-    if (!::WinHttpQueryHeaders(request_, WINHTTP_QUERY_RAW_HEADERS,
-                               WINHTTP_HEADER_NAME_BY_INDEX, buffer.data(),
-                               &dwHeaderSize, WINHTTP_NO_HEADER_INDEX)) {
-      return false;
-    }
-    for (size_t i = 0; i < buffer.length() && buffer[i] != '\0';) {
-      std::wstring_view sv(buffer.c_str() + i);
-      std::string line = encoding::UCS2ToUTF8(sv);
-      char *p = strchr(line.data(), ':');
-      if (p != nullptr) {
-        *p++ = '\0';
-        if (*p == ' ')
-          ++p;
-        response_header_.insert({line.c_str(), p});
-      }
-      i += line.length() + 1;
-    }
-
-    if (!::WinHttpQueryDataAvailable(request_, nullptr)) {
-      return false;
-    }
-    return true;
-  }
-
-  bool OnDateAvailable(DWORD dwBytesAvailable) {
-    buffer_.resize(dwBytesAvailable);
-    if (!::WinHttpReadData(request_, buffer_.data(), dwBytesAvailable,
-                           nullptr)) {
-      return false;
-    }
-    return true;
-  }
-
-  bool OnReadComplete(LPVOID lpBuffer, DWORD dwTotalBytesRead) {
-    if (dwTotalBytesRead > 0) {
-      response_body_.append(static_cast<const char *>(lpBuffer),
-                            dwTotalBytesRead);
-      if (!::WinHttpQueryDataAvailable(request_, nullptr)) {
-        return false;
-      }
-    } else {
-      Callback();
-    }
-    return true;
-  }
-
-  void OnRequestError(LPWINHTTP_ASYNC_RESULT result) {
-    if (on_error_) {
-      const char *error = nullptr;
-      switch (result->dwResult) {
-      case API_RECEIVE_RESPONSE:
-        error = "API_RECEIVE_RESPONSE";
-        break;
-      case API_QUERY_DATA_AVAILABLE:
-        error = "API_QUERY_DATA_AVAILABLE";
-        break;
-      case API_READ_DATA:
-        error = "API_READ_DATA";
-        break;
-      case API_WRITE_DATA:
-        error = "API_WRITE_DATA";
-        break;
-      case API_SEND_REQUEST:
-        error = "API_RECEIVE_RESPONSE";
-        break;
-      case API_GET_PROXY_FOR_URL:
-        error = "API_RECEIVE_RESPONSE";
-        break;
-      default:
-        break;
-      }
-      on_error_(error);
-    }
-    ::SetEvent(event_);
-    keep_this_.reset();
-  }
-
-  void Callback() {
-    if (on_response_) {
-      HttpClient::HttpHeader header;
-      for (auto &h : response_header_) {
-        header.insert({h.first, h.second});
-      }
-      on_response_(status_code_, std::move(header), response_body_.c_str());
-    }
-    ::SetEvent(event_);
-    keep_this_.reset();
-  }
-
-private:
-  void CALLBACK WinHttpStatusCallback(HINTERNET hInternet,
-                                      DWORD dwInternetStatus,
-                                      LPVOID lpvStatusInformation,
-                                      DWORD dwStatusInformationLength) {
-    switch (dwInternetStatus) {
-    case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE:
-      OnSendRequestComplete();
-      break;
-    case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE:
-      OnHeadersAvailable();
-      break;
-    case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE:
-      OnDateAvailable(*(DWORD *)lpvStatusInformation);
-      break;
-    case WINHTTP_CALLBACK_STATUS_READ_COMPLETE:
-      OnReadComplete(lpvStatusInformation, dwStatusInformationLength);
-      break;
-    case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
-      OnRequestError((LPWINHTTP_ASYNC_RESULT)lpvStatusInformation);
-      break;
-    default:
-      break;
-    }
-  }
-
-private:
-  static void CALLBACK StaticWinHttpStatusCallback(
-      HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus,
-      LPVOID lpvStatusInformation, DWORD dwStatusInformationLength) {
-    ((HttpSession *)dwContext)
-        ->WinHttpStatusCallback(hInternet, dwInternetStatus,
-                                lpvStatusInformation,
-                                dwStatusInformationLength);
-  }
-
-private:
-  unsigned timeout_ = 0;
-  HttpClient::HttpResponseHandler on_response_;
-  HttpClient::HttpErrorNotifier on_error_;
-
-  Url url_parts_;
-  std::string method_;
-  HttpClient::HttpHeader request_header_;
-  std::string request_body_;
-  HINTERNET session_;
-  HANDLE event_ = nullptr;
-  HINTERNET connection_;
-  HINTERNET request_;
-  std::shared_ptr<HttpSession> keep_this_;
-  unsigned status_code_;
-  HttpClient::HttpHeader response_header_;
-  std::string buffer_;
-  std::string response_body_;
+enum class HttpMethod : int {
+  Get = 0,
+  Post,
+  Put,
+  Delete,
 };
 
-bool start_session(HANDLE event, std::string user_agent, std::string url,
-                   std::string method, HttpClient::HttpHeader header,
-                   std::string body,
-                   HttpClient::HttpResponseHandler on_response,
-                   HttpClient::HttpErrorNotifier on_error, unsigned timeout) {
-  auto session = std::make_shared<HttpSession>(
-      event, user_agent, std::move(url), method, std::move(header), "",
-      std::move(on_response), std::move(on_error), timeout);
-  return session->Start();
-}
+struct HttpMethodString {
+#ifdef _DEBUG
+  HttpMethod method;
+#endif
+  const wchar_t *string;
+};
+
+#ifdef _DEBUG
+#define _(m, s) m, s
+#else
+#define _(m, s) s
+#endif
+
+static const HttpMethodString HTTP_METHOD_STRING_TABLE[] = {
+    {_(HttpMethod::Get, L"GET")},
+    {_(HttpMethod::Post, L"POST")},
+    {_(HttpMethod::Put, L"PUT")},
+    {_(HttpMethod::Delete, L"DELETE")},
+};
+
+#undef _
 
 } // namespace
 
-HttpClient::HttpClient(std::string user_agent /*= ""*/)
-    : user_agent_(std::move(user_agent)), waitable_context_() {
-  waitable_context_ = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
+class HttpClient::HttpSession {
+public:
+  HttpSession(std::string user_agent) {
+    std::wstring ua = encoding::UTF8ToUCS2(user_agent);
+
+    session_ = ::WinHttpOpen(ua.empty() ? L"WinHttp" : ua.c_str(), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                             WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+
+    DWORD options = WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP;
+    ::WinHttpSetOption(session_, WINHTTP_OPTION_REDIRECT_POLICY, &options, sizeof(options));
+  }
+  ~HttpSession() {
+    ::WinHttpCloseHandle(session_);
+  }
+
+  std::error_code SendAndReceive(HttpMethod method,
+                                 const std::string_view &url_string,
+                                 const RequestHeader &request_header,
+                                 const std::string_view &request_body,
+                                 unsigned *response_status,
+                                 ResponseHeader *response_header,
+                                 std::string *response_body,
+                                 unsigned timeout = 0) {
+    if (timeout > 0)
+      ::WinHttpSetTimeouts(session_, timeout, timeout, timeout, timeout);
+
+    Url url = Url::Parse(url_string);
+    if (!url.valid)
+      return std::make_error_code(std::errc::invalid_argument);
+    if (url.protocol != PROTOCOL_HTTPS && url.protocol != PROTOCOL_HTTP)
+      return std::make_error_code(std::errc::protocol_not_supported);
+    bool ssl = url.protocol == PROTOCOL_HTTPS;
+
+    std::wstring host  = encoding::UTF8ToUCS2(url.domain);
+    std::wstring path  = encoding::UTF8ToUCS2(url.full_path);
+    INTERNET_PORT port = INTERNET_DEFAULT_PORT;
+    if (url.port.empty())
+      port = ssl ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
+    else
+      std::from_chars(url.port.data(), url.port.data() + url.port.length(), port);
+
+    HINTERNET connection = Connect(session_, host, port);
+    if (connection == nullptr) {
+      return std::error_code(::GetLastError(), std::system_category());
+    }
+    BOOST_SCOPE_EXIT(connection) {
+      ::WinHttpCloseHandle(connection);
+    }
+    BOOST_SCOPE_EXIT_END;
+
+    HINTERNET request = OpenRequest(connection, ssl, method, path);
+    if (request == nullptr) {
+      return std::error_code(::GetLastError(), std::system_category());
+    }
+
+    BOOST_SCOPE_EXIT(request) {
+      ::WinHttpCloseHandle(request);
+    }
+    BOOST_SCOPE_EXIT_END;
+
+    if (!SendRequest(request, request_header, request_body)) {
+      return std::error_code(::GetLastError(), std::system_category());
+    }
+
+    if (response_status != nullptr || response_header != nullptr) {
+      if (!ReceiveHeader(request, response_status, response_header)) {
+        return std::error_code(::GetLastError(), std::system_category());
+      }
+    }
+
+    if (response_body != nullptr) {
+      if (!ReceiveBody(request, response_body)) {
+        return std::error_code(::GetLastError(), std::system_category());
+      }
+    }
+
+    return {};
+  }
+
+private:
+  HINTERNET Connect(HINTERNET session, const std::wstring &host, INTERNET_PORT port) {
+    return ::WinHttpConnect(session, host.c_str(), port, 0);
+  }
+
+  HINTERNET OpenRequest(HINTERNET connection, bool ssl, HttpMethod method, const std::wstring &path) {
+    const wchar_t *verb = HTTP_METHOD_STRING_TABLE[static_cast<int>(method)].string;
+    return ::WinHttpOpenRequest(connection, verb, path.empty() ? L"/" : path.c_str(), nullptr, WINHTTP_NO_REFERER,
+                                WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_REFRESH | (ssl ? WINHTTP_FLAG_SECURE : 0));
+  }
+
+  bool SendRequest(HINTERNET request, const RequestHeader &request_header, const std::string_view &request_body) {
+    std::stringstream ss;
+    for (const auto &h : request_header)
+      ss << h.first << ": " << h.second << "\r\n";
+    std::wstring header_string = encoding::UTF8ToUCS2(ss.str());
+    if (!::WinHttpSendRequest(request, header_string.c_str(), header_string.length(),
+                              const_cast<char *>(request_body.data()), request_body.length(), request_body.length(),
+                              0)) {
+      return false;
+    }
+    if (!::WinHttpReceiveResponse(request, nullptr)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool ReceiveHeader(HINTERNET request, unsigned *response_status, ResponseHeader *response_header) {
+    if (response_status != nullptr) {
+      DWORD status_code_size = 0;
+      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, WINHTTP_NO_OUTPUT_BUFFER,
+                            &status_code_size, WINHTTP_NO_HEADER_INDEX);
+      std::wstring status_code;
+      status_code.resize(status_code_size * sizeof(wchar_t));
+      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, status_code.data(),
+                            &status_code_size, WINHTTP_NO_HEADER_INDEX);
+      *response_status = _wtoi(status_code.c_str());
+    }
+
+    if (response_header != nullptr) {
+      DWORD header_size = 0;
+      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX, WINHTTP_NO_OUTPUT_BUFFER,
+                            &header_size, WINHTTP_NO_HEADER_INDEX);
+      std::wstring buffer_w;
+      buffer_w.resize(header_size);
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX, buffer_w.data(),
+                                 &header_size, WINHTTP_NO_HEADER_INDEX)) {
+        return false;
+      }
+      std::string buffer = encoding::UCS2ToUTF8(buffer_w);
+
+      for (size_t i = 0; i < buffer.length() && buffer[i] != '\0';) {
+        char *k = buffer.data() + i;
+        int len = strlen(k);
+        char *v = strchr(k, ':');
+        if (v != nullptr) {
+          *v++ = '\0';
+          if (*v == ' ')
+            ++v;
+          response_header->insert({k, v});
+        }
+        i += len + 1;
+      }
+    }
+
+    return true;
+  }
+
+  bool ReceiveBody(HINTERNET request, std::string *response_body) {
+    DWORD bytes_available = 0;
+    std::string buffer;
+    while (true) {
+      if (!::WinHttpQueryDataAvailable(request, &bytes_available))
+        return false;
+      if (bytes_available == 0)
+        break;
+      while (bytes_available > 0) {
+        buffer.resize(bytes_available);
+        DWORD bytes_read = 0;
+        if (!::WinHttpReadData(request, buffer.data(), bytes_available, &bytes_read))
+          return false;
+        if (bytes_read > 0) {
+          response_body->append(buffer.data(), bytes_read);
+        }
+        bytes_available -= bytes_read;
+      }
+    }
+    return true;
+  }
+
+private:
+  HINTERNET session_;
+};
+
+HttpClient::HttpClient(std::string user_agent) : session_(std::make_unique<HttpSession>(std::move(user_agent))) {
 }
 
-HttpClient::~HttpClient() { ::CloseHandle((HANDLE)waitable_context_); }
-
-bool HttpClient::Get(std::string url, HttpHeader header,
-                     HttpResponseHandler on_response,
-                     HttpErrorNotifier on_error, unsigned timeout /*= 0*/) {
-  return start_session((HANDLE)waitable_context_, user_agent_, url, "GET",
-                       std::move(header), "", std::move(on_response),
-                       std::move(on_error), timeout);
+HttpClient::~HttpClient() {
 }
 
-bool HttpClient::Post(std::string url, HttpHeader header, std::string body,
-                      HttpResponseHandler on_response,
-                      HttpErrorNotifier on_error, unsigned timeout /*= 0*/) {
-  return start_session((HANDLE)waitable_context_, user_agent_, url, "POST",
-                       std::move(header), std::move(body),
-                       std::move(on_response), std::move(on_error), timeout);
+std::error_code HttpClient::Get(const std::string_view &url,
+                                const RequestHeader &request_header,
+                                unsigned *response_status,
+                                ResponseHeader *response_header,
+                                std::string *response_body,
+                                unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Get, url, request_header, "", response_status, response_header,
+                                  response_body);
 }
 
-bool HttpClient::Put(std::string url, HttpHeader header, std::string body,
-                     HttpResponseHandler on_response,
-                     HttpErrorNotifier on_error, unsigned timeout /*= 0*/) {
-  return start_session((HANDLE)waitable_context_, user_agent_, url, "PUT",
-                       std::move(header), std::move(body),
-                       std::move(on_response), std::move(on_error), timeout);
+std::error_code HttpClient::Post(const std::string_view &url,
+                                 const RequestHeader &request_header,
+                                 const std::string_view &request_body,
+                                 unsigned *response_status,
+                                 ResponseHeader *response_header,
+                                 std::string *response_body,
+                                 unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Post, url, request_header, request_body, response_status, response_header,
+                                  response_body);
 }
 
-bool HttpClient::Delete(std::string url, HttpHeader header,
-                        HttpResponseHandler on_response,
-                        HttpErrorNotifier on_error, unsigned timeout /*= 0*/) {
-  return start_session((HANDLE)waitable_context_, user_agent_, url, "DELETE",
-                       std::move(header), "", std::move(on_response),
-                       std::move(on_error), timeout);
+std::error_code HttpClient::Put(const std::string_view &url,
+                                const RequestHeader &request_header,
+                                const std::string_view &request_body,
+                                unsigned *response_status,
+                                ResponseHeader *response_header,
+                                std::string *response_body,
+                                unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Put, url, request_header, request_body, response_status, response_header,
+                                  response_body);
 }
 
-void HttpClient::Wait() {
-  ::WaitForSingleObject((HANDLE)waitable_context_, INFINITE);
+std::error_code HttpClient::Delete(const std::string_view &url,
+                                   const RequestHeader &request_header,
+                                   unsigned *response_status,
+                                   ResponseHeader *response_header,
+                                   std::string *response_body,
+                                   unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Delete, url, request_header, "", response_status, response_header,
+                                  response_body);
 }

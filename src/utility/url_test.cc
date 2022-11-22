@@ -2,12 +2,11 @@
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(normal) {
-  Url url;
   const char *url_string =
       "http://username:password@domain:80/path/to/page?query=value#fragment";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "username");
   BOOST_CHECK_EQUAL(url.password, "password");
@@ -21,12 +20,11 @@ BOOST_AUTO_TEST_CASE(normal) {
 }
 
 BOOST_AUTO_TEST_CASE(no_password) {
-  Url url;
   const char *url_string =
       "http://username@domain:80/path/to/page?query=value#fragment";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "username");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -40,11 +38,10 @@ BOOST_AUTO_TEST_CASE(no_password) {
 }
 
 BOOST_AUTO_TEST_CASE(no_username_password) {
-  Url url;
   const char *url_string = "http://domain:80/path/to/page?query=value#fragment";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -58,12 +55,11 @@ BOOST_AUTO_TEST_CASE(no_username_password) {
 }
 
 BOOST_AUTO_TEST_CASE(no_port) {
-  Url url;
   const char *url_string =
       "http://domain/path/to/page?query=value#fragment";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -77,11 +73,10 @@ BOOST_AUTO_TEST_CASE(no_port) {
 }
 
 BOOST_AUTO_TEST_CASE(has_query_no_frament) {
-  Url url;
   const char *url_string = "http://domain/path/to/page?query=value";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -95,11 +90,10 @@ BOOST_AUTO_TEST_CASE(has_query_no_frament) {
 }
 
 BOOST_AUTO_TEST_CASE(has_query_no_frament_has_sharp) {
-  Url url;
   const char *url_string = "http://domain/path/to/page?query=value#";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -113,11 +107,10 @@ BOOST_AUTO_TEST_CASE(has_query_no_frament_has_sharp) {
 }
 
 BOOST_AUTO_TEST_CASE(no_query_has_frament) {
-  Url url;
   const char *url_string = "http://domain/path/to/page#fragment";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -130,11 +123,10 @@ BOOST_AUTO_TEST_CASE(no_query_has_frament) {
 }
 
 BOOST_AUTO_TEST_CASE(no_query_has_question_mask_has_frament) {
-  Url url;
   const char *url_string = "http://domain/path/to/page?#fragment";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -148,11 +140,10 @@ BOOST_AUTO_TEST_CASE(no_query_has_question_mask_has_frament) {
 }
 
 BOOST_AUTO_TEST_CASE(no_query_no_frament) {
-  Url url;
   const char *url_string = "http://domain/path/to/page";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -165,11 +156,10 @@ BOOST_AUTO_TEST_CASE(no_query_no_frament) {
 }
 
 BOOST_AUTO_TEST_CASE(root_path) {
-  Url url;
   const char *url_string = "http://domain/";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");
@@ -182,11 +172,10 @@ BOOST_AUTO_TEST_CASE(root_path) {
 }
 
 BOOST_AUTO_TEST_CASE(no_path) {
-  Url url;
   const char *url_string = "http://domain";
-  bool s = url.parse(url_string);
+  Url url = Url::Parse(url_string);
 
-  BOOST_CHECK_EQUAL(s, true);
+  BOOST_CHECK_EQUAL(url.valid, true);
   BOOST_CHECK_EQUAL(url.protocol, "http");
   BOOST_CHECK_EQUAL(url.username, "");
   BOOST_CHECK_EQUAL(url.password, "");

@@ -3,68 +3,68 @@
 
 namespace {
 
-static const char *URL_PATTERN =
-    "([^:]+)://(?:([^:]+)(?::([^@]+))?@)?([^:/]+)(?::(\\d+))?"
-    "((?:([^?#]+))?(?:\\?([^#]+)?)?(?:#(.+)?)?)";
-
 enum UrlPart : unsigned int {
   Protocol = 1,
   Username = 2,
   Password = 3,
-  Domain = 4,
-  Port = 5,
+  Domain   = 4,
+  Port     = 5,
   FullPath = 6,
-  Path = 7,
-  Query = 8,
+  Path     = 7,
+  Query    = 8,
   Fragment = 9,
 };
 
-} // namespace
+template <typename CharType>
+struct CharTypeTrait;
+template <>
+struct CharTypeTrait<char> {
+  static inline const char *URL_PATTERN = "([^:]+)://(?:([^:]+)(?::([^@]+))?@)?([^:/]+)(?::(\\d+))?"
+                                          "((?:([^?#]+))?(?:\\?([^#]+)?)?(?:#(.+)?)?)";
+  static inline const std::regex URL_REGEXP{URL_PATTERN};
+};
+template <>
+struct CharTypeTrait<wchar_t> {
+  static inline const wchar_t *URL_PATTERN = L"([^:]+)://(?:([^:]+)(?::([^@]+))?@)?([^:/]+)(?::(\\d+))?"
+                                             L"((?:([^?#]+))?(?:\\?([^#]+)?)?(?:#(.+)?)?)";
+  static inline const std::wregex URL_REGEXP{URL_PATTERN};
+};
 
-bool Url::parse(std::string url) {
-  this->url = std::move(url);
-  return parse(std::string_view(this->url));
-}
+template <typename CharType>
+UrlT<CharType> ParseUrl(const std::basic_string_view<CharType> &url) {
+  UrlT<CharType> url_parts;
 
-bool Url::parse(const char* url) {
-  return parse(std::string_view(url));
-}
-
-bool Url::parse(const std::string_view &url) {
-  static std::regex re(URL_PATTERN);
-
-  std::match_results<std::string_view::const_iterator> m;
-  if (!std::regex_match(url.cbegin(), url.cend(), m, re)) {
-    return false;
+  std::match_results<std::basic_string_view<CharType>::const_iterator> m;
+  url_parts.valid = std::regex_match(url.cbegin(), url.cend(), m, CharTypeTrait<CharType>::URL_REGEXP);
+  if (url_parts.valid) {
+    if (m[Protocol].length() != 0)
+      url_parts.protocol = std::basic_string_view<CharType>(&*m[Protocol].first, m[Protocol].length());
+    if (m[Username].length() != 0)
+      url_parts.username = std::basic_string_view<CharType>(&*m[Username].first, m[Username].length());
+    if (m[Password].length() != 0)
+      url_parts.password = std::basic_string_view<CharType>(&*m[Password].first, m[Password].length());
+    if (m[Domain].length() != 0)
+      url_parts.domain = std::basic_string_view<CharType>(&*m[Domain].first, m[Domain].length());
+    if (m[Port].length() != 0)
+      url_parts.port = std::basic_string_view<CharType>(&*m[Port].first, m[Port].length());
+    if (m[FullPath].length() != 0)
+      url_parts.full_path = std::basic_string_view<CharType>(&*m[FullPath].first, m[FullPath].length());
+    if (m[Path].length() != 0)
+      url_parts.path = std::basic_string_view<CharType>(&*m[Path].first, m[Path].length());
+    if (m[Query].length() != 0)
+      url_parts.query = std::basic_string_view<CharType>(&*m[Query].first, m[Query].length());
+    if (m[Fragment].length() != 0)
+      url_parts.fragment = std::basic_string_view<CharType>(&*m[Fragment].first, m[Fragment].length());
   }
 
-  protocol = m[Protocol].length() == 0
-                 ? ""
-                 : std::string_view(&*m[Protocol].first, m[Protocol].length());
-  username = m[Username].length() == 0
-                 ? ""
-                 : std::string_view(&*m[Username].first, m[Username].length());
-  password = m[Password].length() == 0
-                 ? ""
-                 : std::string_view(&*m[Password].first, m[Password].length());
-  domain = m[Domain].length() == 0
-               ? ""
-               : std::string_view(&*m[Domain].first, m[Domain].length());
-  port = m[Port].length() == 0
-             ? ""
-             : std::string_view(&*m[Port].first, m[Port].length());
-  full_path = m[FullPath].length() == 0
-                  ? ""
-                  : std::string_view(&*m[FullPath].first, m[FullPath].length());
-  path = m[Path].length() == 0
-             ? ""
-             : std::string_view(&*m[Path].first, m[Path].length());
-  query = m[Query].length() == 0
-              ? ""
-              : std::string_view(&*m[Query].first, m[Query].length());
-  fragment = m[Fragment].length() == 0
-                 ? ""
-                 : std::string_view(&*m[Fragment].first, m[Fragment].length());
+  return std::move(url_parts);
+}
+} // namespace
 
-  return true;
+Url Url::Parse(const std::string_view &url) {
+  return ParseUrl(url);
+}
+
+UrlW UrlW::Parse(const std::wstring_view &url) {
+  return ParseUrl(url);
 }

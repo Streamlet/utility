@@ -6,32 +6,41 @@
 
 class HttpClient {
 public:
-  HttpClient(std::string user_agent = "");
+  HttpClient(std::string user_agent = DEFAULT_USER_AGENT);
   ~HttpClient();
 
-  typedef std::multimap<std::string_view, std::string_view> HttpHeader;
+  typedef std::multimap<std::string_view, std::string> RequestHeader;
+  typedef std::multimap<std::string, std::string> ResponseHeader;
 
-  typedef std::function<void(unsigned status, HttpHeader header,
-                             std::string_view body)>
-      HttpResponseHandler;
-  typedef std::function<void(const char *error)>
-      HttpErrorNotifier;
-
-  bool Get(std::string url, HttpHeader header, HttpResponseHandler on_response,
-           HttpErrorNotifier on_error, unsigned timeout = 0);
-  bool Post(std::string url, HttpHeader header, std::string body,
-            HttpResponseHandler on_response, HttpErrorNotifier on_error,
-            unsigned timeout = 0);
-  bool Put(std::string url, HttpHeader header, std::string body,
-           HttpResponseHandler on_response, HttpErrorNotifier on_error,
-           unsigned timeout = 0);
-  bool Delete(std::string url, HttpHeader header,
-              HttpResponseHandler on_response, HttpErrorNotifier on_error,
-              unsigned timeout = 0);
-
-  void Wait();
+  std::error_code Get(const std::string_view &url,
+                      const RequestHeader &request_header,
+                      unsigned *response_status,
+                      ResponseHeader *response_header,
+                      std::string *response_body,
+                      unsigned timeout = 0);
+  std::error_code Post(const std::string_view &url,
+                       const RequestHeader &request_header,
+                       const std::string_view &request_body,
+                       unsigned *response_status,
+                       ResponseHeader *response_header,
+                       std::string *response_body,
+                       unsigned timeout = 0);
+  std::error_code Put(const std::string_view &url,
+                      const RequestHeader &request_header,
+                      const std::string_view &request_body,
+                      unsigned *response_status,
+                      ResponseHeader *response_header,
+                      std::string *response_body,
+                      unsigned timeout = 0);
+  std::error_code Delete(const std::string_view &url,
+                         const RequestHeader &request_header,
+                         unsigned *response_status,
+                         ResponseHeader *response_header,
+                         std::string *response_body,
+                         unsigned timeout = 0);
 
 private:
-  std::string user_agent_;
-  void *waitable_context_ = nullptr;
+  static const char *DEFAULT_USER_AGENT;
+  class HttpSession;
+  std::unique_ptr<HttpSession> session_;
 };

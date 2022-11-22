@@ -1,19 +1,21 @@
 #include <string>
 #include <string_view>
 
-struct Url {
-  bool parse(std::string url);
-  bool parse(const char* url);
-  bool parse(const std::string_view &url);
+template <typename CharType>
+struct UrlT {
+  static UrlT Parse(const std::basic_string_view<CharType> &url);
 
-  std::string url;
-  std::string_view protocol;
-  std::string_view username;
-  std::string_view password;
-  std::string_view domain;
-  std::string_view port;
-  std::string_view full_path; // path with query and fragment
-  std::string_view path;
-  std::string_view query;
-  std::string_view fragment;
+  bool valid = false;
+  std::basic_string_view<CharType> protocol;
+  std::basic_string_view<CharType> username;
+  std::basic_string_view<CharType> password;
+  std::basic_string_view<CharType> domain;
+  std::basic_string_view<CharType> port;
+  std::basic_string_view<CharType> full_path; // path with query and fragment
+  std::basic_string_view<CharType> path;
+  std::basic_string_view<CharType> query;
+  std::basic_string_view<CharType> fragment;
 };
+
+using Url = UrlT<char>;
+using UrlW = UrlT<wchar_t>;

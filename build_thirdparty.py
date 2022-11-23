@@ -41,21 +41,6 @@ def build_boost(debug):
         % (b2, platform_args, config, config, config, boost_libs))
     os.chdir('..')
 
-def build_openssl(debug):
-    os.chdir('openssl')
-    config = 'debug' if debug else 'release'
-    prefix = os.path.abspath(os.path.join('build', config))
-    if sys.platform == 'win32':
-        cmd('perl Configure VC-WIN64A threads no-shared --%s --prefix=%s --openssldir=%s' % (config, prefix, prefix))
-        cmd('nmake')
-        cmd('nmake install')
-    else:
-        cmd('./config threads shared --%s --prefix=%s --openssldir=%s'
-            % (config, prefix, prefix))
-        cmd('make')
-        cmd('make install')
-    os.chdir('..')
-
 def build_curl(debug):
     os.chdir('curl')
     config = 'debug' if debug else 'release'
@@ -82,7 +67,6 @@ def main(args):
     debug = 'debug' in args
     os.chdir('thirdparty')
     build_boost(debug)
-    build_openssl(debug)
     build_curl(debug)
     os.chdir('..')
 

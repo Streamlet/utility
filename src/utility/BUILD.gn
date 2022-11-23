@@ -1,8 +1,7 @@
 declare_args() {
-  # On Windows, the default implement is WinHTTP, then CURL, then Boost.Beast
-  # On Posix, the default implement is CURL, then Boost.Beast
+  # On Windows, the default implement is WinHTTP, then cURL
+  # On Posix, the default and only implement is cURL
   winhttp = true
-  beast = false
 }
 
 source_set("utility") {
@@ -22,7 +21,7 @@ source_set("utility") {
         "http_client_winhttp.cc",
       ]
       libs = [ "winhttp.lib" ]
-    } else if (!beast) {
+    } else {
       defines += [ "CURL_STATICLIB" ]
       sources += [ "http_client_curl.cc" ]
       libs = [
@@ -37,28 +36,11 @@ source_set("utility") {
       } else {
         libs += [ "libcurl_a.lib" ]
       }
-    } else {
-      sources += [ "http_client_beast.cc" ]
-      libs = [
-        "user32.lib",
-        "advapi32.lib",
-        "crypt32.lib",
-        "libssl.lib",
-        "libcrypto.lib",
-      ]
     }
   } else {
-    if (!beast) {
       defines += [ "CURL_STATICLIB" ]
       sources += [ "http_client_curl.cc" ]
       libs = [ "curl" ]
-    } else {
-      sources += [ "http_client_beast.cc" ]
-      libs = [
-        "ssl",
-        "crypto",
-      ]
-    }
   }
 }
 

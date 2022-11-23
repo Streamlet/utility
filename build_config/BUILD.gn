@@ -23,23 +23,19 @@ config("project_common") {
   if (is_debug) {
     include_dirs += [
       "//thirdparty/boost/build/debug/include",
-      "//thirdparty/openssl/build/debug/include",
       "//thirdparty/curl/build/debug/include",
     ]
     lib_dirs += [
       "//thirdparty/boost/build/debug/lib",
-      "//thirdparty/openssl/build/debug/lib",
       "//thirdparty/curl/build/debug/lib",
     ]
   } else {
     include_dirs += [
       "//thirdparty/boost/build/release/include",
-      "//thirdparty/openssl/build/release/include",
       "//thirdparty/curl/build/release/include",
     ]
     lib_dirs += [
       "//thirdparty/boost/build/release/lib",
-      "//thirdparty/openssl/build/release/lib",
       "//thirdparty/curl/build/release/lib",
     ]
   }

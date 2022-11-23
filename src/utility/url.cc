@@ -30,11 +30,12 @@ struct CharTypeTrait<wchar_t> {
   static inline const std::wregex URL_REGEXP{URL_PATTERN};
 };
 
-template <typename CharType>
-UrlT<CharType> ParseUrl(const std::basic_string_view<CharType> &url) {
-  UrlT<CharType> url_parts;
+} // namespace
 
-  std::match_results<std::basic_string_view<CharType>::const_iterator> m;
+template <typename CharType>
+UrlT<CharType> UrlT<CharType>::Parse(const std::basic_string_view<CharType> &url) {
+  UrlT<CharType> url_parts;
+  std::match_results<typename std::basic_string_view<CharType>::const_iterator> m;
   url_parts.valid = std::regex_match(url.cbegin(), url.cend(), m, CharTypeTrait<CharType>::URL_REGEXP);
   if (url_parts.valid) {
     if (m[Protocol].length() != 0)
@@ -59,12 +60,6 @@ UrlT<CharType> ParseUrl(const std::basic_string_view<CharType> &url) {
 
   return std::move(url_parts);
 }
-} // namespace
 
-Url Url::Parse(const std::string_view &url) {
-  return ParseUrl(url);
-}
-
-UrlW UrlW::Parse(const std::wstring_view &url) {
-  return ParseUrl(url);
-}
+template class UrlT<char>;
+template class UrlT<wchar_t>;

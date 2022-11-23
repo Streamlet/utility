@@ -1,25 +1,48 @@
 declare_args() {
+  # On Windows, the default implement is WinHTTP, then CURL, then Boost.Beast
+  # On Posix, the default implement is CURL, then Boost.Beast
   winhttp = true
+  beast = false
 }
 
 source_set("utility") {
   configs += [ "//build_config:project_common" ]
+  defines = []
   sources = [
     "http_client.cc",
     "http_client.h",
-    "url.cc",
-    "url.h",
   ]
   if (is_win) {
     if (winhttp) {
       sources += [
         "encoding.h",
         "encoding_win.cc",
-        "http_client_win.cc",
+        "http_client_winhttp.cc",
+        "url.cc",
+        "url.h",
       ]
       libs = [ "winhttp.lib" ]
+    } else if (!beast) {
+      defines += [ "CURL_STATICLIB" ]
+      sources += [ "http_client_curl.cc" ]
+      libs = [
+        "advapi32.lib",
+        "crypt32.lib",
+        "normaliz.lib",
+        "ws2_32.lib",
+        "wldap32.lib",
+      ]
+      if (is_debug) {
+        libs += [ "libcurl_a_debug.lib" ]
+      } else {
+        libs += [ "libcurl_a.lib" ]
+      }
     } else {
-      sources += [ "http_client_posix.cc" ]
+      sources += [
+        "http_client_beast.cc",
+        "url.cc",
+        "url.h",
+      ]
       libs = [
         "user32.lib",
         "advapi32.lib",
@@ -29,11 +52,26 @@ source_set("utility") {
       ]
     }
   } else {
-    sources += [ "http_client_posix.cc" ]
-    libs = [
-      "ssl",
-      "crypto",
-    ]
+    if (!beast) {
+      defines += [ "CURL_STATICLIB" ]
+      sources += [ "http_client_curl.cc" ]
+      libs = []
+      if (is_debug) {
+        libs += [ "curl_a_debug" ]
+      } else {
+        libs += [ "curl_a" ]
+      }
+    } else {
+      sources += [
+        "http_client_beast.cc",
+        "url.cc",
+        "url.h",
+      ]
+      libs = [
+        "ssl",
+        "crypto",
+      ]
+    }
   }
 }
 

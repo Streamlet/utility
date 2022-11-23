@@ -18,22 +18,18 @@ config("project_common") {
       "_WIN32_WINDOWS=0x0501",
     ]
   }
-  include_dirs = [ "//src" ]
+  include_dirs = [
+    "//src",
+    "//thirdparty/boost/",
+    "//thirdparty/curl/include",
+  ]
   lib_dirs = []
   if (is_debug) {
-    include_dirs += [
-      "//thirdparty/boost/build/debug/include",
-      "//thirdparty/curl/build/debug/include",
-    ]
     lib_dirs += [
       "//thirdparty/boost/build/debug/lib",
       "//thirdparty/curl/build/debug/lib",
     ]
   } else {
-    include_dirs += [
-      "//thirdparty/boost/build/release/include",
-      "//thirdparty/curl/build/release/include",
-    ]
     lib_dirs += [
       "//thirdparty/boost/build/release/lib",
       "//thirdparty/curl/build/release/lib",

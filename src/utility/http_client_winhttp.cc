@@ -16,36 +16,9 @@ const unsigned HTTP_VERSION = 11;
 const char *PROTOCOL_HTTPS  = "https";
 const char *PROTOCOL_HTTP   = "http";
 
-enum class HttpMethod : int {
-  Get = 0,
-  Post,
-  Put,
-  Delete,
-};
-
-struct HttpMethodString {
-#ifdef _DEBUG
-  HttpMethod method;
-#endif
-  const wchar_t *string;
-};
-
-#ifdef _DEBUG
-#define _(m, s) m, s
-#else
-#define _(m, s) s
-#endif
-
-static const HttpMethodString HTTP_METHOD_STRING_TABLE[] = {
-    {_(HttpMethod::Get, L"GET")},
-    {_(HttpMethod::Post, L"POST")},
-    {_(HttpMethod::Put, L"PUT")},
-    {_(HttpMethod::Delete, L"DELETE")},
-};
-
-#undef _
-
 } // namespace
+
+void ParseHeader(const std::string &raw_header, HttpClient::ResponseHeader &parsed_header);
 
 class HttpClient::HttpSession {
 public:
@@ -62,7 +35,7 @@ public:
     ::WinHttpCloseHandle(session_);
   }
 
-  std::error_code SendAndReceive(HttpMethod method,
+  std::error_code SendAndReceive(const wchar_t *method,
                                  const std::string_view &url_string,
                                  const RequestHeader &request_header,
                                  const std::string_view &request_body,
@@ -131,9 +104,8 @@ private:
     return ::WinHttpConnect(session, host.c_str(), port, 0);
   }
 
-  HINTERNET OpenRequest(HINTERNET connection, bool ssl, HttpMethod method, const std::wstring &path) {
-    const wchar_t *verb = HTTP_METHOD_STRING_TABLE[static_cast<int>(method)].string;
-    return ::WinHttpOpenRequest(connection, verb, path.empty() ? L"/" : path.c_str(), nullptr, WINHTTP_NO_REFERER,
+  HINTERNET OpenRequest(HINTERNET connection, bool ssl, const wchar_t *method, const std::wstring &path) {
+    return ::WinHttpOpenRequest(connection, method, path.empty() ? L"/" : path.c_str(), nullptr, WINHTTP_NO_REFERER,
                                 WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_REFRESH | (ssl ? WINHTTP_FLAG_SECURE : 0));
   }
 
@@ -167,28 +139,16 @@ private:
 
     if (response_header != nullptr) {
       DWORD header_size = 0;
-      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX, WINHTTP_NO_OUTPUT_BUFFER,
-                            &header_size, WINHTTP_NO_HEADER_INDEX);
+      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
+                            WINHTTP_NO_OUTPUT_BUFFER, &header_size, WINHTTP_NO_HEADER_INDEX);
       std::wstring buffer_w;
       buffer_w.resize(header_size);
-      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX, buffer_w.data(),
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX, buffer_w.data(),
                                  &header_size, WINHTTP_NO_HEADER_INDEX)) {
         return false;
       }
-      std::string buffer = encoding::UCS2ToUTF8(buffer_w);
-
-      for (size_t i = 0; i < buffer.length() && buffer[i] != '\0';) {
-        char *k = buffer.data() + i;
-        int len = strlen(k);
-        char *v = strchr(k, ':');
-        if (v != nullptr) {
-          *v++ = '\0';
-          if (*v == ' ')
-            ++v;
-          response_header->insert({k, v});
-        }
-        i += len + 1;
-      }
+      std::string raw_header = encoding::UCS2ToUTF8(buffer_w);
+      ParseHeader(raw_header, *response_header);
     }
 
     return true;
@@ -232,8 +192,7 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                 ResponseHeader *response_header,
                                 std::string *response_body,
                                 unsigned timeout) {
-  return session_->SendAndReceive(HttpMethod::Get, url, request_header, "", response_status, response_header,
-                                  response_body);
+  return session_->SendAndReceive(L"GET", url, request_header, "", response_status, response_header, response_body);
 }
 
 std::error_code HttpClient::Post(const std::string_view &url,
@@ -243,7 +202,7 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                  ResponseHeader *response_header,
                                  std::string *response_body,
                                  unsigned timeout) {
-  return session_->SendAndReceive(HttpMethod::Post, url, request_header, request_body, response_status, response_header,
+  return session_->SendAndReceive(L"POST", url, request_header, request_body, response_status, response_header,
                                   response_body);
 }
 
@@ -254,7 +213,7 @@ std::error_code HttpClient::Put(const std::string_view &url,
                                 ResponseHeader *response_header,
                                 std::string *response_body,
                                 unsigned timeout) {
-  return session_->SendAndReceive(HttpMethod::Put, url, request_header, request_body, response_status, response_header,
+  return session_->SendAndReceive(L"PUT", url, request_header, request_body, response_status, response_header,
                                   response_body);
 }
 
@@ -264,6 +223,5 @@ std::error_code HttpClient::Delete(const std::string_view &url,
                                    ResponseHeader *response_header,
                                    std::string *response_body,
                                    unsigned timeout) {
-  return session_->SendAndReceive(HttpMethod::Delete, url, request_header, "", response_status, response_header,
-                                  response_body);
+  return session_->SendAndReceive(L"DELETE", url, request_header, "", response_status, response_header, response_body);
 }

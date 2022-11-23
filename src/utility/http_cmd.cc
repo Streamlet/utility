@@ -1,6 +1,5 @@
 #include "http_client.h"
 #include <iostream>
-#include <Windows.h>
 
 int main(int argc, char *argv[]) {
   HttpClient http;

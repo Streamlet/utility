@@ -53,14 +53,15 @@ def build_openssl(debug):
         cmd('./config threads shared --%s --prefix=%s --openssldir=%s'
             % (config, prefix, prefix))
         cmd('make')
-        #cmd('make install')
+        cmd('make install')
     os.chdir('..')
 
 def build_curl(debug):
     os.chdir('curl')
     config = 'debug' if debug else 'release'
     prefix = os.path.abspath(os.path.join('build', config))
-    openssl_path = os.path.abspath(os.path.join('..', 'openssl', 'build', config))
+    if not os.path.exists(prefix):
+        os.makedirs(prefix)
     if not os.path.exists(prefix):
         pass
     if sys.platform == 'win32':

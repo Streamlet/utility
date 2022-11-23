@@ -11,6 +11,8 @@ source_set("utility") {
   sources = [
     "http_client.cc",
     "http_client.h",
+    "url.cc",
+    "url.h",
   ]
   if (is_win) {
     if (winhttp) {
@@ -18,8 +20,6 @@ source_set("utility") {
         "encoding.h",
         "encoding_win.cc",
         "http_client_winhttp.cc",
-        "url.cc",
-        "url.h",
       ]
       libs = [ "winhttp.lib" ]
     } else if (!beast) {
@@ -38,11 +38,7 @@ source_set("utility") {
         libs += [ "libcurl_a.lib" ]
       }
     } else {
-      sources += [
-        "http_client_beast.cc",
-        "url.cc",
-        "url.h",
-      ]
+      sources += [ "http_client_beast.cc" ]
       libs = [
         "user32.lib",
         "advapi32.lib",
@@ -55,18 +51,9 @@ source_set("utility") {
     if (!beast) {
       defines += [ "CURL_STATICLIB" ]
       sources += [ "http_client_curl.cc" ]
-      libs = []
-      if (is_debug) {
-        libs += [ "curl_a_debug" ]
-      } else {
-        libs += [ "curl_a" ]
-      }
+      libs = [ "curl" ]
     } else {
-      sources += [
-        "http_client_beast.cc",
-        "url.cc",
-        "url.h",
-      ]
+      sources += [ "http_client_beast.cc" ]
       libs = [
         "ssl",
         "crypto",

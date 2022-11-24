@@ -21,17 +21,20 @@ config("project_common") {
   include_dirs = [
     "//src",
     "//thirdparty/boost/",
+    "//thirdparty/googletest/googletest/include",
     "//thirdparty/curl/include",
   ]
   lib_dirs = []
   if (is_debug) {
     lib_dirs += [
-      "//thirdparty/boost/build/debug/lib",
+      # "//thirdparty/boost/build/debug/lib",
+      "//thirdparty/googletest/build/Debug",
       "//thirdparty/curl/build/debug/lib",
     ]
   } else {
     lib_dirs += [
-      "//thirdparty/boost/build/release/lib",
+      # "//thirdparty/boost/build/release/lib",
+      "//thirdparty/googletest/build/Release",
       "//thirdparty/curl/build/release/lib",
     ]
   }

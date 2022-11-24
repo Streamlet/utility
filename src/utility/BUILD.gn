@@ -38,9 +38,9 @@ source_set("utility") {
       }
     }
   } else {
-      defines += [ "CURL_STATICLIB" ]
-      sources += [ "http_client_curl.cc" ]
-      libs = [ "curl" ]
+    defines += [ "CURL_STATICLIB" ]
+    sources += [ "http_client_curl.cc" ]
+    libs = [ "curl" ]
   }
 }
 
@@ -55,11 +55,14 @@ executable("utility_test") {
     "url_test.cc",
   ]
 
-  deps = [ ":utility" ]
-
-  if (!is_win) {
-    libs = [ "boost_unit_test_framework" ]
+  libs = []
+  if (is_debug) {
+    libs += [ "gtestd.lib" ]
+  } else {
+    libs += [ "gtest.lib" ]
   }
+
+  deps = [ ":utility" ]
 }
 
 executable("http_cmd") {

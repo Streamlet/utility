@@ -1,7 +1,7 @@
-#!/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os, sys, subprocess
+import os, sys, subprocess, locale
 
 
 def cmd(cmd):
@@ -10,48 +10,50 @@ def cmd(cmd):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT,
                                shell=True)
-    ret_code = 0
+    encoding = locale.getpreferredencoding(False)
     while True:
         nextline = process.stdout.readline()
-        if nextline == '' and process.poll() is not None:
+        if nextline is not None:
+            sys.stdout.write(nextline.decode(encoding))
+            sys.stdout.flush()
+        if process.poll() is not None:
             break
-        sys.stdout.write(nextline)
-        sys.stdout.flush()
-
-    ret_code = process.returncode
-    return ret_code
+    return process.returncode
 
 
-def build_boost(debug):
-    os.chdir('boost')
-    config = 'debug' if debug else 'release'
-    boost_libs = '--with-test'
-    if sys.platform == 'win32':
-        b2 = 'b2.exe'
-        platform_args = 'cxxflags="/std:c++17" runtime-link=static'
-    else:
-        b2 = './b2'
-        platform_args = 'cxxflags="-std=c++17" runtime-link=shared'
-    if not os.path.exists(b2):
-        if sys.platform == 'win32':
-            cmd('bootstrap.bat')
-        else:
-            cmd('./bootstrap.sh')
-    cmd('%s install %s link=static threading=multi address-model=64 variant=%s  define=BOOST_AUTO_LINK_SYSTEM define=BOOST_TEST_NO_MAIN define=BOOST_TEST_ALTERNATIVE_INIT_API define=BOOST_BEAST_USE_STD_STRING_VIEW --layout=system --prefix=build/%s --build_dir=build/%s %s'
-        % (b2, platform_args, config, config, config, boost_libs))
+def build_gtest(config):
+    os.chdir('googletest')
+    cmd('cmake -S googletest -B build')
+    cmd('cmake --build build --config %s' % config)
     os.chdir('..')
 
-def build_curl(debug):
+
+def build_boost(config):
+    os.chdir('boost')
+    boost_libs = ''
+    if len(boost_libs) > 0:
+        if sys.platform == 'win32':
+            b2 = 'b2.exe'
+            platform_args = 'cxxflags="/std:c++17" runtime-link=static'
+        else:
+            b2 = './b2'
+            platform_args = 'cxxflags="-std=c++17" runtime-link=shared'
+        if not os.path.exists(b2):
+            if sys.platform == 'win32':
+                cmd('bootstrap.bat')
+            else:
+                cmd('./bootstrap.sh')
+        cmd('%s install %s link=static threading=multi address-model=64 variant=%s  define=BOOST_AUTO_LINK_SYSTEM --layout=system --prefix=build/%s --build_dir=build/%s %s'
+            % (b2, platform_args, config, config, config, boost_libs))
+    os.chdir('..')
+
+
+def build_curl(config):
     os.chdir('curl')
-    config = 'debug' if debug else 'release'
     prefix = os.path.abspath(os.path.join('build', config))
-    if not os.path.exists(prefix):
-        os.makedirs(prefix)
-    if not os.path.exists(prefix):
-        pass
     if sys.platform == 'win32':
         os.chdir('winbuild')
-        debug_yes_no = 'yes' if debug else 'no'
+        debug_yes_no = 'yes' if config == 'debug' else 'no'
         cmd('nmake /f Makefile.vc mode=static WITH_PREFIX=%s ENABLE_UNICODE=yes GEN_PDB=yes DEBUG=%s MACHINE=x64 RTLIBCFG=static'
             % (prefix, debug_yes_no))
         os.chdir('..')
@@ -63,14 +65,15 @@ def build_curl(debug):
         cmd('make install')
     os.chdir('..')
 
-def main(args):
-    debug = 'debug' in args
+def main():
     os.chdir('thirdparty')
-    build_boost(debug)
-    build_curl(debug)
+    for config in ['debug', 'release']:
+        build_boost(config)
+        build_gtest(config)
+        build_curl(config)
     os.chdir('..')
 
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    main(sys.argv[1:])
+    main()

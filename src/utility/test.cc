@@ -1,6 +1,6 @@
-#define BOOST_TEST_MODULE UtilityUnitTest
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 
 int main(int argc, char *argv[]) {
-  return boost::unit_test::unit_test_main(&init_unit_test, argc, argv);
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -11,6 +11,7 @@ public:
 
   typedef std::multimap<std::string_view, std::string> RequestHeader;
   typedef std::multimap<std::string, std::string> ResponseHeader;
+  typedef std::function<void(const void *data, size_t length)> ResponseBodyReceiver;
 
   std::error_code Get(const std::string_view &url,
                       const RequestHeader &request_header,
@@ -18,12 +19,25 @@ public:
                       ResponseHeader *response_header,
                       std::string *response_body,
                       unsigned timeout = 0);
+  std::error_code Get(const std::string_view &url,
+                      const RequestHeader &request_header,
+                      unsigned *response_status,
+                      ResponseHeader *response_header,
+                      ResponseBodyReceiver response_body_receiver,
+                      unsigned timeout = 0);
   std::error_code Post(const std::string_view &url,
                        const RequestHeader &request_header,
                        const std::string_view &request_body,
                        unsigned *response_status,
                        ResponseHeader *response_header,
                        std::string *response_body,
+                       unsigned timeout = 0);
+  std::error_code Post(const std::string_view &url,
+                       const RequestHeader &request_header,
+                       const std::string_view &request_body,
+                       unsigned *response_status,
+                       ResponseHeader *response_header,
+                       ResponseBodyReceiver response_body_receiver,
                        unsigned timeout = 0);
   std::error_code Put(const std::string_view &url,
                       const RequestHeader &request_header,

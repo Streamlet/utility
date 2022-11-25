@@ -37,19 +37,29 @@ size_t read_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
   return len;
 }
 
-struct CUrlWriteContext {
+struct CUrlWriteHeaderContext {
   std::string &receiver;
 };
 
-size_t write_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
-  CUrlWriteContext *ctx = static_cast<CUrlWriteContext *>(userdata);
+size_t write_header_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
+  CUrlWriteHeaderContext *ctx = static_cast<CUrlWriteHeaderContext *>(userdata);
   ctx->receiver.append(buffer, buffer + size * nitems);
+  return size * nitems;
+}
+struct CUrlWriteBodyContext {
+  HttpClient::ResponseBodyReceiver response_body_receiver;
+};
+
+size_t write_body_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
+  CUrlWriteBodyContext *ctx = static_cast<CUrlWriteBodyContext *>(userdata);
+  ctx->response_body_receiver(buffer, size * nitems);
   return size * nitems;
 }
 
 } // namespace
 
 void ParseHeader(const std::string &raw_header, HttpClient::ResponseHeader &parsed_header);
+HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body);
 
 class HttpClient::HttpSession {
 public:
@@ -63,7 +73,7 @@ public:
                                  const std::string_view &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
-                                 std::string *response_body,
+                                 ResponseBodyReceiver response_body_receiver,
                                  unsigned timeout = 0) {
     CURL *curl = curl_easy_init();
     BOOST_SCOPE_EXIT(curl) {
@@ -115,14 +125,14 @@ public:
     }
 
     std::string raw_header;
-    CUrlWriteContext header_ctx{raw_header};
+    CUrlWriteHeaderContext header_ctx{raw_header};
     if (response_header != nullptr) {
-      curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_callback);
+      curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
       curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_ctx);
     }
-    CUrlWriteContext write_ctx{*response_body};
-    if (response_body != nullptr) {
-      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    CUrlWriteBodyContext write_ctx{response_body_receiver};
+    if (response_body_receiver != nullptr) {
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body_callback);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_ctx);
     }
 
@@ -162,7 +172,17 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                 std::string *response_body,
                                 unsigned timeout) {
   return session_->SendAndReceive(HttpMethod::Get, url, request_header, "", response_status, response_header,
-                                  response_body);
+                                  StringBodyReceiver(response_body));
+}
+
+std::error_code HttpClient::Get(const std::string_view &url,
+                                const RequestHeader &request_header,
+                                unsigned *response_status,
+                                ResponseHeader *response_header,
+                                ResponseBodyReceiver response_body_receiver,
+                                unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Get, url, request_header, "", response_status, response_header,
+                                  response_body_receiver);
 }
 
 std::error_code HttpClient::Post(const std::string_view &url,
@@ -173,7 +193,18 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                  std::string *response_body,
                                  unsigned timeout) {
   return session_->SendAndReceive(HttpMethod::Post, url, request_header, request_body, response_status, response_header,
-                                  response_body);
+                                  StringBodyReceiver(response_body));
+}
+
+std::error_code HttpClient::Post(const std::string_view &url,
+                                 const RequestHeader &request_header,
+                                 const std::string_view &request_body,
+                                 unsigned *response_status,
+                                 ResponseHeader *response_header,
+                                 ResponseBodyReceiver response_body_receiver,
+                                 unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Post, url, request_header, request_body, response_status, response_header,
+                                  response_body_receiver);
 }
 
 std::error_code HttpClient::Put(const std::string_view &url,
@@ -184,7 +215,7 @@ std::error_code HttpClient::Put(const std::string_view &url,
                                 std::string *response_body,
                                 unsigned timeout) {
   return session_->SendAndReceive(HttpMethod::Put, url, request_header, request_body, response_status, response_header,
-                                  response_body);
+                                  StringBodyReceiver(response_body));
 }
 
 std::error_code HttpClient::Delete(const std::string_view &url,
@@ -194,5 +225,5 @@ std::error_code HttpClient::Delete(const std::string_view &url,
                                    std::string *response_body,
                                    unsigned timeout) {
   return session_->SendAndReceive(HttpMethod::Delete, url, request_header, "", response_status, response_header,
-                                  response_body);
+                                  StringBodyReceiver(response_body));
 }

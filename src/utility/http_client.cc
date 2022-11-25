@@ -20,3 +20,11 @@ void ParseHeader(const std::string &raw_header, HttpClient::ResponseHeader &pars
     i += crlf - p + 2;
   }
 }
+
+HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body) {
+  if (response_body == nullptr)
+    return nullptr;
+  return [response_body](const void *data, size_t length) {
+    response_body->append(static_cast<const char *>(data), length);
+  };
+}

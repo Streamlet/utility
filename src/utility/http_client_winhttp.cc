@@ -19,6 +19,7 @@ const char *PROTOCOL_HTTP   = "http";
 } // namespace
 
 void ParseHeader(const std::string &raw_header, HttpClient::ResponseHeader &parsed_header);
+HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body);
 
 class HttpClient::HttpSession {
 public:
@@ -41,7 +42,7 @@ public:
                                  const std::string_view &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
-                                 std::string *response_body,
+                                 ResponseBodyReceiver response_body_receiver,
                                  unsigned timeout = 0) {
     if (timeout > 0)
       ::WinHttpSetTimeouts(session_, timeout, timeout, timeout, timeout);
@@ -90,8 +91,8 @@ public:
       }
     }
 
-    if (response_body != nullptr) {
-      if (!ReceiveBody(request, response_body)) {
+    if (response_body_receiver != nullptr) {
+      if (!ReceiveBody(request, response_body_receiver)) {
         return std::error_code(::GetLastError(), std::system_category());
       }
     }
@@ -154,7 +155,7 @@ private:
     return true;
   }
 
-  bool ReceiveBody(HINTERNET request, std::string *response_body) {
+  bool ReceiveBody(HINTERNET request, ResponseBodyReceiver response_body_receiver) {
     DWORD bytes_available = 0;
     std::string buffer;
     while (true) {
@@ -168,7 +169,7 @@ private:
         if (!::WinHttpReadData(request, buffer.data(), bytes_available, &bytes_read))
           return false;
         if (bytes_read > 0) {
-          response_body->append(buffer.data(), bytes_read);
+          response_body_receiver(buffer.data(), bytes_read);
         }
         bytes_available -= bytes_read;
       }
@@ -192,7 +193,18 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                 ResponseHeader *response_header,
                                 std::string *response_body,
                                 unsigned timeout) {
-  return session_->SendAndReceive(L"GET", url, request_header, "", response_status, response_header, response_body);
+  return session_->SendAndReceive(L"GET", url, request_header, "", response_status, response_header,
+                                  StringBodyReceiver(response_body));
+}
+
+std::error_code HttpClient::Get(const std::string_view &url,
+                                const RequestHeader &request_header,
+                                unsigned *response_status,
+                                ResponseHeader *response_header,
+                                ResponseBodyReceiver response_body_receiver,
+                                unsigned timeout) {
+  return session_->SendAndReceive(L"GET", url, request_header, "", response_status, response_header,
+                                  response_body_receiver);
 }
 
 std::error_code HttpClient::Post(const std::string_view &url,
@@ -203,7 +215,18 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                  std::string *response_body,
                                  unsigned timeout) {
   return session_->SendAndReceive(L"POST", url, request_header, request_body, response_status, response_header,
-                                  response_body);
+                                  StringBodyReceiver(response_body));
+}
+
+std::error_code HttpClient::Post(const std::string_view &url,
+                                 const RequestHeader &request_header,
+                                 const std::string_view &request_body,
+                                 unsigned *response_status,
+                                 ResponseHeader *response_header,
+                                 ResponseBodyReceiver response_body_receiver,
+                                 unsigned timeout) {
+  return session_->SendAndReceive(L"POST", url, request_header, request_body, response_status, response_header,
+                                  response_body_receiver);
 }
 
 std::error_code HttpClient::Put(const std::string_view &url,
@@ -214,7 +237,7 @@ std::error_code HttpClient::Put(const std::string_view &url,
                                 std::string *response_body,
                                 unsigned timeout) {
   return session_->SendAndReceive(L"PUT", url, request_header, request_body, response_status, response_header,
-                                  response_body);
+                                  StringBodyReceiver(response_body));
 }
 
 std::error_code HttpClient::Delete(const std::string_view &url,
@@ -223,5 +246,6 @@ std::error_code HttpClient::Delete(const std::string_view &url,
                                    ResponseHeader *response_header,
                                    std::string *response_body,
                                    unsigned timeout) {
-  return session_->SendAndReceive(L"DELETE", url, request_header, "", response_status, response_header, response_body);
+  return session_->SendAndReceive(L"DELETE", url, request_header, "", response_status, response_header,
+                                  StringBodyReceiver(response_body));
 }

@@ -8,3 +8,15 @@ static_library("client_sdk") {
 
   deps = [ "//src/utility:utility" ]
 }
+
+executable("client_sdk_test") {
+  include_dirs = [ "//src/include" ]
+  configs += [ "//build_config:project_common" ]
+  if (is_win) {
+    configs += [ "//build/config/win:static_runtime" ]
+  }
+
+  sources = [ "client_sdk_test.cc" ]
+
+  deps = [ ":client_sdk" ]
+}

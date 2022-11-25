@@ -21,3 +21,7 @@ DEPS:
     ROOT_DIR: curl-7.86.0
     URL_HASH:
       SHA256: f5ca69db03eea17fa8705bdfb1a9f58d76a46c9010518109bb38f313137e0a28
+
+  thirdparty/rapidjson:
+    GIT_REPOSITORY: git@github.com:Tencent/rapidjson.git
+    GIT_TAG: v1.1.0

@@ -23,6 +23,7 @@ config("project_common") {
     "//thirdparty/boost/",
     "//thirdparty/googletest/googletest/include",
     "//thirdparty/curl/include",
+    "//thirdparty/rapidjson/include",
   ]
   lib_dirs = []
   if (is_debug) {

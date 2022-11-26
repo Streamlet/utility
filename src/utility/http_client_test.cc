@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
   std::string body;
   auto ec = http.Get(argv[1], {}, &status, &header, &body);
   if (ec) {
-    std::cout << ec << std::endl;
+    std::cout << ec.value() << ": " << ec.message() << std::endl;
     return -1;
   }
 

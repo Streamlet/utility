@@ -13,6 +13,11 @@ public:
   typedef std::multimap<std::string, std::string> ResponseHeader;
   typedef std::function<void(const void *data, size_t length)> ResponseBodyReceiver;
 
+  std::error_code Head(const std::string_view &url,
+                       const RequestHeader &request_header,
+                       unsigned *response_status,
+                       ResponseHeader *response_header,
+                       unsigned timeout = 0);
   std::error_code Get(const std::string_view &url,
                       const RequestHeader &request_header,
                       unsigned *response_status,

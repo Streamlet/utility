@@ -1,20 +1,21 @@
 #include "http_client.h"
-#include <boost/scope_exit.hpp>
 #include <curl/curl.h>
 #include <iostream>
+#include <loki/ScopeGuard.h>
 #include <memory>
 
 namespace {
 
-const unsigned HTTP_VERSION                 = 11;
-const char *PROTOCOL_HTTPS                  = "https";
-const char *PROTOCOL_HTTP                   = "http";
-const char *INTERNET_DEFAULT_HTTPS_PORT     = "443";
-const char *INTERNET_DEFAULT_HTTP_PORT      = "80";
+const unsigned HTTP_VERSION = 11;
+const char *PROTOCOL_HTTPS = "https";
+const char *PROTOCOL_HTTP = "http";
+const char *INTERNET_DEFAULT_HTTPS_PORT = "443";
+const char *INTERNET_DEFAULT_HTTP_PORT = "80";
 const unsigned CLOSE_CONNECTION_MAX_TIMEOUT = 1000;
 
 enum class HttpMethod : int {
-  Get = 0,
+  Head = 0,
+  Get,
   Post,
   Put,
   Delete,
@@ -22,8 +23,8 @@ enum class HttpMethod : int {
 
 struct CUrlReadContext {
   const char *data = nullptr;
-  size_t total     = 0;
-  size_t read      = 0;
+  size_t total = 0;
+  size_t read = 0;
 };
 
 size_t read_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
@@ -56,6 +57,26 @@ size_t write_body_callback(char *buffer, size_t size, size_t nitems, void *userd
   return size * nitems;
 }
 
+class curl_error_category : public std::error_category {
+  const char *name() const noexcept override {
+    return "curl_error";
+  }
+
+  std::string message(int _Errval) const override {
+    const char *error = curl_easy_strerror(static_cast<CURLcode>(_Errval));
+    return error == nullptr ? "unknown error" : error;
+  }
+};
+
+std::error_category &curl_category() {
+  static curl_error_category instance;
+  return instance;
+}
+
+std::error_code make_curl_error(CURLcode curl_code) {
+  return std::error_code(curl_code, curl_category());
+}
+
 } // namespace
 
 void ParseHeader(const std::string &raw_header, HttpClient::ResponseHeader &parsed_header);
@@ -76,32 +97,44 @@ public:
                                  ResponseBodyReceiver response_body_receiver,
                                  unsigned timeout = 0) {
     CURL *curl = curl_easy_init();
-    BOOST_SCOPE_EXIT(curl) {
-      curl_easy_cleanup(curl);
-    }
-    BOOST_SCOPE_EXIT_END;
+    if (curl == nullptr)
+      return make_curl_error(CURLE_FAILED_INIT);
+
+    LOKI_ON_BLOCK_EXIT(curl_easy_cleanup, curl);
 
     std::string url(url_string);
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    CURLcode error = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    if (error != CURLE_OK)
+      return make_curl_error(error);
 
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    error = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    if (error != CURLE_OK)
+      return make_curl_error(error);
 
     switch (method) {
+    case HttpMethod::Head:
+      error = curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+      break;
     case HttpMethod::Get:
-      curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+      error = curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
       break;
     case HttpMethod::Post:
-      curl_easy_setopt(curl, CURLOPT_POST, 1);
+      error = curl_easy_setopt(curl, CURLOPT_POST, 1);
       break;
     case HttpMethod::Put:
-      curl_easy_setopt(curl, CURLOPT_PUT, 1);
+      error = curl_easy_setopt(curl, CURLOPT_PUT, 1);
       break;
     case HttpMethod::Delete:
+      error = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+      break;
     default:
-      return std::make_error_code(std::errc::operation_not_supported);
+      return make_curl_error(CURLE_UNSUPPORTED_PROTOCOL);
     }
+    if (error != CURLE_OK)
+      return make_curl_error(error);
 
     curl_slist *header = nullptr;
+    auto curl_free_header_guard = Loki::MakeGuard(curl_slist_free_all, header);
     if (!request_header.empty()) {
       for (const auto &h : request_header) {
         std::string header_line;
@@ -110,42 +143,51 @@ public:
         header_line += h.second;
         header = curl_slist_append(header, header_line.c_str());
       }
-      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+      error = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
+    } else {
+      curl_free_header_guard.Dismiss();
     }
-    BOOST_SCOPE_EXIT(&request_header, header) {
-      if (!request_header.empty())
-        curl_slist_free_all(header);
-    }
-    BOOST_SCOPE_EXIT_END;
 
     CUrlReadContext read_ctx{request_body.data(), request_body.size(), 0};
     if (!request_body.empty()) {
-      curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
-      curl_easy_setopt(curl, CURLOPT_READDATA, &read_ctx);
+      error = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
+      error = curl_easy_setopt(curl, CURLOPT_READDATA, &read_ctx);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
     }
 
     std::string raw_header;
     CUrlWriteHeaderContext header_ctx{raw_header};
     if (response_header != nullptr) {
-      curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
-      curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_ctx);
+      error = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
+      error = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_ctx);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
     }
     CUrlWriteBodyContext write_ctx{response_body_receiver};
     if (response_body_receiver != nullptr) {
-      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body_callback);
-      curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_ctx);
+      error = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body_callback);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
+      error = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_ctx);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
     }
 
-    CURLcode code = curl_easy_perform(curl);
-    if (code != CURLE_OK) {
-      return std::error_code(code, std::generic_category());
-    }
+    error = curl_easy_perform(curl);
+    if (error != CURLE_OK)
+      return make_curl_error(error);
 
     if (response_status != nullptr) {
-      code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, response_status);
-      if (code != CURLE_OK) {
-        return std::error_code(code, std::generic_category());
-      }
+      error = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, response_status);
+      if (error != CURLE_OK)
+        return make_curl_error(error);
     }
 
     if (response_header != nullptr) {
@@ -163,6 +205,14 @@ HttpClient::HttpClient(std::string user_agent) : session_(std::make_unique<HttpS
 }
 
 HttpClient::~HttpClient() {
+}
+
+std::error_code HttpClient::Head(const std::string_view &url,
+                                 const RequestHeader &request_header,
+                                 unsigned *response_status,
+                                 ResponseHeader *response_header,
+                                 unsigned timeout) {
+  return session_->SendAndReceive(HttpMethod::Head, url, request_header, "", response_status, response_header, nullptr);
 }
 
 std::error_code HttpClient::Get(const std::string_view &url,

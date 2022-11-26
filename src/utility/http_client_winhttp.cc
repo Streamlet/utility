@@ -4,8 +4,8 @@
 #include "encoding.h"
 #include "http_client.h"
 #include "url.h"
-#include <boost/scope_exit.hpp>
 #include <charconv>
+#include <loki/ScopeGuard.h>
 #include <memory>
 #include <sstream>
 #include <string_view>
@@ -13,8 +13,32 @@
 namespace {
 
 const unsigned HTTP_VERSION = 11;
-const char *PROTOCOL_HTTPS  = "https";
-const char *PROTOCOL_HTTP   = "http";
+const char *PROTOCOL_HTTPS = "https";
+const char *PROTOCOL_HTTP = "http";
+
+class winhttp_error_category : public std::error_category {
+  const char *name() const noexcept override {
+    return "winhttp_error";
+  }
+
+  std::string message(int _Errval) const override {
+    LPSTR buffer = nullptr;
+    ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                         nullptr, _Errval, 0, reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
+    
+    LOKI_ON_BLOCK_EXIT(::LocalFree, buffer);
+    return buffer == nullptr ? "unknown error" : buffer;
+  }
+};
+
+std::error_category &winhttp_category() {
+  static winhttp_error_category instance;
+  return instance;
+}
+
+std::error_code make_winhttp_error(DWORD error) {
+  return std::error_code(error, winhttp_category());
+}
 
 } // namespace
 
@@ -54,8 +78,8 @@ public:
       return std::make_error_code(std::errc::protocol_not_supported);
     bool ssl = url.protocol == PROTOCOL_HTTPS;
 
-    std::wstring host  = encoding::UTF8ToUCS2(url.domain);
-    std::wstring path  = encoding::UTF8ToUCS2(url.full_path);
+    std::wstring host = encoding::UTF8ToUCS2(url.domain);
+    std::wstring path = encoding::UTF8ToUCS2(url.full_path);
     INTERNET_PORT port = INTERNET_DEFAULT_PORT;
     if (url.port.empty())
       port = ssl ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
@@ -63,38 +87,29 @@ public:
       std::from_chars(url.port.data(), url.port.data() + url.port.length(), port);
 
     HINTERNET connection = Connect(session_, host, port);
-    if (connection == nullptr) {
-      return std::error_code(::GetLastError(), std::system_category());
-    }
-    BOOST_SCOPE_EXIT(connection) {
-      ::WinHttpCloseHandle(connection);
-    }
-    BOOST_SCOPE_EXIT_END;
+    if (connection == nullptr)
+      return make_winhttp_error(::GetLastError());
+    LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, connection);
 
     HINTERNET request = OpenRequest(connection, ssl, method, path);
-    if (request == nullptr) {
-      return std::error_code(::GetLastError(), std::system_category());
-    }
+    if (request == nullptr)
+      return make_winhttp_error(::GetLastError());
+    LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, request);
 
-    BOOST_SCOPE_EXIT(request) {
-      ::WinHttpCloseHandle(request);
-    }
-    BOOST_SCOPE_EXIT_END;
-
-    if (!SendRequest(request, request_header, request_body)) {
-      return std::error_code(::GetLastError(), std::system_category());
-    }
+    std::error_code ec = SendRequest(request, request_header, request_body);
+    if (ec)
+      return ec;
 
     if (response_status != nullptr || response_header != nullptr) {
-      if (!ReceiveHeader(request, response_status, response_header)) {
-        return std::error_code(::GetLastError(), std::system_category());
-      }
+      ec = ReceiveHeader(request, response_status, response_header);
+      if (ec)
+        return ec;
     }
 
     if (response_body_receiver != nullptr) {
-      if (!ReceiveBody(request, response_body_receiver)) {
-        return std::error_code(::GetLastError(), std::system_category());
-      }
+      ec = ReceiveBody(request, response_body_receiver);
+      if (ec)
+        return ec;
     }
 
     return {};
@@ -110,7 +125,8 @@ private:
                                 WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_REFRESH | (ssl ? WINHTTP_FLAG_SECURE : 0));
   }
 
-  bool SendRequest(HINTERNET request, const RequestHeader &request_header, const std::string_view &request_body) {
+  std::error_code
+  SendRequest(HINTERNET request, const RequestHeader &request_header, const std::string_view &request_body) {
     std::stringstream ss;
     for (const auto &h : request_header)
       ss << h.first << ": " << h.second << "\r\n";
@@ -118,63 +134,73 @@ private:
     if (!::WinHttpSendRequest(request, header_string.c_str(), header_string.length(),
                               const_cast<char *>(request_body.data()), request_body.length(), request_body.length(),
                               0)) {
-      return false;
+      return make_winhttp_error(::GetLastError());
     }
-    if (!::WinHttpReceiveResponse(request, nullptr)) {
-      return false;
-    }
-    return true;
+    if (!::WinHttpReceiveResponse(request, nullptr))
+      return make_winhttp_error(::GetLastError());
+
+    return {};
   }
 
-  bool ReceiveHeader(HINTERNET request, unsigned *response_status, ResponseHeader *response_header) {
+  std::error_code ReceiveHeader(HINTERNET request, unsigned *response_status, ResponseHeader *response_header) {
     if (response_status != nullptr) {
       DWORD status_code_size = 0;
-      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, WINHTTP_NO_OUTPUT_BUFFER,
-                            &status_code_size, WINHTTP_NO_HEADER_INDEX);
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
+                                 WINHTTP_NO_OUTPUT_BUFFER, &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
+        DWORD error = ::GetLastError();
+        if (error != ERROR_INSUFFICIENT_BUFFER)
+          return make_winhttp_error(error);
+      }
       std::wstring status_code;
       status_code.resize(status_code_size * sizeof(wchar_t));
-      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, status_code.data(),
-                            &status_code_size, WINHTTP_NO_HEADER_INDEX);
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, status_code.data(),
+                                 &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
+        return make_winhttp_error(::GetLastError());
+      }
       *response_status = _wtoi(status_code.c_str());
     }
 
     if (response_header != nullptr) {
       DWORD header_size = 0;
-      ::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
-                            WINHTTP_NO_OUTPUT_BUFFER, &header_size, WINHTTP_NO_HEADER_INDEX);
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
+                                 WINHTTP_NO_OUTPUT_BUFFER, &header_size, WINHTTP_NO_HEADER_INDEX)) {
+        DWORD error = ::GetLastError();
+        if (error != ERROR_INSUFFICIENT_BUFFER)
+          return make_winhttp_error(error);
+      }
       std::wstring buffer_w;
       buffer_w.resize(header_size);
       if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX, buffer_w.data(),
                                  &header_size, WINHTTP_NO_HEADER_INDEX)) {
-        return false;
+        return make_winhttp_error(::GetLastError());
       }
       std::string raw_header = encoding::UCS2ToUTF8(buffer_w);
       ParseHeader(raw_header, *response_header);
     }
 
-    return true;
+    return {};
   }
 
-  bool ReceiveBody(HINTERNET request, ResponseBodyReceiver response_body_receiver) {
+  std::error_code ReceiveBody(HINTERNET request, ResponseBodyReceiver response_body_receiver) {
     DWORD bytes_available = 0;
     std::string buffer;
     while (true) {
       if (!::WinHttpQueryDataAvailable(request, &bytes_available))
-        return false;
+        return make_winhttp_error(::GetLastError());
       if (bytes_available == 0)
         break;
       while (bytes_available > 0) {
         buffer.resize(bytes_available);
         DWORD bytes_read = 0;
         if (!::WinHttpReadData(request, buffer.data(), bytes_available, &bytes_read))
-          return false;
+          return make_winhttp_error(::GetLastError());
         if (bytes_read > 0) {
           response_body_receiver(buffer.data(), bytes_read);
         }
         bytes_available -= bytes_read;
       }
     }
-    return true;
+    return {};
   }
 
 private:
@@ -185,6 +211,14 @@ HttpClient::HttpClient(std::string user_agent) : session_(std::make_unique<HttpS
 }
 
 HttpClient::~HttpClient() {
+}
+
+std::error_code HttpClient::Head(const std::string_view &url,
+                                 const RequestHeader &request_header,
+                                 unsigned *response_status,
+                                 ResponseHeader *response_header,
+                                 unsigned timeout) {
+  return session_->SendAndReceive(L"HEAD", url, request_header, "", response_status, response_header, nullptr);
 }
 
 std::error_code HttpClient::Get(const std::string_view &url,

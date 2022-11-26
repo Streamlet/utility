@@ -4,25 +4,41 @@
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+package_info = '''
+{
+    "package_name": "selfupdate",
+    "package_version": "1.0",
+    "package_url": "https://proof.ovh.net/files/1Mb.dat",
+    "package_size": 1048576,
+    "package_format": "zip",
+    "update_title": "SelfUpdate 1.0",
+    "update_description": "This upgrade is very important!",
+}'''
+
+package_content = '''
+sampple downloaded content
+'''
+
 
 class web_server(BaseHTTPRequestHandler):
 
+    def do_HEAD(self):
+        if self.path == '/download':
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(package_content)))
+            self.end_headers()
+        else:
+            self.send_error(404)
+
     def do_GET(self):
-        print(self.path)
         if self.path == '/query':
             self.send_response(200)
             self.end_headers()
-            self.wfile.write('''
-{
-    "title": "SampleSoftware",
-    "description": "This upgrade is very important!",
-    "server_version": "1.0",
-    "package_url": "http://localhost:8080/download",
-    "package_format": "zip",
-}'''.encode())
+            self.wfile.write(package_info.encode())
         elif self.path == '/download':
             self.send_response(200)
             self.end_headers()
+            self.wfile.write(package_content.encode())
         else:
             self.send_error(404)
 

@@ -21,6 +21,7 @@ config("project_common") {
   include_dirs = [
     "//src",
     "//thirdparty/boost/",
+    "//thirdparty/loki/include",
     "//thirdparty/googletest/googletest/include",
     "//thirdparty/curl/include",
     "//thirdparty/rapidjson/include",

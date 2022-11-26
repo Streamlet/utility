@@ -19,4 +19,3 @@ BinPackParameters: false
 ShortNamespaceLines: 0
 SortIncludes: CaseInsensitive
 AlignArrayOfStructures: Left
-AlignConsecutiveAssignments: Consecutive

@@ -10,10 +10,12 @@ source_set("utility") {
   sources = [
     "http_client.cc",
     "http_client.h",
+    "system_util.h",
     "url.cc",
     "url.h",
   ]
   if (is_win) {
+    sources += [ "system_util_win.cc" ]
     if (winhttp) {
       sources += [
         "encoding.h",
@@ -39,7 +41,10 @@ source_set("utility") {
     }
   } else {
     defines += [ "CURL_STATICLIB" ]
-    sources += [ "http_client_curl.cc" ]
+    sources += [
+      "http_client_curl.cc",
+      "system_util_posix.cc",
+    ]
     libs = [ "curl" ]
   }
 }
@@ -65,13 +70,13 @@ executable("utility_test") {
   deps = [ ":utility" ]
 }
 
-executable("http_cmd") {
+executable("http_client_test") {
   configs += [ "//build_config:project_common" ]
   if (is_win) {
     configs += [ "//build/config/win:static_runtime" ]
   }
 
-  sources = [ "http_cmd.cc" ]
+  sources = [ "http_client_test.cc" ]
 
   deps = [ ":utility" ]
 }

@@ -65,12 +65,30 @@ def build_curl(config):
         cmd('make install')
     os.chdir('..')
 
+
+def build_openssl(config):
+    os.chdir('openssl')
+    prefix = os.path.abspath(os.path.join('build', config))
+    if sys.platform == 'win32':
+        cmd('perl Configure VC-WIN64A threads no-shared --%s --prefix=%s --openssldir=%s'
+            % (config, prefix, prefix))
+        cmd('nmake')
+        cmd('nmake install')
+    else:
+        cmd('./config threads shared --%s --prefix=%s --openssldir=%s' %
+            (config, prefix, prefix))
+        cmd('make')
+        cmd('make install')
+    os.chdir('..')
+
+
 def main():
     os.chdir('thirdparty')
     for config in ['debug', 'release']:
-        build_boost(config)
-        build_gtest(config)
-        build_curl(config)
+        #build_boost(config)
+        #build_gtest(config)
+        #build_curl(config)
+        build_openssl(config)
     os.chdir('..')
 
 

@@ -11,6 +11,11 @@ package_info = '''
     "package_url": "https://proof.ovh.net/files/1Mb.dat",
     "package_size": 1048576,
     "package_format": "zip",
+    "package_hash": {
+        "md5": "d6dd8a9fdac2c00e4d7bc9b0ab2d383d",
+        "sha1": "385da5a9ad0382ac3fc8b50fe76c37f04c5907c7",
+        "sha256": "92c4ff2dbefdde59ed9f0f3cf89d7ec991c819470b3513dbfac8ee877f805a6e",
+    },
     "update_title": "SelfUpdate 1.0",
     "update_description": "This upgrade is very important!",
 }'''

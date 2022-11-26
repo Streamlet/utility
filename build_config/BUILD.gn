@@ -25,6 +25,8 @@ config("project_common") {
     "//thirdparty/googletest/googletest/include",
     "//thirdparty/curl/include",
     "//thirdparty/rapidjson/include",
+
+    # "//thirdparty/openssl/include",
   ]
   lib_dirs = []
   if (is_debug) {
@@ -32,12 +34,16 @@ config("project_common") {
       # "//thirdparty/boost/build/debug/lib",
       "//thirdparty/googletest/build/Debug",
       "//thirdparty/curl/build/debug/lib",
+
+      # "//thirdparty/openssl/build/debug/lib",
     ]
   } else {
     lib_dirs += [
       # "//thirdparty/boost/build/release/lib",
       "//thirdparty/googletest/build/Release",
       "//thirdparty/curl/build/release/lib",
+
+      # "//thirdparty/openssl/build/release/lib",
     ]
   }
 }

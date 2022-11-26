@@ -6,5 +6,8 @@ group("all") {
 }
 
 group("test") {
-  deps = [ "//src/utility:utility_test" ]
+  deps = [
+    "//src/client_sdk:client_sdk_test",
+    "//src/utility:utility_test",
+  ]
 }

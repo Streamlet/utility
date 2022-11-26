@@ -5,6 +5,7 @@
 #include <direct.h>
 #include <rapidjson/document.h>
 #include <sstream>
+#include <utility/crypto.h>
 #include <utility/http_client.h>
 #include <utility/system_util.h>
 
@@ -16,6 +17,7 @@ enum selfupdate_error_code {
   SUE_OK = 0,
   SUE_PackageInfoFormatError,
   SUE_PackageSizeError,
+  SUE_PackageVerifyError,
 
   SUE_Count,
 };
@@ -36,6 +38,7 @@ static const SelfUpdateErrorMessage selfupdate_error_message_[] = {
     {_(SUE_OK, "OK")},
     {_(SUE_PackageInfoFormatError, "package info format error")},
     {_(SUE_PackageSizeError, "package size error")},
+    {_(SUE_PackageVerifyError, "package verify error")},
 };
 #undef _
 
@@ -70,6 +73,13 @@ const char *PACKAGEINFO_PACKAGE_VERSION = "package_version";
 const char *PACKAGEINFO_PACKAGE_URL = "package_url";
 const char *PACKAGEINFO_PACKAGE_SIZE = "package_size";
 const char *PACKAGEINFO_PACKAGE_FORMAT = "package_format";
+const char *PACKAGEINFO_PACKAGE_HASH = "package_hash";
+const char *PACKAGEINFO_PACKAGE_HASH_ALGO_MD5 = "md5";
+const char *PACKAGEINFO_PACKAGE_HASH_ALGO_SHA1 = "sha1";
+const char *PACKAGEINFO_PACKAGE_HASH_ALGO_SHA224 = "sha224";
+const char *PACKAGEINFO_PACKAGE_HASH_ALGO_SHA256 = "sha256";
+const char *PACKAGEINFO_PACKAGE_HASH_ALGO_SHA384 = "sha384";
+const char *PACKAGEINFO_PACKAGE_HASH_ALGO_SHA512 = "sha512";
 const char *PACKAGEINFO_UPDATE_TITLE = "update_title";
 const char *PACKAGEINFO_UPDATE_DESCRIPTION = "update_description";
 
@@ -103,6 +113,7 @@ std::error_code Query(const std::string &query_url, const std::string &query_bod
       !doc.HasMember(PACKAGEINFO_PACKAGE_URL) || !doc[PACKAGEINFO_PACKAGE_URL].IsString() ||
       !doc.HasMember(PACKAGEINFO_PACKAGE_SIZE) || !doc[PACKAGEINFO_PACKAGE_SIZE].IsUint64() ||
       !doc.HasMember(PACKAGEINFO_PACKAGE_FORMAT) || !doc[PACKAGEINFO_PACKAGE_FORMAT].IsString() ||
+      !doc.HasMember(PACKAGEINFO_PACKAGE_HASH) || !doc[PACKAGEINFO_PACKAGE_HASH].IsObject() ||
       !doc.HasMember(PACKAGEINFO_UPDATE_TITLE) || !doc[PACKAGEINFO_UPDATE_TITLE].IsString() ||
       !doc.HasMember(PACKAGEINFO_UPDATE_DESCRIPTION) || !doc[PACKAGEINFO_UPDATE_DESCRIPTION].IsString())
     return make_selfupdate_error(SUE_PackageInfoFormatError);
@@ -116,6 +127,20 @@ std::error_code Query(const std::string &query_url, const std::string &query_bod
   package_info.package_size = doc[PACKAGEINFO_PACKAGE_SIZE].GetUint64();
   package_info.package_format.assign(doc[PACKAGEINFO_PACKAGE_FORMAT].GetString(),
                                      doc[PACKAGEINFO_PACKAGE_FORMAT].GetStringLength());
+  for (auto it = doc[PACKAGEINFO_PACKAGE_HASH].MemberBegin(); it != doc[PACKAGEINFO_PACKAGE_HASH].MemberEnd(); ++it) {
+    if (!it->name.IsString() || !it->value.IsString()) {
+      return make_selfupdate_error(SUE_PackageInfoFormatError);
+    } else if (_stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_MD5) == 0 ||
+               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA1) == 0 ||
+               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA224) == 0 ||
+               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA256) == 0 ||
+               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA384) == 0 ||
+               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA512) == 0) {
+      package_info.package_hash.insert(std::make_pair(it->name.GetString(), it->value.GetString()));
+    } else {
+      return make_selfupdate_error(SUE_PackageInfoFormatError);
+    }
+  }
   package_info.update_title.assign(doc[PACKAGEINFO_UPDATE_TITLE].GetString(),
                                    doc[PACKAGEINFO_UPDATE_TITLE].GetStringLength());
   package_info.update_description.assign(doc[PACKAGEINFO_UPDATE_DESCRIPTION].GetString(),
@@ -146,6 +171,36 @@ const char *PACKAGE_NAME_VERSION_SEP = "-";
 const char *FILE_NAME_EXT_SEP = ".";
 const char *DOWNLOADING_FILE_SUFFIX = ".downloading";
 
+bool VerifyPackage(const std::string &package_file, const std::map<std::string, std::string> &hash) {
+  for (const auto &item : hash) {
+    if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_MD5) {
+      if (crypto::MD5(package_file.c_str()) != item.second)
+        return false;
+    }
+    if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA1) {
+      if (crypto::SHA1(package_file.c_str()) != item.second)
+        return false;
+    }
+    if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA224) {
+      if (crypto::SHA224(package_file.c_str()) != item.second)
+        return false;
+    }
+    if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA256) {
+      if (crypto::SHA256(package_file.c_str()) != item.second)
+        return false;
+    }
+    if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA384) {
+      if (crypto::SHA384(package_file.c_str()) != item.second)
+        return false;
+    }
+    if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA512) {
+      if (crypto::SHA512(package_file.c_str()) != item.second)
+        return false;
+    }
+  }
+  return true;
+}
+
 } // namespace
 
 std::error_code Download(const PackageInfo &package_info, DownloadProgressMonitor download_progress_monitor) {
@@ -160,8 +215,10 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   FILE *f = fopen(package_file.c_str(), "ab");
   _fseeki64(f, 0, SEEK_END);
   long long offset = _ftelli64(f);
-  if (offset == package_info.package_size && downloaded_size < 0)
+  if (offset == package_info.package_size && downloaded_size < 0 &&
+      VerifyPackage(package_file, package_info.package_hash)) {
     return {};
+  }
 
   if (downloaded_size > 0 && offset >= downloaded_size) {
     _fseeki64(f, downloaded_size, SEEK_SET);
@@ -203,8 +260,13 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
           download_progress_monitor(downloaded_size, total_size);
       });
   fclose(f);
-  if (downloaded_size == total_size)
+  if (downloaded_size == total_size) {
     _unlink(package_downloading_file.c_str());
+    if (!VerifyPackage(package_file, package_info.package_hash)) {
+      _unlink(package_file.c_str());
+      return make_selfupdate_error(SUE_PackageVerifyError);
+    }
+  }
   return ec;
 }
 

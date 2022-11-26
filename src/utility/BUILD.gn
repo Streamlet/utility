@@ -8,25 +8,29 @@ source_set("utility") {
   configs += [ "//build_config:project_common" ]
   defines = []
   sources = [
+    "crypto.cc",
+    "crypto.h",
     "http_client.cc",
     "http_client.h",
     "system_util.h",
     "url.cc",
     "url.h",
   ]
+  deps = [ "//thirdparty:crypto" ]
   if (is_win) {
     sources += [ "system_util_win.cc" ]
+    libs = []
     if (winhttp) {
       sources += [
         "encoding.h",
         "encoding_win.cc",
         "http_client_winhttp.cc",
       ]
-      libs = [ "winhttp.lib" ]
+      libs += [ "winhttp.lib" ]
     } else {
       defines += [ "CURL_STATICLIB" ]
       sources += [ "http_client_curl.cc" ]
-      libs = [
+      libs += [
         "advapi32.lib",
         "crypt32.lib",
         "normaliz.lib",

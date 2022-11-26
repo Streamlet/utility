@@ -32,3 +32,9 @@ DEPS:
   thirdparty/rapidjson:
     GIT_REPOSITORY: git@github.com:Tencent/rapidjson.git
     GIT_TAG: v1.1.0
+
+  thirdparty/openssl:
+    URL: https://www.openssl.org/source/openssl-1.1.1s.tar.gz
+    ROOT_DIR: openssl-1.1.1s
+    URL_HASH:
+      SHA256: c5ac01e760ee6ff0dab61d6b2bbd30146724d063eb322180c6f18a6f74e4b6aa

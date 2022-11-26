@@ -17,6 +17,9 @@ int main() {
   std::cout << "package_url: " << package_info.package_url << std::endl;
   std::cout << "package_size: " << package_info.package_size << std::endl;
   std::cout << "package_format: " << package_info.package_format << std::endl;
+  std::cout << "package_hash: " << std::endl;
+  for (const auto &item : package_info.package_hash)
+    std::cout << "  " << item.first << ": " << item.second << std::endl;
   std::cout << "update_title: " << package_info.update_title << std::endl;
   std::cout << "update_description: " << package_info.update_description << std::endl;
 

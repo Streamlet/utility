@@ -3,6 +3,7 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 #include <cstdio>
 #include <direct.h>
+#include <loki/ScopeGuard.h>
 #include <rapidjson/document.h>
 #include <sstream>
 #include <utility/crypto.h>
@@ -213,6 +214,7 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   long long downloaded_size = ReadInteger(package_downloading_file);
 
   FILE *f = fopen(package_file.c_str(), "ab");
+  LOKI_ON_BLOCK_EXIT(fclose, f);
   _fseeki64(f, 0, SEEK_END);
   long long offset = _ftelli64(f);
   if (offset == package_info.package_size && downloaded_size < 0 &&
@@ -259,7 +261,9 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
         if (download_progress_monitor != nullptr)
           download_progress_monitor(downloaded_size, total_size);
       });
-  fclose(f);
+  if (ec)
+    return ec;
+
   if (downloaded_size == total_size) {
     _unlink(package_downloading_file.c_str());
     if (!VerifyPackage(package_file, package_info.package_hash)) {
@@ -267,10 +271,14 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
       return make_selfupdate_error(SUE_PackageVerifyError);
     }
   }
-  return ec;
+  return {};
 }
 
-std::error_code Install(const PackageInfo &PackageInfo) {
+std::error_code Install(const PackageInfo &package_info) {
+  std::string cache_dir = system_util::GetTempDirPath() + app_name_;
+  std::string package_file = cache_dir + system_util::GetPathSep() + package_info.package_name +
+                             PACKAGE_NAME_VERSION_SEP + package_info.package_version + FILE_NAME_EXT_SEP +
+                             package_info.package_format;
   return {};
 }
 

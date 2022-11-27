@@ -1,28 +1,50 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os
+import os, sys, zipfile, hashlib
 from http.server import HTTPServer, BaseHTTPRequestHandler
+
+
+def make_package(dir):
+    if sys.platform == 'win32':
+        filename = 'client_sdk_test.exe'
+    else:
+        filename = 'client_sdk_test'
+    src_file = os.path.join(dir, filename)
+    package_file = os.path.join(dir, 'client_sdk_test.zip')
+    with zipfile.ZipFile(package_file, 'w') as zip:
+        zip.write(src_file, filename)
+
+    package_file_size = os.stat(package_file).st_size
+
+    sha256 = hashlib.sha256()
+    with open(package_file, 'rb') as f:
+        BLOCK_SIZE = 1024 * 1024
+        while True:
+            buffer = f.read(BLOCK_SIZE)
+            sha256.update(buffer)
+            if (len(buffer) < BLOCK_SIZE):
+                break
+    sha256_hash = sha256.hexdigest().lower()
+
+    return package_file, package_file_size, sha256_hash
+
+
+package_file, package_file_size, sha256_hash = make_package(sys.argv[1])
 
 package_info = '''
 {
     "package_name": "selfupdate",
     "package_version": "1.0",
-    "package_url": "https://proof.ovh.net/files/1Mb.dat",
-    "package_size": 1048576,
+    "package_url": "http://localhost:8080/download",
+    "package_size": %d,
     "package_format": "zip",
     "package_hash": {
-        "md5": "d6dd8a9fdac2c00e4d7bc9b0ab2d383d",
-        "sha1": "385da5a9ad0382ac3fc8b50fe76c37f04c5907c7",
-        "sha256": "92c4ff2dbefdde59ed9f0f3cf89d7ec991c819470b3513dbfac8ee877f805a6e",
+        "sha256": "%s",
     },
     "update_title": "SelfUpdate 1.0",
     "update_description": "This upgrade is very important!",
-}'''
-
-package_content = '''
-sampple downloaded content
-'''
+}''' % (package_file_size, sha256_hash)
 
 
 class web_server(BaseHTTPRequestHandler):
@@ -30,7 +52,7 @@ class web_server(BaseHTTPRequestHandler):
     def do_HEAD(self):
         if self.path == '/download':
             self.send_response(200)
-            self.send_header("Content-Length", str(len(package_content)))
+            self.send_header("Content-Length", str(package_file_size))
             self.end_headers()
         else:
             self.send_error(404)
@@ -43,7 +65,8 @@ class web_server(BaseHTTPRequestHandler):
         elif self.path == '/download':
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(package_content.encode())
+            with open(package_file, 'rb') as f:
+                self.wfile.write(f.read())
         else:
             self.send_error(404)
 

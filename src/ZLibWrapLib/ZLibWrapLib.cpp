@@ -14,7 +14,6 @@
 //------------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "ZLibWrapLib.h"
 #include "Encoding.h"
 #include <loki/ScopeGuard.h>

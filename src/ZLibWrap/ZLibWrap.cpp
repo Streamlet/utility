@@ -14,7 +14,6 @@
 //------------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "ZLibWrap.h"
 #include "../ZLibWrapLib/ZLibWrapLib.h"
 

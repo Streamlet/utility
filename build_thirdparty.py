@@ -23,8 +23,9 @@ def cmd(cmd):
 
 def build_gtest(config):
     os.chdir('googletest')
-    cmd('cmake -S googletest -B build')
+    cmd('cmake -S . -B build')
     cmd('cmake --build build --config %s' % config)
+    cmd('cmake --install build --prefix build/%s' % config)
     os.chdir('..')
 
 
@@ -58,7 +59,8 @@ def build_curl(config):
             % (prefix, debug_yes_no))
         os.chdir('..')
     else:
-        enable_debug = '--enable-debug' if debug else ''
+        enable_debug = '--enable-debug' if config == 'debug' else ''
+        # install openssl-devel, zlib-devel in your system
         cmd('./configure --prefix=%s --with-ssl %s' %
             (prefix, enable_debug))
         cmd('make')
@@ -85,9 +87,9 @@ def build_openssl(config):
 def main():
     os.chdir('thirdparty')
     for config in ['debug', 'release']:
-        #build_boost(config)
-        #build_gtest(config)
-        #build_curl(config)
+        build_boost(config)
+        build_gtest(config)
+        build_curl(config)
         build_openssl(config)
     os.chdir('..')
 

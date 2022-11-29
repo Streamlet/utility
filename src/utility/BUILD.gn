@@ -65,10 +65,14 @@ executable("utility_test") {
   ]
 
   libs = []
-  if (is_debug) {
-    libs += [ "gtestd.lib" ]
+  if (is_win) {
+    if (is_debug) {
+      libs += [ "gtestd.lib" ]
+    } else {
+      libs += [ "gtest.lib" ]
+    }
   } else {
-    libs += [ "gtest.lib" ]
+    libs += [ "gtest" ]
   }
 
   deps = [ ":utility" ]

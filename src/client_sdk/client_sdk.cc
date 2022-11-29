@@ -2,13 +2,27 @@
 #include <memory>
 #define RAPIDJSON_HAS_STDSTRING 1
 #include <cstdio>
-#include <direct.h>
 #include <loki/ScopeGuard.h>
 #include <rapidjson/document.h>
 #include <sstream>
 #include <utility/crypto.h>
 #include <utility/http_client.h>
 #include <utility/system_util.h>
+#ifdef _WIN32
+#include <direct.h>
+#define unlink _unlink
+#define mkdir(...) _mkdir(__VA_ARGS__)
+#define ftell _ftelli64
+#define fseek _fseeki64
+#else
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#define mkdir(...) mkdir(__VA_ARGS__, 0755)
+#define stricmp strcasecmp
+#define ftell ftello64
+#define fseek fseeko64
+#endif
 
 namespace selfupdate {
 
@@ -131,12 +145,12 @@ std::error_code Query(const std::string &query_url, const std::string &query_bod
   for (auto it = doc[PACKAGEINFO_PACKAGE_HASH].MemberBegin(); it != doc[PACKAGEINFO_PACKAGE_HASH].MemberEnd(); ++it) {
     if (!it->name.IsString() || !it->value.IsString()) {
       return make_selfupdate_error(SUE_PackageInfoFormatError);
-    } else if (_stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_MD5) == 0 ||
-               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA1) == 0 ||
-               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA224) == 0 ||
-               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA256) == 0 ||
-               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA384) == 0 ||
-               _stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA512) == 0) {
+    } else if (stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_MD5) == 0 ||
+               stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA1) == 0 ||
+               stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA224) == 0 ||
+               stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA256) == 0 ||
+               stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA384) == 0 ||
+               stricmp(it->name.GetString(), PACKAGEINFO_PACKAGE_HASH_ALGO_SHA512) == 0) {
       package_info.package_hash.insert(std::make_pair(it->name.GetString(), it->value.GetString()));
     } else {
       return make_selfupdate_error(SUE_PackageInfoFormatError);
@@ -206,7 +220,7 @@ bool VerifyPackage(const std::string &package_file, const std::map<std::string, 
 
 std::error_code Download(const PackageInfo &package_info, DownloadProgressMonitor download_progress_monitor) {
   std::string cache_dir = system_util::GetTempDirPath() + app_name_;
-  _mkdir(cache_dir.c_str());
+  mkdir(cache_dir.c_str());
   std::string package_file = cache_dir + system_util::GetPathSep() + package_info.package_name +
                              PACKAGE_NAME_VERSION_SEP + package_info.package_version + FILE_NAME_EXT_SEP +
                              package_info.package_format;
@@ -215,17 +229,17 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
 
   FILE *f = fopen(package_file.c_str(), "ab");
   LOKI_ON_BLOCK_EXIT(fclose, f);
-  _fseeki64(f, 0, SEEK_END);
-  long long offset = _ftelli64(f);
+  fseek(f, 0, SEEK_END);
+  long long offset = ftell(f);
   if (offset == package_info.package_size && downloaded_size < 0 &&
       VerifyPackage(package_file, package_info.package_hash)) {
     return {};
   }
 
   if (downloaded_size > 0 && offset >= downloaded_size) {
-    _fseeki64(f, downloaded_size, SEEK_SET);
+    fseek(f, downloaded_size, SEEK_SET);
   } else {
-    _fseeki64(f, downloaded_size, SEEK_SET);
+    fseek(f, downloaded_size, SEEK_SET);
     downloaded_size = 0;
   }
   HttpClient http_client(user_agent_);
@@ -265,9 +279,9 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
     return ec;
 
   if (downloaded_size == total_size) {
-    _unlink(package_downloading_file.c_str());
+    unlink(package_downloading_file.c_str());
     if (!VerifyPackage(package_file, package_info.package_hash)) {
-      _unlink(package_file.c_str());
+      unlink(package_file.c_str());
       return make_selfupdate_error(SUE_PackageVerifyError);
     }
   }

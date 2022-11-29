@@ -3,6 +3,7 @@
 #include <iostream>
 #include <loki/ScopeGuard.h>
 #include <memory>
+#include <cstring>
 
 namespace {
 

@@ -30,14 +30,25 @@ config("project_common") {
   if (is_debug) {
     lib_dirs += [
       # "//thirdparty/boost/build/debug/lib",
-      "//thirdparty/googletest/build/debug/lib64",
       "//thirdparty/curl/build/debug/lib",
     ]
   } else {
     lib_dirs += [
       # "//thirdparty/boost/build/release/lib",
-      "//thirdparty/googletest/build/release/lib64",
       "//thirdparty/curl/build/release/lib",
     ]
+  }
+  if (is_win) {
+    if (is_debug) {
+      lib_dirs += [ "//thirdparty/googletest/build/debug/lib" ]
+    } else {
+      lib_dirs += [ "//thirdparty/googletest/build/release/lib" ]
+    }
+  } else {
+    if (is_debug) {
+      lib_dirs += [ "//thirdparty/googletest/build/debug/lib64" ]
+    } else {
+      lib_dirs += [ "//thirdparty/googletest/build/release/lib64" ]
+    }
   }
 }

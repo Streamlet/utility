@@ -25,7 +25,7 @@ def build_gtest(config):
     os.chdir('googletest')
     cmd('cmake -S . -B build')
     cmd('cmake --build build --config %s' % config)
-    cmd('cmake --install build --prefix build/%s' % config)
+    cmd('cmake --install build  --config %s --prefix build/%s' % (config, config))
     os.chdir('..')
 
 

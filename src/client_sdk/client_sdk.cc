@@ -11,14 +11,15 @@
 #ifdef _WIN32
 #include <direct.h>
 #define unlink _unlink
-#define mkdir(...) _mkdir(__VA_ARGS__)
+#define mkdir(path) _mkdir(path)
+#define stricmp _stricmp
 #define ftell _ftelli64
 #define fseek _fseeki64
 #else
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#define mkdir(...) mkdir(__VA_ARGS__, 0755)
+#define mkdir(path) mkdir(path, 0755)
 #define stricmp strcasecmp
 #define ftell ftello64
 #define fseek fseeko64

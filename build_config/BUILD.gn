@@ -38,17 +38,17 @@ config("project_common") {
       "//thirdparty/curl/build/release/lib",
     ]
   }
-  if (is_win) {
-    if (is_debug) {
-      lib_dirs += [ "//thirdparty/googletest/build/debug/lib" ]
-    } else {
-      lib_dirs += [ "//thirdparty/googletest/build/release/lib" ]
-    }
-  } else {
+  if (is_linux) {
     if (is_debug) {
       lib_dirs += [ "//thirdparty/googletest/build/debug/lib64" ]
     } else {
       lib_dirs += [ "//thirdparty/googletest/build/release/lib64" ]
+    }
+  } else {
+    if (is_debug) {
+      lib_dirs += [ "//thirdparty/googletest/build/debug/lib" ]
+    } else {
+      lib_dirs += [ "//thirdparty/googletest/build/release/lib" ]
     }
   }
 }

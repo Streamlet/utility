@@ -16,13 +16,14 @@
 #define ftell _ftelli64
 #define fseek _fseeki64
 #else
+#define _FILE_OFFSET_BITS 64
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #define mkdir(path) mkdir(path, 0755)
 #define stricmp strcasecmp
-#define ftell ftello64
-#define fseek fseeko64
+#define ftell ftello
+#define fseek fseeko
 #endif
 
 namespace selfupdate {

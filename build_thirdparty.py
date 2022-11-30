@@ -74,13 +74,11 @@ def build_openssl(config):
     if sys.platform == 'win32':
         cmd('perl Configure VC-WIN64A threads no-shared --%s --prefix=%s --openssldir=%s'
             % (config, prefix, prefix))
-        cmd('nmake')
-        cmd('nmake install')
+        cmd('nmake include/openssl/opensslconf.h')
     else:
         cmd('./config threads shared --%s --prefix=%s --openssldir=%s' %
             (config, prefix, prefix))
-        cmd('make')
-        cmd('make install')
+        cmd('make include/openssl/opensslconf.h')
     os.chdir('..')
 
 

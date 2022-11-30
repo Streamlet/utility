@@ -165,7 +165,7 @@ std::string DigestToHexString(unsigned char *digest, size_t length) {
   std::string hex;
   hex.resize(length * 2);
   for (size_t i = 0; i < length; ++i)
-    sprintf(hex.data() + i * 2, "%02x", digest[i]);
+    snprintf(hex.data() + i * 2, 2, "%02x", digest[i]);
   return std::move(hex);
 }
 

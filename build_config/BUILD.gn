@@ -25,6 +25,7 @@ config("project_common") {
     "//thirdparty/googletest/googletest/include",
     "//thirdparty/curl/include",
     "//thirdparty/rapidjson/include",
+    "//thirdparty/openssl/include",
   ]
   lib_dirs = []
   if (is_debug) {

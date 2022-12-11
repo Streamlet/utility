@@ -1,7 +1,8 @@
 static_library("client_sdk") {
   configs += [ "../../build_config:project_common" ]
-  cflags = [ "-Wno-deprecated-declarations" ]
-
+  if (is_posix) {
+    cflags = [ "-Wno-deprecated-declarations" ]
+  }
   sources = [
     "../include/selfupdate/selfupdate.h",
     "client_sdk.cc",

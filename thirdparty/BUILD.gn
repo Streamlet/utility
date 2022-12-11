@@ -1,12 +1,12 @@
 static_library("crypto") {
-  include_dirs = [ "//thirdparty/openssl/include" ]
+  include_dirs = [ "openssl/include" ]
   sources = [
-    "//thirdparty/openssl/crypto/md5/md5_one.c",
-    "//thirdparty/openssl/crypto/md5/md5_dgst.c",
-    "//thirdparty/openssl/crypto/sha/sha1_one.c",
-    "//thirdparty/openssl/crypto/sha/sha1dgst.c",
-    "//thirdparty/openssl/crypto/sha/sha256.c",
-    "//thirdparty/openssl/crypto/sha/sha512.c",
-    "//thirdparty/openssl/crypto/mem_clr.c",
+    "openssl/crypto/md5/md5_dgst.c",
+    "openssl/crypto/md5/md5_one.c",
+    "openssl/crypto/mem_clr.c",
+    "openssl/crypto/sha/sha1_one.c",
+    "openssl/crypto/sha/sha1dgst.c",
+    "openssl/crypto/sha/sha256.c",
+    "openssl/crypto/sha/sha512.c",
   ]
 }

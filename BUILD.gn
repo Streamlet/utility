@@ -1,13 +1,13 @@
 group("all") {
   deps = [
-    "//src/client_sdk",
-    "//src/server",
+    "src/client_sdk",
+    "src/server",
   ]
 }
 
 group("test") {
   deps = [
-    "//src/client_sdk:client_sdk_test",
-    "//src/utility:utility_test",
+    "src/client_sdk:client_sdk_test",
+    "src/utility:utility_test",
   ]
 }

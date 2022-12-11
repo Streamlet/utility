@@ -1,5 +1,5 @@
 static_library("client_sdk") {
-  configs += [ "//build_config:project_common" ]
+  configs += [ "../../build_config:project_common" ]
   cflags = [ "-Wno-deprecated-declarations" ]
 
   sources = [
@@ -7,20 +7,20 @@ static_library("client_sdk") {
     "client_sdk.cc",
   ]
 
-  deps = [ "//src/utility:utility" ]
+  deps = [ "../utility:utility" ]
 }
 
 executable("client_sdk_test") {
-  include_dirs = [ "//src/include" ]
-  configs += [ "//build_config:project_common" ]
+  include_dirs = [ "../include" ]
+  configs += [ "../../build_config:project_common" ]
   if (is_win) {
-    configs += [ "//build/config/win:static_runtime" ]
+    configs += [ "../../build/config/win:static_runtime" ]
   }
 
   sources = [ "client_sdk_test.cc" ]
 
   deps = [
     ":client_sdk",
-    "//thirdparty/ZLibWrap/src:zlibwrap",
+    "../../thirdparty/ZLibWrap/src:zlibwrap",
   ]
 }

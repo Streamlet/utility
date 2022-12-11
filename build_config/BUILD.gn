@@ -26,6 +26,7 @@ config("project_common") {
     "//thirdparty/curl/include",
     "//thirdparty/rapidjson/include",
     "//thirdparty/openssl/include",
+    "//thirdparty/ZLibWrap/include",
   ]
   lib_dirs = []
   if (is_debug) {

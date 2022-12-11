@@ -32,6 +32,11 @@ int main() {
     std::cout << ec.value() << ": " << ec.message() << std::endl;
     return -1;
   }
-
+  std::cout << "Step 3: install package" << std::endl;
+  ec = selfupdate::Install(package_info);
+  if (ec) {
+    std::cout << ec.value() << ": " << ec.message() << std::endl;
+    return -1;
+  }
   return 0;
 }

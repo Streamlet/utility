@@ -8,6 +8,7 @@
 #include <utility/crypto.h>
 #include <utility/http_client.h>
 #include <utility/system_util.h>
+#include <zlibwrap/zlibwrap.h>
 #ifdef _WIN32
 #include <direct.h>
 #define unlink _unlink
@@ -20,6 +21,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #define mkdir(path) mkdir(path, 0755)
 #define stricmp strcasecmp
 #define ftell ftello
@@ -290,11 +292,16 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   return {};
 }
 
-std::error_code Install(const PackageInfo &package_info) {
+namespace {} // namespace
+
+std::error_code Install(const PackageInfo &package_info, const std::string &install_dir) {
   std::string cache_dir = system_util::GetTempDirPath() + app_name_;
   std::string package_file = cache_dir + system_util::GetPathSep() + package_info.package_name +
                              PACKAGE_NAME_VERSION_SEP + package_info.package_version + FILE_NAME_EXT_SEP +
                              package_info.package_format;
+  std::string package_dir = cache_dir + system_util::GetPathSep() + package_info.package_name +
+                            PACKAGE_NAME_VERSION_SEP + package_info.package_version;
+  zlibwrap::ZipExtract(package_file.c_str(), package_dir.c_str());
   return {};
 }
 

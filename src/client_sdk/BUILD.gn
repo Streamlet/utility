@@ -19,5 +19,8 @@ executable("client_sdk_test") {
 
   sources = [ "client_sdk_test.cc" ]
 
-  deps = [ ":client_sdk" ]
+  deps = [
+    ":client_sdk",
+    "//thirdparty/ZLibWrap/src:zlibwrap",
+  ]
 }

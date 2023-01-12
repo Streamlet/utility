@@ -11,14 +11,16 @@
 #include <zlibwrap/zlibwrap.h>
 #ifdef _WIN32
 #include <direct.h>
+#include <io.h>
 #define unlink _unlink
+#define rmdir _rmdir
 #define mkdir(path) _mkdir(path)
 #define stricmp _stricmp
 #define ftell _ftelli64
 #define fseek _fseeki64
 #else
 #define _FILE_OFFSET_BITS 64
-#include <unistd.h>
+#include <glob.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -37,6 +39,7 @@ enum selfupdate_error_code {
   SUE_PackageInfoFormatError,
   SUE_PackageSizeError,
   SUE_PackageVerifyError,
+  SUE_PackageExtractError,
 
   SUE_Count,
 };
@@ -231,8 +234,8 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   std::string package_downloading_file = package_file + DOWNLOADING_FILE_SUFFIX;
   long long downloaded_size = ReadInteger(package_downloading_file);
 
-  FILE *f = fopen(package_file.c_str(), "ab");
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  FILE *f = fopen(package_file.c_str(), "wb");
+  auto sgCloseFile = ::Loki::MakeGuard(fclose, f);
   fseek(f, 0, SEEK_END);
   long long offset = ftell(f);
   if (offset == package_info.package_size && downloaded_size < 0 &&
@@ -281,6 +284,8 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
       });
   if (ec)
     return ec;
+  fclose(f);
+  sgCloseFile.Dismiss();
 
   if (downloaded_size == total_size) {
     unlink(package_downloading_file.c_str());
@@ -292,7 +297,59 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   return {};
 }
 
-namespace {} // namespace
+namespace {
+#ifdef _WIN32
+bool rmdir_recursive(const std::string &path) {
+  __finddata64_t find_data = {};
+  intptr_t find = _findfirst64((path + "/*").c_str(), &find_data);
+  if (find == -1)
+    return false;
+  LOKI_ON_BLOCK_EXIT(_findclose, find);
+
+  do {
+    if (strcmp(find_data.name, ".") == 0 || strcmp(find_data.name, "..") == 0)
+      continue;
+
+    std::string sub_path = path + find_data.name;
+    if ((find_data.attrib & _A_SUBDIR) != 0) {
+      if (!rmdir_recursive(sub_path))
+        return false;
+    } else {
+      if (unlink(sub_path.c_str()) != 0)
+        return false;
+    }
+  } while (_findnext64(find, &find_data) == 0);
+
+  if (rmdir(path.c_str()) != 0)
+    return false;
+  return true;
+}
+#else
+bool rmdir_recursive(const std::string &path) {
+  glob_t globbuf = {};
+  if (glob((path + "/*").c_str(), 0, nullptr, &globbuf) != 0)
+    return false;
+  LOKI_ON_BLOCK_EXIT(globfree, &globbuf);
+
+  for (size_t i = 0; i < globbuf.gl_pathc; ++i) {
+    std::string sub_path = globbuf.gl_pathv[i];
+    struct stat st = {};
+    if (stat(sub_path.c_str(), &st) != 0)
+      return false;
+    if (S_ISDIR(st.st_mode)) {
+      if (!rmdir_recursive(sub_path))
+        return false;
+    } else {
+      if (unlink(sub_path.c_str()) != 0)
+        return false;
+    }
+  }
+  if (rmdir(path.c_str()) != 0)
+    return false;
+  return true;
+}
+#endif
+} // namespace
 
 std::error_code Install(const PackageInfo &package_info, const std::string &install_dir) {
   std::string cache_dir = system_util::GetTempDirPath() + app_name_;
@@ -301,7 +358,11 @@ std::error_code Install(const PackageInfo &package_info, const std::string &inst
                              package_info.package_format;
   std::string package_dir = cache_dir + system_util::GetPathSep() + package_info.package_name +
                             PACKAGE_NAME_VERSION_SEP + package_info.package_version;
-  zlibwrap::ZipExtract(package_file.c_str(), package_dir.c_str());
+  if (!rmdir_recursive(package_dir))
+    return make_selfupdate_error(SUE_PackageExtractError);
+  if (!zlibwrap::ZipExtract(package_file.c_str(), package_dir.c_str()))
+    return make_selfupdate_error(SUE_PackageExtractError);
+
   return {};
 }
 

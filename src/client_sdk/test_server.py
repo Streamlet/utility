@@ -22,9 +22,9 @@ def make_package(dir):
         BLOCK_SIZE = 1024 * 1024
         while True:
             buffer = f.read(BLOCK_SIZE)
-            sha256.update(buffer)
-            if (len(buffer) < BLOCK_SIZE):
+            if (buffer is None or len(buffer) == 0):
                 break
+            sha256.update(buffer)
     sha256_hash = sha256.hexdigest().lower()
 
     return package_file, package_file_size, sha256_hash

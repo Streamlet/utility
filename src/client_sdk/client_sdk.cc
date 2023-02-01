@@ -225,6 +225,14 @@ bool VerifyPackage(const std::string &package_file, const std::map<std::string, 
 
 } // namespace
 
+// If GCC optimize >= -O2, downloaded_size will be reset after http_client.Get.
+// The below test "if (downloaded_size == total_size)" will never be satisfied.
+// This mighe be a bug of GCC optimization, but I am not able to make a simple example.
+#ifdef __GNUC__
+#pragma GCC push_options
+#pragma GCC optimize("O1")
+#endif
+
 std::error_code Download(const PackageInfo &package_info, DownloadProgressMonitor download_progress_monitor) {
   std::string cache_dir = system_util::GetTempDirPath() + app_name_;
   mkdir(cache_dir.c_str());
@@ -243,10 +251,10 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
     return {};
   }
 
-  if (downloaded_size > 0 && offset >= downloaded_size) {
+  if (downloaded_size > 0 && offset > downloaded_size) {
     fseek(f, downloaded_size, SEEK_SET);
   } else {
-    fseek(f, downloaded_size, SEEK_SET);
+    fseek(f, 0, SEEK_SET);
     downloaded_size = 0;
   }
   HttpClient http_client(user_agent_);
@@ -273,7 +281,7 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   HttpClient::RequestHeader request_header = {
       {"Range", range_expr.str()}
   };
-  ec =
+ ec =
       http_client.Get(package_info.package_url, request_header, &status, nullptr, [&](const void *data, size_t length) {
         fwrite(data, 1, length, f);
         fflush(f);
@@ -282,7 +290,7 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
         if (download_progress_monitor != nullptr)
           download_progress_monitor(downloaded_size, total_size);
       });
-  if (ec)
+ if (ec)
     return ec;
   fclose(f);
   sgCloseFile.Dismiss();
@@ -296,6 +304,9 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   }
   return {};
 }
+#ifdef __GNUC__
+#pragma GCC pop_options
+#endif
 
 namespace {
 #ifdef _WIN32
@@ -360,6 +371,7 @@ std::error_code Install(const PackageInfo &package_info, const std::string &inst
                             PACKAGE_NAME_VERSION_SEP + package_info.package_version;
   if (!rmdir_recursive(package_dir))
     return make_selfupdate_error(SUE_PackageExtractError);
+  return {};
   if (!zlibwrap::ZipExtract(package_file.c_str(), package_dir.c_str()))
     return make_selfupdate_error(SUE_PackageExtractError);
 

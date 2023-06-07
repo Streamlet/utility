@@ -23,8 +23,12 @@ std::string MD5(const void *data, size_t length) {
   unsigned char *digest = ::MD5(static_cast<const unsigned char *>(data), length, nullptr);
   return DigestToHexString(digest, MD5_DIGEST_LENGTH);
 }
-std::string MD5(const char *file_path) {
-  FILE *f = fopen(file_path, "rb");
+std::string MD5(const std::filesystem::path &file_path) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file_path.c_str(), L"rb");
+#else
+  FILE *f = fopen(file_path.c_str(), "rb");
+#endif
   if (f == nullptr)
     return "";
   LOKI_ON_BLOCK_EXIT(fclose, f);
@@ -47,8 +51,12 @@ std::string SHA1(const void *data, size_t length) {
   unsigned char *digest = ::SHA1(static_cast<const unsigned char *>(data), length, nullptr);
   return DigestToHexString(digest, SHA_DIGEST_LENGTH);
 }
-std::string SHA1(const char *file_path) {
-  FILE *f = fopen(file_path, "rb");
+std::string SHA1(const std::filesystem::path &file_path) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file_path.c_str(), L"rb");
+#else
+  FILE *f = fopen(file_path.c_str(), "rb");
+#endif
   if (f == nullptr)
     return "";
   LOKI_ON_BLOCK_EXIT(fclose, f);
@@ -71,8 +79,12 @@ std::string SHA224(const void *data, size_t length) {
   unsigned char *digest = ::SHA224(static_cast<const unsigned char *>(data), length, nullptr);
   return DigestToHexString(digest, SHA224_DIGEST_LENGTH);
 }
-std::string SHA224(const char *file_path) {
-  FILE *f = fopen(file_path, "rb");
+std::string SHA224(const std::filesystem::path &file_path) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file_path.c_str(), L"rb");
+#else
+  FILE *f = fopen(file_path.c_str(), "rb");
+#endif
   if (f == nullptr)
     return "";
   LOKI_ON_BLOCK_EXIT(fclose, f);
@@ -95,8 +107,12 @@ std::string SHA256(const void *data, size_t length) {
   unsigned char *digest = ::SHA256(static_cast<const unsigned char *>(data), length, nullptr);
   return DigestToHexString(digest, SHA256_DIGEST_LENGTH);
 }
-std::string SHA256(const char *file_path) {
-  FILE *f = fopen(file_path, "rb");
+std::string SHA256(const std::filesystem::path &file_path) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file_path.c_str(), L"rb");
+#else
+  FILE *f = fopen(file_path.c_str(), "rb");
+#endif
   if (f == nullptr)
     return "";
   LOKI_ON_BLOCK_EXIT(fclose, f);
@@ -119,8 +135,12 @@ std::string SHA384(const void *data, size_t length) {
   unsigned char *digest = ::SHA384(static_cast<const unsigned char *>(data), length, nullptr);
   return DigestToHexString(digest, SHA384_DIGEST_LENGTH);
 }
-std::string SHA384(const char *file_path) {
-  FILE *f = fopen(file_path, "rb");
+std::string SHA384(const std::filesystem::path &file_path) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file_path.c_str(), L"rb");
+#else
+  FILE *f = fopen(file_path.c_str(), "rb");
+#endif
   if (f == nullptr)
     return "";
   LOKI_ON_BLOCK_EXIT(fclose, f);
@@ -143,8 +163,12 @@ std::string SHA512(const void *data, size_t length) {
   unsigned char *digest = ::SHA512(static_cast<const unsigned char *>(data), length, nullptr);
   return DigestToHexString(digest, SHA512_DIGEST_LENGTH);
 }
-std::string SHA512(const char *file_path) {
-  FILE *f = fopen(file_path, "rb");
+std::string SHA512(const std::filesystem::path &file_path) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file_path.c_str(), L"rb");
+#else
+  FILE *f = fopen(file_path.c_str(), "rb");
+#endif
   if (f == nullptr)
     return "";
   LOKI_ON_BLOCK_EXIT(fclose, f);

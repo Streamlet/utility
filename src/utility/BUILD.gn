@@ -5,20 +5,18 @@ declare_args() {
 }
 
 source_set("utility") {
-  configs += [ "//build_config:project_common" ]
+  configs += [ "../../build_config:project_common" ]
   defines = []
   sources = [
     "crypto.cc",
     "crypto.h",
     "http_client.cc",
     "http_client.h",
-    "system_util.h",
     "url.cc",
     "url.h",
   ]
-  deps = [ "//thirdparty:crypto" ]
+  deps = [ "../../thirdparty:crypto" ]
   if (is_win) {
-    sources += [ "system_util_win.cc" ]
     libs = []
     if (winhttp) {
       sources += [
@@ -45,18 +43,15 @@ source_set("utility") {
     }
   } else {
     defines += [ "CURL_STATICLIB" ]
-    sources += [
-      "http_client_curl.cc",
-      "system_util_posix.cc",
-    ]
+    sources += [ "http_client_curl.cc" ]
     libs = [ "curl" ]
   }
 }
 
 executable("utility_test") {
-  configs += [ "//build_config:project_common" ]
+  configs += [ "../../build_config:project_common" ]
   if (is_win) {
-    configs += [ "//build/config/win:static_runtime" ]
+    configs += [ "../../build/config/win:static_runtime" ]
   }
 
   sources = [
@@ -79,9 +74,9 @@ executable("utility_test") {
 }
 
 executable("http_client_test") {
-  configs += [ "//build_config:project_common" ]
+  configs += [ "../../build_config:project_common" ]
   if (is_win) {
-    configs += [ "//build/config/win:static_runtime" ]
+    configs += [ "../../build/config/win:static_runtime" ]
   }
 
   sources = [ "http_client_test.cc" ]

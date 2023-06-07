@@ -2,29 +2,18 @@
 #include <memory>
 #define RAPIDJSON_HAS_STDSTRING 1
 #include <cstdio>
+#include <filesystem>
 #include <loki/ScopeGuard.h>
 #include <rapidjson/document.h>
 #include <sstream>
 #include <utility/crypto.h>
 #include <utility/http_client.h>
-#include <utility/system_util.h>
 #include <zlibwrap/zlibwrap.h>
+
 #ifdef _WIN32
-#include <direct.h>
-#include <io.h>
-#define unlink _unlink
-#define rmdir _rmdir
-#define mkdir(path) _mkdir(path)
-#define stricmp _stricmp
-#define ftell _ftelli64
-#define fseek _fseeki64
 #else
 #define _FILE_OFFSET_BITS 64
-#include <glob.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#define mkdir(path) mkdir(path, 0755)
+#include <strings.h>
 #define stricmp strcasecmp
 #define ftell ftello
 #define fseek fseeko
@@ -40,6 +29,7 @@ enum selfupdate_error_code {
   SUE_PackageSizeError,
   SUE_PackageVerifyError,
   SUE_PackageExtractError,
+  SUE_ReplaceFileError,
 
   SUE_Count,
 };
@@ -61,6 +51,8 @@ static const SelfUpdateErrorMessage selfupdate_error_message_[] = {
     {_(SUE_PackageInfoFormatError, "package info format error")},
     {_(SUE_PackageSizeError, "package size error")},
     {_(SUE_PackageVerifyError, "package verify error")},
+    {_(SUE_PackageExtractError, "package extract error")},
+    {_(SUE_ReplaceFileError, "replace file error")},
 };
 #undef _
 
@@ -172,8 +164,12 @@ std::error_code Query(const std::string &query_url, const std::string &query_bod
 
 namespace {
 
-long long ReadInteger(const std::string &file) {
+long long ReadInteger(const std::filesystem::path &file) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file.c_str(), L"r");
+#else
   FILE *f = fopen(file.c_str(), "r");
+#endif
   if (f == nullptr)
     return -1;
   unsigned long long v = 0;
@@ -181,8 +177,12 @@ long long ReadInteger(const std::string &file) {
   fclose(f);
   return v;
 }
-void WriteInteger(const std::string &file, long long v) {
+void WriteInteger(const std::filesystem::path &file, long long v) {
+#ifdef _MSC_VER
+  FILE *f = _wfopen(file.c_str(), L"w");
+#else
   FILE *f = fopen(file.c_str(), "w");
+#endif
   if (f == nullptr)
     return;
   fprintf(f, "%lld", v);
@@ -193,30 +193,30 @@ const char *PACKAGE_NAME_VERSION_SEP = "-";
 const char *FILE_NAME_EXT_SEP = ".";
 const char *DOWNLOADING_FILE_SUFFIX = ".downloading";
 
-bool VerifyPackage(const std::string &package_file, const std::map<std::string, std::string> &hash) {
+bool VerifyPackage(const std::filesystem::path &package_file, const std::map<std::string, std::string> &hash) {
   for (const auto &item : hash) {
     if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_MD5) {
-      if (crypto::MD5(package_file.c_str()) != item.second)
+      if (crypto::MD5(package_file) != item.second)
         return false;
     }
     if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA1) {
-      if (crypto::SHA1(package_file.c_str()) != item.second)
+      if (crypto::SHA1(package_file) != item.second)
         return false;
     }
     if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA224) {
-      if (crypto::SHA224(package_file.c_str()) != item.second)
+      if (crypto::SHA224(package_file) != item.second)
         return false;
     }
     if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA256) {
-      if (crypto::SHA256(package_file.c_str()) != item.second)
+      if (crypto::SHA256(package_file) != item.second)
         return false;
     }
     if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA384) {
-      if (crypto::SHA384(package_file.c_str()) != item.second)
+      if (crypto::SHA384(package_file) != item.second)
         return false;
     }
     if (item.first == PACKAGEINFO_PACKAGE_HASH_ALGO_SHA512) {
-      if (crypto::SHA512(package_file.c_str()) != item.second)
+      if (crypto::SHA512(package_file) != item.second)
         return false;
     }
   }
@@ -234,15 +234,27 @@ bool VerifyPackage(const std::string &package_file, const std::map<std::string, 
 #endif
 
 std::error_code Download(const PackageInfo &package_info, DownloadProgressMonitor download_progress_monitor) {
-  std::string cache_dir = system_util::GetTempDirPath() + app_name_;
-  mkdir(cache_dir.c_str());
-  std::string package_file = cache_dir + system_util::GetPathSep() + package_info.package_name +
-                             PACKAGE_NAME_VERSION_SEP + package_info.package_version + FILE_NAME_EXT_SEP +
-                             package_info.package_format;
-  std::string package_downloading_file = package_file + DOWNLOADING_FILE_SUFFIX;
+  std::error_code ec;
+  std::filesystem::path cache_dir = std::filesystem::temp_directory_path(ec);
+  if (ec)
+    return ec;
+
+  cache_dir /= app_name_;
+  std::filesystem::create_directories(cache_dir, ec);
+  if (ec)
+    return ec;
+
+  std::string package_file_name = package_info.package_name + PACKAGE_NAME_VERSION_SEP + package_info.package_version +
+                                  FILE_NAME_EXT_SEP + package_info.package_format;
+  std::filesystem::path package_file = cache_dir / package_file_name;
+  std::filesystem::path package_downloading_file = cache_dir / (package_file_name + DOWNLOADING_FILE_SUFFIX);
   long long downloaded_size = ReadInteger(package_downloading_file);
 
+#ifdef _MSC_VER
+  FILE *f = _wfopen(package_file.c_str(), L"wb");
+#else
   FILE *f = fopen(package_file.c_str(), "wb");
+#endif
   auto sgCloseFile = ::Loki::MakeGuard(fclose, f);
   fseek(f, 0, SEEK_END);
   long long offset = ftell(f);
@@ -260,7 +272,7 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   HttpClient http_client(user_agent_);
   unsigned status = 0;
   HttpClient::ResponseHeader response_header;
-  std::error_code ec = http_client.Head(package_info.package_url, {}, &status, &response_header);
+  ec = http_client.Head(package_info.package_url, {}, &status, &response_header);
   if (ec)
     return ec;
 
@@ -281,7 +293,7 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
   HttpClient::RequestHeader request_header = {
       {"Range", range_expr.str()}
   };
- ec =
+  ec =
       http_client.Get(package_info.package_url, request_header, &status, nullptr, [&](const void *data, size_t length) {
         fwrite(data, 1, length, f);
         fflush(f);
@@ -290,15 +302,15 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
         if (download_progress_monitor != nullptr)
           download_progress_monitor(downloaded_size, total_size);
       });
- if (ec)
+  if (ec)
     return ec;
   fclose(f);
   sgCloseFile.Dismiss();
 
   if (downloaded_size == total_size) {
-    unlink(package_downloading_file.c_str());
+    std::filesystem::remove(package_downloading_file);
     if (!VerifyPackage(package_file, package_info.package_hash)) {
-      unlink(package_file.c_str());
+      std::filesystem::remove(package_file);
       return make_selfupdate_error(SUE_PackageVerifyError);
     }
   }
@@ -308,73 +320,31 @@ std::error_code Download(const PackageInfo &package_info, DownloadProgressMonito
 #pragma GCC pop_options
 #endif
 
-namespace {
-#ifdef _WIN32
-bool rmdir_recursive(const std::string &path) {
-  __finddata64_t find_data = {};
-  intptr_t find = _findfirst64((path + "/*").c_str(), &find_data);
-  if (find == -1)
-    return false;
-  LOKI_ON_BLOCK_EXIT(_findclose, find);
+std::error_code Install(const std::string &package_name,
+                        const std::string &package_version,
+                        const std::string &package_format,
+                        const std::string &install_dir) {
+  std::error_code ec;
+  std::filesystem::path cache_dir = std::filesystem::temp_directory_path(ec);
+  if (ec)
+    return ec;
+  cache_dir /= app_name_;
 
-  do {
-    if (strcmp(find_data.name, ".") == 0 || strcmp(find_data.name, "..") == 0)
-      continue;
+  std::string package_dir_name = package_name + PACKAGE_NAME_VERSION_SEP + package_version;
+  std::string package_file_name = package_dir_name + FILE_NAME_EXT_SEP + package_format;
+  std::filesystem::path package_dir = cache_dir / package_dir_name;
+  std::filesystem::path package_file = cache_dir / package_file_name;
 
-    std::string sub_path = path + find_data.name;
-    if ((find_data.attrib & _A_SUBDIR) != 0) {
-      if (!rmdir_recursive(sub_path))
-        return false;
-    } else {
-      if (unlink(sub_path.c_str()) != 0)
-        return false;
-    }
-  } while (_findnext64(find, &find_data) == 0);
+  std::filesystem::remove_all(package_dir, ec);
+  if (ec)
+    return ec;
 
-  if (rmdir(path.c_str()) != 0)
-    return false;
-  return true;
-}
-#else
-bool rmdir_recursive(const std::string &path) {
-  glob_t globbuf = {};
-  if (glob((path + "/*").c_str(), 0, nullptr, &globbuf) != 0)
-    return false;
-  LOKI_ON_BLOCK_EXIT(globfree, &globbuf);
-
-  for (size_t i = 0; i < globbuf.gl_pathc; ++i) {
-    std::string sub_path = globbuf.gl_pathv[i];
-    struct stat st = {};
-    if (stat(sub_path.c_str(), &st) != 0)
-      return false;
-    if (S_ISDIR(st.st_mode)) {
-      if (!rmdir_recursive(sub_path))
-        return false;
-    } else {
-      if (unlink(sub_path.c_str()) != 0)
-        return false;
-    }
-  }
-  if (rmdir(path.c_str()) != 0)
-    return false;
-  return true;
-}
-#endif
-} // namespace
-
-std::error_code Install(const PackageInfo &package_info, const std::string &install_dir) {
-  std::string cache_dir = system_util::GetTempDirPath() + app_name_;
-  std::string package_file = cache_dir + system_util::GetPathSep() + package_info.package_name +
-                             PACKAGE_NAME_VERSION_SEP + package_info.package_version + FILE_NAME_EXT_SEP +
-                             package_info.package_format;
-  std::string package_dir = cache_dir + system_util::GetPathSep() + package_info.package_name +
-                            PACKAGE_NAME_VERSION_SEP + package_info.package_version;
-  if (!rmdir_recursive(package_dir))
+  if (!zlibwrap::ZipExtract(package_file.string().c_str(), package_dir.string().c_str()))
     return make_selfupdate_error(SUE_PackageExtractError);
-  return {};
-  if (!zlibwrap::ZipExtract(package_file.c_str(), package_dir.c_str()))
-    return make_selfupdate_error(SUE_PackageExtractError);
-
+  std::filesystem::copy(package_dir, install_dir, std::filesystem::copy_options::recursive, ec);
+  if (ec)
+    return ec;
+  std::filesystem::remove_all(package_dir);
   return {};
 }
 

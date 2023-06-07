@@ -173,7 +173,8 @@ long long ReadInteger(const std::filesystem::path &file) {
   if (f == nullptr)
     return -1;
   unsigned long long v = 0;
-  fscanf(f, "%lld", &v);
+  if (fscanf(f, "%lld", &v) != 1)
+    return -2;
   fclose(f);
   return v;
 }

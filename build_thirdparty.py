@@ -31,7 +31,7 @@ def build_gtest(config):
 
 def build_boost(config):
     os.chdir('boost')
-    boost_libs = ''
+    boost_libs = 'log program_options'
     if len(boost_libs) > 0:
         if sys.platform == 'win32':
             b2 = 'b2.exe'

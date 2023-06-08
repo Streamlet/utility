@@ -1,19 +1,31 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os, sys, zipfile, hashlib
+import os, sys, shutil, zipfile, hashlib
 from http.server import HTTPServer, BaseHTTPRequestHandler
+
+if sys.platform == 'win32':
+    old_filename = 'old_client.exe'
+    new_filename = 'new_client.exe'
+else:
+    old_filename = 'old_client'
+    new_filename = 'new_client'
+
+def prepare(dir):
+    src_file = os.path.join(dir, old_filename)
+    target_dir = os.path.join(dir, 'test')
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    if os.path.exists(os.path.join(target_dir, new_filename)):
+        os.unlink(os.path.join(target_dir, new_filename))
+    shutil.copy(src_file, target_dir)
 
 
 def make_package(dir):
-    if sys.platform == 'win32':
-        filename = 'client_sdk_test.exe'
-    else:
-        filename = 'client_sdk_test'
-    src_file = os.path.join(dir, filename)
-    package_file = os.path.join(dir, 'client_sdk_test.zip')
+    src_file = os.path.join(dir, new_filename)
+    package_file = os.path.join(dir, 'client_test.zip')
     with zipfile.ZipFile(package_file, 'w') as zip:
-        zip.write(src_file, filename)
+        zip.write(src_file, new_filename)
 
     package_file_size = os.stat(package_file).st_size
 
@@ -29,9 +41,9 @@ def make_package(dir):
 
     return package_file, package_file_size, sha256_hash
 
-
-package_file, package_file_size, sha256_hash = make_package(sys.argv[1])
-
+dir = sys.argv[1]
+prepare(dir)
+package_file, package_file_size, sha256_hash = make_package(dir)
 package_info = '''
 {
     "package_name": "selfupdate",
@@ -46,9 +58,7 @@ package_info = '''
     "update_description": "This upgrade is very important!",
 }''' % (package_file_size, sha256_hash)
 
-
-class web_server(BaseHTTPRequestHandler):
-
+class WebServer(BaseHTTPRequestHandler):
     def do_HEAD(self):
         if self.path == '/download':
             self.send_response(200)
@@ -71,11 +81,5 @@ class web_server(BaseHTTPRequestHandler):
             self.send_error(404)
 
 
-def main():
-    httpd = HTTPServer(('localhost', 8080), web_server)
-    httpd.serve_forever()
-
-
-if __name__ == '__main__':
-    os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    main()
+httpd = HTTPServer(('localhost', 8080), WebServer)
+httpd.serve_forever()

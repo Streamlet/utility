@@ -1,9 +1,29 @@
+#include <boost/dll/runtime_symbol_info.hpp>
 #include <iostream>
 #include <math.h>
+#include <selfupdate/installer.h>
 #include <selfupdate/selfupdate.h>
 
-int main() {
-  selfupdate::Initialize("selfupdate_test");
+#ifdef _WIN
+const char *NEW_CLIENT_NAME = "new_client.exe";
+#else
+const char *NEW_CLIENT_NAME = "new_client";
+#endif
+
+int main(int argc, const char *argv[]) {
+
+  selfupdate::InstallContext install_context;
+  if (selfupdate::IsInstallMode(argc, argv, install_context)) {
+    std::cout << "Install from " << install_context.source << " to " << install_context.target << std::endl;
+    std::error_code ec = selfupdate::DoInstall(install_context);
+    if (ec) {
+      std::cout << ec.value() << ": " << ec.message() << std::endl;
+      return -1;
+    }
+    return 0;
+  }
+
+  std::cout << "This is old client." << std::endl << std::endl;
 
   std::cout << "Step 1: query package info" << std::endl;
   selfupdate::PackageInfo package_info;
@@ -28,11 +48,18 @@ int main() {
     std::cout << (round(downloaded_bytes * 10000.0 / total_bytes) / 100) << "%, " << downloaded_bytes << "/"
               << total_bytes << std::endl;
   });
+
   if (ec) {
     std::cout << ec.value() << ": " << ec.message() << std::endl;
     return -1;
   }
+
   std::cout << "Step 3: install package" << std::endl;
+  ec = selfupdate::Install(package_info, boost::dll::program_location().string(), {}, NEW_CLIENT_NAME);
+  if (ec) {
+    std::cout << ec.value() << ": " << ec.message() << std::endl;
+    return -1;
+  }
 
   return 0;
 }

@@ -1,0 +1,29 @@
+executable("old_client") {
+  include_dirs = [ "../src/include" ]
+  configs += [ "../build_config:project_common" ]
+  if (is_win) {
+    configs += [ "../build/config/win:static_runtime" ]
+  }
+
+  sources = [ "old_client.cc" ]
+
+  libs = [
+    "boost_program_options",
+    "boost_filesystem",
+  ]
+
+  deps = [
+    "../src/client:installer",
+    "../src/client:selfupdate",
+    "../thirdparty/ZLibWrap/src:zlibwrap",
+  ]
+}
+
+executable("new_client") {
+  configs += [ "../build_config:project_common" ]
+  if (is_win) {
+    configs += [ "../build/config/win:static_runtime" ]
+  }
+
+  sources = [ "new_client.cc" ]
+}

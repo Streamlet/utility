@@ -31,13 +31,13 @@ config("project_common") {
   lib_dirs = []
   if (is_debug) {
     lib_dirs += [
-      # "../thirdparty/boost/build/debug/lib",
+      "../thirdparty/boost/build/debug/lib",
       "../thirdparty/curl/build/debug/lib",
       "../thirdparty/googletest/build/debug/lib",
     ]
   } else {
     lib_dirs += [
-      # "../thirdparty/boost/build/release/lib",
+      "../thirdparty/boost/build/release/lib",
       "../thirdparty/curl/build/release/lib",
       "../thirdparty/googletest/build/release/lib",
     ]

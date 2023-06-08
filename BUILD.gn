@@ -1,13 +1,15 @@
 group("all") {
   deps = [
-    "src/client_sdk",
+    "src/client:installer",
+    "src/client:selfupdate",
     "src/server",
   ]
 }
 
 group("test") {
   deps = [
-    "src/client_sdk:client_sdk_test",
     "src/utility:utility_test",
+    "test:new_client",
+    "test:old_client",
   ]
 }

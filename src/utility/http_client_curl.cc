@@ -1,9 +1,8 @@
 #include "http_client.h"
+#include <cstring>
 #include <curl/curl.h>
-#include <iostream>
 #include <loki/ScopeGuard.h>
 #include <memory>
-#include <cstring>
 
 namespace {
 
@@ -103,8 +102,12 @@ public:
 
     LOKI_ON_BLOCK_EXIT(curl_easy_cleanup, curl);
 
+    CURLcode error = curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent_.empty() ? "cURL" : user_agent_.c_str());
+    if (error != CURLE_OK)
+      return make_curl_error(error);
+
     std::string url(url_string);
-    CURLcode error = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    error = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     if (error != CURLE_OK)
       return make_curl_error(error);
 

@@ -9,8 +9,8 @@ group("all") {
 group("test") {
   testonly = true
   deps = [
+    "src/example:new_client",
+    "src/example:old_client",
     "src/utility:utility_test",
-    "test:new_client",
-    "test:old_client",
   ]
 }

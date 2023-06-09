@@ -49,6 +49,8 @@ source_set("utility") {
 }
 
 executable("utility_test") {
+  testonly = true
+
   configs += [ "../../build_config:project_common" ]
   if (is_win) {
     configs += [ "../../build/config/win:static_runtime" ]

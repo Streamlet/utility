@@ -1,4 +1,6 @@
 executable("old_client") {
+  testonly = true
+
   include_dirs = [ "../src/include" ]
   configs += [ "../build_config:project_common" ]
   if (is_win) {
@@ -6,11 +8,6 @@ executable("old_client") {
   }
 
   sources = [ "old_client.cc" ]
-
-  libs = [
-    "boost_program_options",
-    "boost_filesystem",
-  ]
 
   deps = [
     "../src/client:installer",
@@ -20,6 +17,8 @@ executable("old_client") {
 }
 
 executable("new_client") {
+  testonly = true
+
   configs += [ "../build_config:project_common" ]
   if (is_win) {
     configs += [ "../build/config/win:static_runtime" ]

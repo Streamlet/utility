@@ -47,6 +47,7 @@ package_file, package_file_size, sha256_hash = make_package(dir)
 package_info = '''
 {
     "package_name": "selfupdate",
+    "has_new_version": true,
     "package_version": "1.0",
     "package_url": "http://localhost:8080/download",
     "package_size": %d,

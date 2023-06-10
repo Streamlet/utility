@@ -27,13 +27,15 @@ int main(int argc, const char *argv[]) {
 
   std::cout << "Step 1: query package info" << std::endl;
   selfupdate::PackageInfo package_info;
-  std::error_code ec = selfupdate::Query("http://localhost:8080/query", "", package_info);
+  std::error_code ec = selfupdate::Query("http://localhost:8080/example/1.0", "", package_info);
   if (ec) {
     std::cout << ec.value() << ": " << ec.message() << std::endl;
     return -1;
   }
   std::cout << "package_name: " << package_info.package_name << std::endl;
+  std::cout << "has_new_version: " << package_info.has_new_version << std::endl;
   std::cout << "package_version: " << package_info.package_version << std::endl;
+  std::cout << "force_update: " << package_info.force_update << std::endl;
   std::cout << "package_url: " << package_info.package_url << std::endl;
   std::cout << "package_size: " << package_info.package_size << std::endl;
   std::cout << "package_format: " << package_info.package_format << std::endl;

@@ -7,11 +7,11 @@ enum UrlPart : unsigned int {
   Protocol = 1,
   Username = 2,
   Password = 3,
-  Domain   = 4,
-  Port     = 5,
+  Domain = 4,
+  Port = 5,
   FullPath = 6,
-  Path     = 7,
-  Query    = 8,
+  Path = 7,
+  Query = 8,
   Fragment = 9,
 };
 
@@ -61,5 +61,5 @@ UrlT<CharType> UrlT<CharType>::Parse(const std::basic_string_view<CharType> &url
   return std::move(url_parts);
 }
 
-template class UrlT<char>;
-template class UrlT<wchar_t>;
+template struct UrlT<char>;
+template struct UrlT<wchar_t>;

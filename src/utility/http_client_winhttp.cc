@@ -24,8 +24,8 @@ class winhttp_error_category : public std::error_category {
   std::string message(int _Errval) const override {
     LPSTR buffer = nullptr;
     ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                         nullptr, _Errval, 0, reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
-    
+                     nullptr, _Errval, 0, reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
+
     LOKI_ON_BLOCK_EXIT(::LocalFree, buffer);
     return buffer == nullptr ? "unknown error" : buffer;
   }
@@ -131,9 +131,9 @@ private:
     for (const auto &h : request_header)
       ss << h.first << ": " << h.second << "\r\n";
     std::wstring header_string = encoding::UTF8ToUCS2(ss.str());
-    if (!::WinHttpSendRequest(request, header_string.c_str(), header_string.length(),
-                              const_cast<char *>(request_body.data()), request_body.length(), request_body.length(),
-                              0)) {
+    if (!::WinHttpSendRequest(request, header_string.c_str(), (DWORD)header_string.length(),
+                              const_cast<char *>(request_body.data()), (DWORD)request_body.length(),
+                              (DWORD)request_body.length(), 0)) {
       return make_winhttp_error(::GetLastError());
     }
     if (!::WinHttpReceiveResponse(request, nullptr))

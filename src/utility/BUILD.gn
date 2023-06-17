@@ -5,7 +5,6 @@ declare_args() {
 }
 
 source_set("utility") {
-  configs += [ "../../build_config:project_common" ]
   defines = []
   sources = [
     "crypto.cc",
@@ -15,7 +14,10 @@ source_set("utility") {
     "url.cc",
     "url.h",
   ]
-  deps = [ "../../thirdparty:crypto" ]
+  deps = [
+    "../../thirdparty:loki",
+    "../../thirdparty:openssl_crypto",
+  ]
   if (is_win) {
     libs = []
     if (winhttp) {
@@ -26,35 +28,29 @@ source_set("utility") {
       ]
       libs += [ "winhttp.lib" ]
     } else {
-      defines += [ "CURL_STATICLIB" ]
       sources += [ "http_client_curl.cc" ]
       libs += [
-        "advapi32.lib",
         "crypt32.lib",
         "normaliz.lib",
         "ws2_32.lib",
         "wldap32.lib",
       ]
       if (is_debug) {
-        libs += [ "libcurl_a_debug.lib" ]
+        libs += [ "libcurl-d.lib" ]
       } else {
-        libs += [ "libcurl_a.lib" ]
+        libs += [ "libcurl.lib" ]
       }
+      deps += [ "../../thirdparty:curl" ]
     }
   } else {
-    defines += [ "CURL_STATICLIB" ]
     sources += [ "http_client_curl.cc" ]
     libs = [ "curl" ]
+    deps += [ "../../thirdparty:curl" ]
   }
 }
 
 executable("utility_test") {
   testonly = true
-
-  configs += [ "../../build_config:project_common" ]
-  if (is_win) {
-    configs += [ "../../build/config/win:static_runtime" ]
-  }
 
   sources = [
     "test.cc",
@@ -63,24 +59,19 @@ executable("utility_test") {
 
   libs = []
   if (is_win) {
-    if (is_debug) {
-      libs += [ "gtestd.lib" ]
-    } else {
-      libs += [ "gtest.lib" ]
-    }
+    libs += [ "gtest.lib" ]
   } else {
     libs += [ "gtest" ]
   }
 
-  deps = [ ":utility" ]
+  deps = [
+    ":utility",
+    "../../thirdparty:googletest",
+  ]
 }
 
 executable("http_client_test") {
-  configs += [ "../../build_config:project_common" ]
-  if (is_win) {
-    configs += [ "../../build/config/win:static_runtime" ]
-  }
-
+  testonly = true
   sources = [ "http_client_test.cc" ]
 
   deps = [ ":utility" ]

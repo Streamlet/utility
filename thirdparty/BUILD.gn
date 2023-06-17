@@ -1,5 +1,120 @@
-static_library("crypto") {
+# boost
+
+config("boost_public_config") {
+  defines = [ "BOOST_AUTO_LINK_SYSTEM" ]
+  include_dirs = [ "$target_gen_dir/boost/include" ]
+  lib_dirs = [ "$target_gen_dir/boost/lib" ]
+}
+
+boost("boost") {
+  boost_source_dir = "boost"
+  boost_libraries = [
+    "program_options",
+    "filesystem",
+  ]
+  boost_install_dir = "$target_gen_dir/boost"
+  if (is_win) {
+    boost_outputs = [
+      "$target_gen_dir/boost/lib/libboost_program_options.lib",
+      "$target_gen_dir/boost/lib/libboost_filesystem.lib",
+    ]
+  } else {
+    boost_outputs = [
+      "$target_gen_dir/boost/lib/libboost_program_options.a",
+      "$target_gen_dir/boost/lib/libboost_filesystem.a",
+    ]
+  }
+
+  public_configs = [ ":boost_public_config" ]
+}
+
+# loki
+
+config("loki_public_config") {
+  include_dirs = [ "loki/include" ]
+  if (is_win) {
+    cflags = [ "/wd4828" ]
+  }
+}
+
+group("loki") {
+  public_configs = [ ":loki_public_config" ]
+}
+
+#googletest
+
+config("googletest_public_config") {
+  include_dirs = [ "$target_gen_dir/googletest/include" ]
+  lib_dirs = [ "$target_gen_dir/googletest/lib" ]
+}
+
+cmake("googletest") {
+  testonly = true
+  cmake_root_dir = "googletest"
+  cmake_options = [ "BUILD_GMOCK=OFF" ]
+  if (!static_link_crt) {
+    cmake_options += [ "googletest_force_shared_crt=ON" ]
+  }
+  cmake_install_dir = "$target_gen_dir/googletest"
+  if (is_win) {
+    cmake_outputs = [ "$target_gen_dir/googletest/lib/gtest.lib" ]
+  } else {
+    cmake_outputs = [ "$target_gen_dir/googletest/lib/libgtest.a" ]
+  }
+  public_configs = [ ":googletest_public_config" ]
+}
+
+#curl
+
+config("curl_public_config") {
+  include_dirs = [ "$target_gen_dir/curl/include" ]
+  lib_dirs = [ "$target_gen_dir/curl/lib" ]
+  if (static_link_crt) {
+    defines = [ "CURL_STATICLIB" ]
+  }
+}
+
+cmake("curl") {
+  cmake_root_dir = "curl"
+  cmake_options = [
+    "BUILD_CURL_EXE=OFF",
+    "BUILD_SHARED_LIBS=OFF",
+    "ENABLE_UNICODE=ON",
+  ]
+  if (static_link_crt) {
+    cmake_options += [ "CURL_STATIC_CRT=ON" ]
+  }
+  cmake_install_dir = "$target_gen_dir/curl"
+  if (is_win) {
+    if (is_debug) {
+      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
+    } else {
+      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.lib" ]
+    }
+  } else {
+    cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
+  }
+  public_configs = [ ":curl_public_config" ]
+}
+
+#rapidjson
+
+config("rapidjson_public_config") {
+  include_dirs = [ "rapidjson/include" ]
+  defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
+}
+
+group("rapidjson") {
+  public_configs = [ ":rapidjson_public_config" ]
+}
+
+# openssl
+
+config("openssl_crypto_public_config") {
   include_dirs = [ "openssl/include" ]
+}
+
+source_set("openssl_crypto") {
   sources = [
     "openssl/crypto/md5/md5_dgst.c",
     "openssl/crypto/md5/md5_one.c",
@@ -9,4 +124,16 @@ static_library("crypto") {
     "openssl/crypto/sha/sha256.c",
     "openssl/crypto/sha/sha512.c",
   ]
+  public_configs = [ ":openssl_crypto_public_config" ]
+}
+
+# zlibwrap
+
+config("zlibwrap_public_config") {
+  include_dirs = [ "ZLibWrap/include" ]
+}
+
+group("zlibwrap") {
+  public_configs = [ ":zlibwrap_public_config" ]
+  deps = [ "ZLibWrap/src:zlibwrap" ]
 }

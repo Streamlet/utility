@@ -66,35 +66,37 @@ cmake("googletest") {
 
 #curl
 
-config("curl_public_config") {
-  include_dirs = [ "$target_gen_dir/curl/include" ]
-  lib_dirs = [ "$target_gen_dir/curl/lib" ]
-  if (static_link_crt) {
-    defines = [ "CURL_STATICLIB" ]
-  }
-}
-
-cmake("curl") {
-  cmake_root_dir = "curl"
-  cmake_options = [
-    "BUILD_CURL_EXE=OFF",
-    "BUILD_SHARED_LIBS=OFF",
-    "ENABLE_UNICODE=ON",
-  ]
-  if (static_link_crt) {
-    cmake_options += [ "CURL_STATIC_CRT=ON" ]
-  }
-  cmake_install_dir = "$target_gen_dir/curl"
-  if (is_win) {
-    if (is_debug) {
-      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
-    } else {
-      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.lib" ]
+if (!is_win && !winhttp) {
+  config("curl_public_config") {
+    include_dirs = [ "$target_gen_dir/curl/include" ]
+    lib_dirs = [ "$target_gen_dir/curl/lib" ]
+    if (static_link_crt) {
+      defines = [ "CURL_STATICLIB" ]
     }
-  } else {
-    cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
   }
-  public_configs = [ ":curl_public_config" ]
+
+  cmake("curl") {
+    cmake_root_dir = "curl"
+    cmake_options = [
+      "BUILD_CURL_EXE=OFF",
+      "BUILD_SHARED_LIBS=OFF",
+      "ENABLE_UNICODE=ON",
+    ]
+    if (static_link_crt) {
+      cmake_options += [ "CURL_STATIC_CRT=ON" ]
+    }
+    cmake_install_dir = "$target_gen_dir/curl"
+    if (is_win) {
+      if (is_debug) {
+        cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
+      } else {
+        cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.lib" ]
+      }
+    } else {
+      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
+    }
+    public_configs = [ ":curl_public_config" ]
+  }
 }
 
 #rapidjson

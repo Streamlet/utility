@@ -13,6 +13,7 @@ boost("boost") {
     "filesystem",
   ]
   boost_install_dir = "$target_gen_dir/boost"
+  boost_layout = "system"
   if (is_win) {
     boost_outputs = [
       "$target_gen_dir/boost/lib/libboost_program_options.lib",

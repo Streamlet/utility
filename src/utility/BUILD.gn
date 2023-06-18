@@ -45,7 +45,10 @@ source_set("utility") {
     }
   } else {
     sources += [ "http_client_curl.cc" ]
-    libs = [ "curl", "crypto" ]
+    libs = [
+      "curl",
+      "crypto",
+    ]
     deps += [ "../../thirdparty:curl" ]
   }
 }

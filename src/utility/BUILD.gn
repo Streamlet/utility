@@ -14,13 +14,10 @@ source_set("utility") {
     "url.cc",
     "url.h",
   ]
-  deps = [
-    "../../thirdparty:loki",
-    "../../thirdparty:openssl",
-  ]
+  libs = []
+  deps = [ "../../thirdparty:loki" ]
 
   if (is_win) {
-    libs = []
     if (winhttp) {
       sources += [
         "encoding.h",
@@ -43,9 +40,10 @@ source_set("utility") {
       }
       deps += [ "../../thirdparty:curl" ]
     }
+    deps += [ "../../thirdparty:openssl" ]
   } else {
     sources += [ "http_client_curl.cc" ]
-    libs = [
+    libs += [
       "curl",
       "crypto",
     ]

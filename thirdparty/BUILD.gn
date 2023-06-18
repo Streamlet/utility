@@ -162,14 +162,6 @@ if (is_win) {
     }
     public_configs = [ ":openssl_public_config" ]
   }
-} else {
-  config("openssl_public_config") {
-    include_dirs = [ "openssl/include" ]
-    cflags = [ "-Wno-deprecated-declarations" ]
-  }
-  group("openssl") {
-    public_configs = [ ":openssl_public_config" ]
-  }
 }
 
 # if (is_posix) {

@@ -46,33 +46,42 @@ group("loki") {
 
 config("googletest_public_config") {
   include_dirs = [ "$target_gen_dir/googletest/include" ]
-  lib_dirs = [ "$target_gen_dir/googletest/lib" ]
+  if (is_posix && target_cpu == "x64") {
+    lib_dirs = [ "$target_gen_dir/googletest/lib" ]
+  } else {
+    lib_dirs = [ "$target_gen_dir/googletest/lib" ]
+  }
 }
 
 cmake("googletest") {
   testonly = true
   cmake_root_dir = "googletest"
   cmake_options = [ "BUILD_GMOCK=OFF" ]
-  if (!static_link_crt) {
+  if (!is_win || !static_link_crt) {
     cmake_options += [ "googletest_force_shared_crt=ON" ]
   }
   cmake_install_dir = "$target_gen_dir/googletest"
   if (is_win) {
     cmake_outputs = [ "$target_gen_dir/googletest/lib/gtest.lib" ]
   } else {
-    cmake_outputs = [ "$target_gen_dir/googletest/lib/libgtest.a" ]
+    if (target_cpu == "x64") {
+      cmake_outputs = [ "$target_gen_dir/googletest/lib64/libgtest.a" ]
+    } else {
+      cmake_outputs = [ "$target_gen_dir/googletest/lib/libgtest.a" ]
+    }
   }
   public_configs = [ ":googletest_public_config" ]
 }
 
 #curl
 
-if (!is_win && !winhttp) {
+if (is_win && !winhttp) {
   config("curl_public_config") {
     include_dirs = [ "$target_gen_dir/curl/include" ]
     lib_dirs = [ "$target_gen_dir/curl/lib" ]
+    defines = []
     if (static_link_crt) {
-      defines = [ "CURL_STATICLIB" ]
+      defines += [ "CURL_STATICLIB" ]
     }
   }
 
@@ -83,19 +92,38 @@ if (!is_win && !winhttp) {
       "BUILD_SHARED_LIBS=OFF",
       "ENABLE_UNICODE=ON",
     ]
-    if (static_link_crt) {
+    if (is_posix) {
+      cmake_options += [ "CURL_USE_OPENSSL=ON" ]
+    }
+    if (is_win && static_link_crt) {
       cmake_options += [ "CURL_STATIC_CRT=ON" ]
     }
     cmake_install_dir = "$target_gen_dir/curl"
-    if (is_win) {
-      if (is_debug) {
-        cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
-      } else {
-        cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.lib" ]
-      }
+    if (is_debug) {
+      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
     } else {
-      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
+      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.lib" ]
     }
+
+    public_configs = [ ":curl_public_config" ]
+  }
+}
+if (is_posix) {
+  config("curl_public_config") {
+    include_dirs = [ "$target_gen_dir/curl/include" ]
+    lib_dirs = [ "$target_gen_dir/curl/lib" ]
+  }
+
+  # for posix
+  # install openssl-devel, zlib-devel in your system
+  makefile("curl") {
+    makefile_root_dir = "curl"
+    makefile_prefix = "$target_gen_dir/curl"
+    makefile_options = [ "--with-ssl" ]
+    if (is_debug) {
+      makefile_options += [ "--enable-debug" ]
+    }
+    makefile_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
     public_configs = [ ":curl_public_config" ]
   }
 }
@@ -113,21 +141,56 @@ group("rapidjson") {
 
 # openssl
 
-config("openssl_crypto_public_config") {
-  include_dirs = [ "openssl/include" ]
+if (is_win) {
+  config("openssl_public_config") {
+    include_dirs = [ "openssl/include" ]
+    cflags = [ "-Wno-deprecated-declarations" ]
+  }
+
+  source_set("openssl") {
+    sources = [
+      "openssl/crypto/md5/md5_dgst.c",
+      "openssl/crypto/md5/md5_one.c",
+      "openssl/crypto/mem_clr.c",
+      "openssl/crypto/sha/sha1_one.c",
+      "openssl/crypto/sha/sha1dgst.c",
+      "openssl/crypto/sha/sha256.c",
+      "openssl/crypto/sha/sha512.c",
+    ]
+    if (is_posix) {
+      deps = [ ":openssl_gen_conf" ]
+    }
+    public_configs = [ ":openssl_public_config" ]
+  }
 }
 
-source_set("openssl_crypto") {
-  sources = [
-    "openssl/crypto/md5/md5_dgst.c",
-    "openssl/crypto/md5/md5_one.c",
-    "openssl/crypto/mem_clr.c",
-    "openssl/crypto/sha/sha1_one.c",
-    "openssl/crypto/sha/sha1dgst.c",
-    "openssl/crypto/sha/sha256.c",
-    "openssl/crypto/sha/sha512.c",
-  ]
-  public_configs = [ ":openssl_crypto_public_config" ]
+if (is_posix) {
+  config("openssl_public_config") {
+    include_dirs = [ "$target_gen_dir/openssl/include" ]
+    lib_dirs = [ "$target_gen_dir/openssl/lib" ]
+    cflags = [ "-Wno-deprecated-declarations" ]
+  }
+
+  makefile("openssl") {
+    makefile_root_dir = "openssl"
+    makefile_config_cmd = "./config"
+    makefile_prefix = "$target_gen_dir/openssl"
+    makefile_options = [
+      "threads",
+      "shared",
+    ]
+    if (is_debug) {
+      makefile_options += [ "--debug" ]
+    } else {
+      makefile_options += [ "--release" ]
+    }
+    makefile_options +=
+        [ "--openssldir=" +
+          rebase_path("$target_gen_dir/openssl", root_build_dir) ]
+    makefile_target = [ "include/openssl/opensslconf.h" ]
+    makefile_outputs = [ "$target_gen_dir/openssl/lib/libcrypto.a" ]
+    public_configs = [ ":openssl_public_config" ]
+  }
 }
 
 # zlibwrap

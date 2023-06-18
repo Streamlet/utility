@@ -47,7 +47,7 @@ group("loki") {
 config("googletest_public_config") {
   include_dirs = [ "$target_gen_dir/googletest/include" ]
   if (is_posix && target_cpu == "x64") {
-    lib_dirs = [ "$target_gen_dir/googletest/lib" ]
+    lib_dirs = [ "$target_gen_dir/googletest/lib64" ]
   } else {
     lib_dirs = [ "$target_gen_dir/googletest/lib" ]
   }

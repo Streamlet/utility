@@ -137,6 +137,26 @@ group("rapidjson") {
 # openssl
 
 if (is_win) {
+  makefile("opensslconf") {
+    makefile_root_dir = "openssl"
+    makefile_config_cmd = "./config"
+    makefile_prefix = "$target_gen_dir/openssl"
+    makefile_options = [
+      "threads",
+      "no-shared",
+    ]
+    if (is_debug) {
+      makefile_options += [ "--debug" ]
+    } else {
+      makefile_options += [ "--release" ]
+    }
+    makefile_options +=
+        [ "--openssldir=" +
+          rebase_path("$target_gen_dir/openssl", root_build_dir) ]
+    makefile_targets = [ "include/openssl/opensslconf.h" ]
+    makefile_outputs = [ "$target_gen_dir/openssl/configure" ]
+  }
+
   config("openssl_public_config") {
     include_dirs = [ "openssl/include" ]
     cflags = [ "-Wno-deprecated-declarations" ]
@@ -152,41 +172,58 @@ if (is_win) {
       "openssl/crypto/sha/sha256.c",
       "openssl/crypto/sha/sha512.c",
     ]
-    if (is_posix) {
-      deps = [ ":openssl_gen_conf" ]
-    }
+    deps = [ ":opensslconf" ]
     public_configs = [ ":openssl_public_config" ]
   }
 }
 
-# if (is_posix) {
-#   config("openssl_public_config") {
-#     include_dirs = [ "$target_gen_dir/openssl/include" ]
-#     lib_dirs = [ "$target_gen_dir/openssl/lib" ]
-#     cflags = [ "-Wno-deprecated-declarations" ]
-#   }
+if (is_linux) {
+  config("openssl_public_config") {
+    cflags = [ "-Wno-deprecated-declarations" ]
+    if (is_mac) {
+      include_dirs = [ "openssl/include" ]
+    }
+  }
+  group("openssl") {
+    public_configs = [ ":openssl_public_config" ]
+  }
+}
 
-#   makefile("openssl") {
-#     makefile_root_dir = "openssl"
-#     makefile_config_cmd = "./config"
-#     makefile_prefix = "$target_gen_dir/openssl"
-#     makefile_options = [
-#       "threads",
-#       "shared",
-#     ]
-#     if (is_debug) {
-#       makefile_options += [ "--debug" ]
-#     } else {
-#       makefile_options += [ "--release" ]
-#     }
-#     makefile_options +=
-#         [ "--openssldir=" +
-#           rebase_path("$target_gen_dir/openssl", root_build_dir) ]
-#     makefile_target = [ "include/openssl/opensslconf.h" ]
-#     makefile_outputs = [ "$target_gen_dir/openssl/lib/libcrypto.a" ]
-#     public_configs = [ ":openssl_public_config" ]
-#   }
-# }
+if (is_mac) {
+  config("openssl_public_config") {
+    include_dirs = [ "$target_gen_dir/openssl/include" ]
+    lib_dirs = [ "$target_gen_dir/openssl/lib" ]
+    cflags = [ "-Wno-deprecated-declarations" ]
+  }
+
+  makefile("openssl") {
+    makefile_root_dir = "openssl"
+    makefile_config_cmd = "./config"
+    makefile_prefix = "$target_gen_dir/openssl"
+    makefile_options = [
+      "threads",
+      "no shared",
+    ]
+    if (is_debug) {
+      makefile_options += [ "--debug" ]
+    } else {
+      makefile_options += [ "--release" ]
+    }
+    makefile_options +=
+        [ "--openssldir=" +
+          rebase_path("$target_gen_dir/openssl", root_build_dir) ]
+    makefile_targets = [
+      "",
+      "install",
+    ]
+    makefile_outputs = [
+      "$target_gen_dir/openssl/include/openssl/opensslconf.h",
+      "$target_gen_dir/openssl/lib/libcrypto.a",
+      "$target_gen_dir/openssl/lib/libssl.a",
+    ]
+    public_configs = [ ":openssl_public_config" ]
+  }
+}
 
 # zlibwrap
 

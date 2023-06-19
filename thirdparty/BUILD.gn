@@ -180,9 +180,6 @@ if (is_win) {
 if (is_linux) {
   config("openssl_public_config") {
     cflags = [ "-Wno-deprecated-declarations" ]
-    if (is_mac) {
-      include_dirs = [ "openssl/include" ]
-    }
   }
   group("openssl") {
     public_configs = [ ":openssl_public_config" ]
@@ -202,7 +199,7 @@ if (is_mac) {
     makefile_prefix = "$target_gen_dir/openssl"
     makefile_options = [
       "threads",
-      "no shared",
+      "no-shared",
     ]
     if (is_debug) {
       makefile_options += [ "--debug" ]
@@ -212,10 +209,6 @@ if (is_mac) {
     makefile_options +=
         [ "--openssldir=" +
           rebase_path("$target_gen_dir/openssl", root_build_dir) ]
-    makefile_targets = [
-      "",
-      "install",
-    ]
     makefile_outputs = [
       "$target_gen_dir/openssl/include/openssl/opensslconf.h",
       "$target_gen_dir/openssl/lib/libcrypto.a",

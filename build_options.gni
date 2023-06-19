@@ -1,0 +1,5 @@
+declare_args() {
+  # On Windows, the default implement is WinHTTP, then cURL
+  # On Posix, the default and only implement is cURL
+  winhttp = true
+}

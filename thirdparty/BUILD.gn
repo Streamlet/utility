@@ -1,3 +1,5 @@
+import("../build_options.gni")
+
 # boost
 
 config("boost_public_config") {
@@ -139,12 +141,17 @@ group("rapidjson") {
 if (is_win) {
   makefile("opensslconf") {
     makefile_root_dir = "openssl"
-    makefile_config_cmd = "./config"
+    makefile_config_cmd = "perl Configure"
     makefile_prefix = "$target_gen_dir/openssl"
     makefile_options = [
       "threads",
       "no-shared",
     ]
+    if (target_cpu == "x86") {
+      makefile_options += [ "VC-WIN32" ]
+    } else {
+      makefile_options += [ "VC-WIN64A" ]
+    }
     if (is_debug) {
       makefile_options += [ "--debug" ]
     } else {
@@ -154,12 +161,12 @@ if (is_win) {
         [ "--openssldir=" +
           rebase_path("$target_gen_dir/openssl", root_build_dir) ]
     makefile_targets = [ "include/openssl/opensslconf.h" ]
-    makefile_outputs = [ "$target_gen_dir/openssl/configure" ]
+    makefile_outputs =
+        [ "$target_gen_dir/openssl/make_include_openssl_opensslconf_h" ]
   }
 
   config("openssl_public_config") {
     include_dirs = [ "openssl/include" ]
-    cflags = [ "-Wno-deprecated-declarations" ]
   }
 
   source_set("openssl") {

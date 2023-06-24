@@ -84,7 +84,7 @@ HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body);
 
 class HttpClient::HttpSession {
 public:
-  HttpSession(const std::string &user_agent) : user_agent_(std::move(user_agent)) {
+  HttpSession(std::string user_agent) : user_agent_(std::move(user_agent)) {
   }
   ~HttpSession() {
   }
@@ -189,9 +189,11 @@ public:
       return make_curl_error(error);
 
     if (response_status != nullptr) {
-      error = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, response_status);
+      long response_code = 0;
+      error = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
       if (error != CURLE_OK)
         return make_curl_error(error);
+      *response_status = (unsigned)response_code;
     }
 
     if (response_header != nullptr) {

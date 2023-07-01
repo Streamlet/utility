@@ -20,7 +20,7 @@ DEPS:
       SHA1: 006c630217b1e1fd33015dc0597d2d743d8ee4e3
 
   thirdparty/googletest:
-    GIT_REPO: git@github.com:google/googletest.git
+    GIT_REPO: https://github.com/google/googletest.git
     GIT_TAG: release-1.12.1
 
   thirdparty/curl:
@@ -30,7 +30,7 @@ DEPS:
       SHA256: f5ca69db03eea17fa8705bdfb1a9f58d76a46c9010518109bb38f313137e0a28
 
   thirdparty/rapidjson:
-    GIT_REPO: git@github.com:Tencent/rapidjson.git
+    GIT_REPO: https://github.com/Tencent/rapidjson.git
     GIT_TAG: v1.1.0
 
   thirdparty/openssl:

@@ -1,5 +1,7 @@
 # selfupdate
 
+![Autobuild Status](https://github.com/Streamlet/selfupdate/actions/workflows/autobuild.yml/badge.svg)
+---
 [（中文版本见这里）](README_zh.md)
 
 A library used for self update of client programs, and also its server side program.

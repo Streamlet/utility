@@ -1,0 +1,61 @@
+name: autobuild
+
+on:
+  push:
+  pull_request:
+  release:
+    types: published
+
+jobs:
+
+  build:
+    name: Build ${{ matrix.config }} on ${{ matrix.os }} with ${{ matrix.arch }} arch
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        os: [windows-latest, macOS-latest, ubuntu-latest]
+        arch: [ x64, x86 ]
+        config: [ debug, release ]
+        winhttp: [ true, false ]
+        exclude:
+          - os: macOS-latest
+            arch: x86
+          - os: ubuntu-latest
+            arch: x86
+          - os: macOS-latest
+            winhttp: true
+          - os: ubuntu-latest
+            winhttp: true
+    steps:
+
+    - name: Setup environment
+      run: |
+        pip install PyYAML
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Fetch dependencies
+      run: |
+        ./fetch_deps
+
+    - name: Fetch gn and ninja
+      run: |
+        python build/fetch_binaries.py
+
+    - name: Compile
+      run: |
+        build/bin/gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }} winhttp=${{ matrix.winhttp }}"
+        build/bin/ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
+
+    - name: Unittest
+      run: |
+        out/${{ matrix.config }}_${{ matrix.arch }}/utility_test
+        out/${{ matrix.config }}_${{ matrix.arch }}/http_client_test
+
+    - name: Test
+      run: |
+        python src/sample/test.py out/${{ matrix.config }}_${{ matrix.arch }}

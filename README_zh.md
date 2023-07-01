@@ -1,5 +1,7 @@
 # selfupdate
 
+![Autobuild Status](https://github.com/Streamlet/selfupdate/actions/workflows/autobuild.yml/badge.svg)
+---
 [(Here is the English Version)](README.md)
 
 一个用于客户端程序的自升级模块，以及对应的服务端程序

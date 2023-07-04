@@ -33,9 +33,9 @@ source_set("utility") {
         "wldap32.lib",
       ]
       if (is_debug) {
-        libs += [ "libcurl-d.lib" ]
+        libs += [ "libcurl_a_debug.lib" ]
       } else {
-        libs += [ "libcurl.lib" ]
+        libs += [ "libcurl_a.lib" ]
       }
       deps += [ "../../thirdparty:curl" ]
     }

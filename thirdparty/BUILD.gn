@@ -82,24 +82,40 @@ if (is_win && !winhttp) {
     }
   }
 
-  cmake("curl") {
-    cmake_root_dir = "curl"
-    cmake_options = [
-      "BUILD_CURL_EXE=OFF",
-      "BUILD_SHARED_LIBS=OFF",
-      "ENABLE_UNICODE=ON",
+  makefile("curl") {
+    makefile_root_dir = "curl/winbuild"
+    makefile_config_cmd = ""
+    makefile_prefix = "$target_gen_dir/curl"
+    makefile_file = "Makefile.vc"
+    makefile_targets = [ "" ]
+    makefile_options = [
+      "ENABLE_UNICODE=yes",
+      "MACHINE=" + target_cpu,
+      "mode=static",
+      "WITH_PREFIX=" +
+          string_replace(rebase_path("$target_gen_dir\\curl", "curl\\winbuild"),
+                         "/",
+                         "\\"),
     ]
-    if (is_posix) {
-      cmake_options += [ "CURL_USE_OPENSSL=ON" ]
-    }
-    if (is_win && static_link_crt) {
-      cmake_options += [ "CURL_STATIC_CRT=ON" ]
-    }
-    cmake_install_dir = "$target_gen_dir/curl"
     if (is_debug) {
-      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
+      makefile_options += [ "DEBUG=yes" ]
     } else {
-      cmake_outputs = [ "$target_gen_dir/curl/lib/libcurl.lib" ]
+      makefile_options += [ "DEBUG=no" ]
+    }
+    if (static_link_crt) {
+      makefile_options += [ "RTLIBCFG=static" ]
+    } else {
+      makefile_options += [ "RTLIBCFG=dll" ]
+    }
+
+    makefile_outputs = [
+      "$target_gen_dir/curl/include/curl/curl.h",
+      "$target_gen_dir/curl/bin/curl.exe",
+    ]
+    if (is_debug) {
+      makefile_outputs += [ "$target_gen_dir/curl/lib/libcurl_a_debug.lib" ]
+    } else {
+      makefile_outputs += [ "$target_gen_dir/curl/lib/libcurl_a.lib" ]
     }
 
     public_configs = [ ":curl_public_config" ]
@@ -116,9 +132,9 @@ if (is_posix) {
   makefile("curl") {
     makefile_root_dir = "curl"
     makefile_prefix = "$target_gen_dir/curl"
-    makefile_options = [ "--with-ssl" ]
+    makefile_config_options = [ "--with-ssl" ]
     if (is_debug) {
-      makefile_options += [ "--enable-debug" ]
+      makefile_config_options += [ "--enable-debug" ]
     }
     makefile_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
     public_configs = [ ":curl_public_config" ]
@@ -143,21 +159,21 @@ if (is_win) {
     makefile_root_dir = "openssl"
     makefile_config_cmd = "perl Configure"
     makefile_prefix = "$target_gen_dir/openssl"
-    makefile_options = [
+    makefile_config_options = [
       "threads",
       "no-shared",
     ]
     if (target_cpu == "x86") {
-      makefile_options += [ "VC-WIN32" ]
+      makefile_config_options += [ "VC-WIN32" ]
     } else {
-      makefile_options += [ "VC-WIN64A" ]
+      makefile_config_options += [ "VC-WIN64A" ]
     }
     if (is_debug) {
-      makefile_options += [ "--debug" ]
+      makefile_config_options += [ "--debug" ]
     } else {
-      makefile_options += [ "--release" ]
+      makefile_config_options += [ "--release" ]
     }
-    makefile_options +=
+    makefile_config_options +=
         [ "--openssldir=" +
           rebase_path("$target_gen_dir/openssl", root_build_dir) ]
     makefile_targets = [ "include/openssl/opensslconf.h" ]
@@ -204,16 +220,16 @@ if (is_mac) {
     makefile_root_dir = "openssl"
     makefile_config_cmd = "./config"
     makefile_prefix = "$target_gen_dir/openssl"
-    makefile_options = [
+    makefile_config_options = [
       "threads",
       "no-shared",
     ]
     if (is_debug) {
-      makefile_options += [ "--debug" ]
+      makefile_config_options += [ "--debug" ]
     } else {
-      makefile_options += [ "--release" ]
+      makefile_config_options += [ "--release" ]
     }
-    makefile_options +=
+    makefile_config_options +=
         [ "--openssldir=" +
           rebase_path("$target_gen_dir/openssl", root_build_dir) ]
     makefile_outputs = [

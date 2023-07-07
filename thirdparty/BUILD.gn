@@ -4,7 +4,7 @@ import("../build_options.gni")
 
 config("boost_public_config") {
   defines = [ "BOOST_AUTO_LINK_SYSTEM" ]
-  include_dirs = [ "$target_gen_dir/boost/include" ]
+  include_dirs = [ "boost" ]
   lib_dirs = [ "$target_gen_dir/boost/lib" ]
 }
 

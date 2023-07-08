@@ -11,12 +11,10 @@ source_set("utility") {
     "url.h",
   ]
   libs = []
-  deps = [
-    "../../thirdparty:loki",
-    "../../thirdparty:openssl",
-  ]
+  deps = [ "../../thirdparty:loki" ]
 
   if (is_win) {
+    libs += [ "crypt32.lib" ]
     if (winhttp) {
       sources += [
         "encoding.h",
@@ -27,7 +25,6 @@ source_set("utility") {
     } else {
       sources += [ "http_client_curl.cc" ]
       libs += [
-        "crypt32.lib",
         "normaliz.lib",
         "ws2_32.lib",
         "wldap32.lib",
@@ -45,7 +42,10 @@ source_set("utility") {
       "curl",
       "crypto",
     ]
-    deps += [ "../../thirdparty:curl" ]
+    deps += [
+      "../../thirdparty:curl",
+      "../../thirdparty:openssl",
+    ]
   }
 }
 
@@ -53,6 +53,7 @@ executable("utility_test") {
   testonly = true
 
   sources = [
+    "crypto_test.cc",
     "test.cc",
     "url_test.cc",
   ]

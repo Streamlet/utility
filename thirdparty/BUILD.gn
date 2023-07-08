@@ -153,53 +153,6 @@ group("rapidjson") {
 }
 
 # openssl
-
-if (is_win) {
-  makefile("opensslconf") {
-    makefile_root_dir = "openssl"
-    makefile_config_cmd = "perl Configure"
-    makefile_prefix = "$target_gen_dir/openssl"
-    makefile_config_options = [
-      "threads",
-      "no-shared",
-    ]
-    if (target_cpu == "x86") {
-      makefile_config_options += [ "VC-WIN32" ]
-    } else {
-      makefile_config_options += [ "VC-WIN64A" ]
-    }
-    if (is_debug) {
-      makefile_config_options += [ "--debug" ]
-    } else {
-      makefile_config_options += [ "--release" ]
-    }
-    makefile_config_options +=
-        [ "--openssldir=" +
-          rebase_path("$target_gen_dir/openssl", root_build_dir) ]
-    makefile_targets = [ "include/openssl/opensslconf.h" ]
-    makefile_outputs =
-        [ "$target_gen_dir/openssl/make_include_openssl_opensslconf_h" ]
-  }
-
-  config("openssl_public_config") {
-    include_dirs = [ "openssl/include" ]
-  }
-
-  source_set("openssl") {
-    sources = [
-      "openssl/crypto/md5/md5_dgst.c",
-      "openssl/crypto/md5/md5_one.c",
-      "openssl/crypto/mem_clr.c",
-      "openssl/crypto/sha/sha1_one.c",
-      "openssl/crypto/sha/sha1dgst.c",
-      "openssl/crypto/sha/sha256.c",
-      "openssl/crypto/sha/sha512.c",
-    ]
-    deps = [ ":opensslconf" ]
-    public_configs = [ ":openssl_public_config" ]
-  }
-}
-
 if (is_linux) {
   config("openssl_public_config") {
     cflags = [ "-Wno-deprecated-declarations" ]

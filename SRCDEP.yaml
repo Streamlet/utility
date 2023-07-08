@@ -33,11 +33,11 @@ DEPS:
     GIT_REPO: https://github.com/Tencent/rapidjson.git
     GIT_TAG: v1.1.0
 
-  thirdparty/openssl:
-    URL: https://www.openssl.org/source/openssl-1.1.1s.tar.gz
-    ROOT_DIR: openssl-1.1.1s
+  thirdparty/libressl:
+    URL: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.0.tar.gz
+    ROOT_DIR: libressl-3.8.0
     URL_HASH:
-      SHA256: c5ac01e760ee6ff0dab61d6b2bbd30146724d063eb322180c6f18a6f74e4b6aa
+      SHA256: 12531c1ec808c5c6abeb311899664b0cfed04d4648f456dc959bb93c5f21acac
 
   thirdparty/ZLibWrap:
     GIT_REPO: https://github.com/Streamlet/ZLibWrap.git

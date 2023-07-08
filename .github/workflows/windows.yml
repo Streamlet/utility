@@ -28,9 +28,6 @@ jobs:
         pip install PyYAML
         pip install psutil
 
-    - name: Setup nasm
-      uses: ilammy/setup-nasm@v1
-
     - name: Check out code
       uses: actions/checkout@v3
 

@@ -70,78 +70,6 @@ cmake("googletest") {
   public_configs = [ ":googletest_public_config" ]
 }
 
-#curl
-
-if (is_win && !winhttp) {
-  config("curl_public_config") {
-    include_dirs = [ "$target_gen_dir/curl/include" ]
-    lib_dirs = [ "$target_gen_dir/curl/lib" ]
-    libs = [ "crypt32.lib" ]
-    defines = []
-    if (static_link_crt) {
-      defines += [ "CURL_STATICLIB" ]
-    }
-  }
-
-  makefile("curl") {
-    makefile_root_dir = "curl/winbuild"
-    makefile_config_cmd = ""
-    makefile_prefix = "$target_gen_dir/curl"
-    makefile_file = "Makefile.vc"
-    makefile_targets = [ "" ]
-    makefile_options = [
-      "ENABLE_UNICODE=yes",
-      "MACHINE=" + target_cpu,
-      "mode=static",
-      "WITH_PREFIX=" +
-          string_replace(rebase_path("$target_gen_dir\\curl", "curl\\winbuild"),
-                         "/",
-                         "\\"),
-    ]
-    if (is_debug) {
-      makefile_options += [ "DEBUG=yes" ]
-    } else {
-      makefile_options += [ "DEBUG=no" ]
-    }
-    if (static_link_crt) {
-      makefile_options += [ "RTLIBCFG=static" ]
-    } else {
-      makefile_options += [ "RTLIBCFG=dll" ]
-    }
-
-    makefile_outputs = [
-      "$target_gen_dir/curl/include/curl/curl.h",
-      "$target_gen_dir/curl/bin/curl.exe",
-    ]
-    if (is_debug) {
-      makefile_outputs += [ "$target_gen_dir/curl/lib/libcurl_a_debug.lib" ]
-    } else {
-      makefile_outputs += [ "$target_gen_dir/curl/lib/libcurl_a.lib" ]
-    }
-
-    public_configs = [ ":curl_public_config" ]
-  }
-}
-if (is_posix) {
-  config("curl_public_config") {
-    include_dirs = [ "$target_gen_dir/curl/include" ]
-    lib_dirs = [ "$target_gen_dir/curl/lib" ]
-  }
-
-  # for posix
-  # install openssl-devel, zlib-devel in your system
-  makefile("curl") {
-    makefile_root_dir = "curl"
-    makefile_prefix = "$target_gen_dir/curl"
-    makefile_config_options = [ "--with-ssl" ]
-    if (is_debug) {
-      makefile_config_options += [ "--enable-debug" ]
-    }
-    makefile_outputs = [ "$target_gen_dir/curl/lib/libcurl.a" ]
-    public_configs = [ ":curl_public_config" ]
-  }
-}
-
 #rapidjson
 
 config("rapidjson_public_config") {
@@ -158,16 +86,11 @@ if (is_win || is_mac) {
   config("openssl_public_config") {
     include_dirs = [ "$target_gen_dir/libressl/include" ]
     lib_dirs = [ "$target_gen_dir/libressl/lib" ]
-    if (is_mac) {
+    if (is_posix) {
       cflags = [ "-Wno-deprecated-declarations" ]
     }
     if (is_win) {
-      libs = [
-        "crypto-51.lib",
-        "ws2_32.lib",
-      ]
-    } else {
-      libs = [ "crypto" ]
+      libs = [ "ws2_32.lib" ]
     }
   }
 
@@ -191,13 +114,75 @@ if (is_win || is_mac) {
 }
 
 # openssl
+# for posix: install openssl-devel before compiling
 if (is_linux) {
-  print("using openssl-devel")
   config("openssl_public_config") {
     cflags = [ "-Wno-deprecated-declarations" ]
   }
   group("openssl") {
     public_configs = [ ":openssl_public_config" ]
+  }
+}
+
+# curl
+# for posix: install openssl-devel, zlib-devel before compiling
+if (!is_win || !winhttp) {
+  config("curl_public_config") {
+    include_dirs = [ "$target_gen_dir/curl/include" ]
+    lib_dirs = [ "$target_gen_dir/curl/lib" ]
+    defines = []
+    if (static_link_crt) {
+      defines += [ "CURL_STATICLIB" ]
+    }
+    if (is_win) {
+      libs = [ "crypt32.lib" ]
+    } else {
+      libs = [
+        "crypto",
+        "ssl",
+        "z",
+      ]
+    }
+  }
+
+  cmake("curl") {
+    cmake_root_dir = "curl"
+    cmake_options = [
+      "BUILD_CURL_EXE=OFF",
+      "BUILD_SHARED_LIBS=OFF",
+      "CURL_ENABLE_SSL=ON",
+    ]
+    if (is_win) {
+      if (static_link_crt) {
+        cmake_options += [ "CURL_STATIC_CRT=ON" ]
+      }
+      cmake_options += [
+        "ENABLE_UNICODE=ON",
+        "CURL_USE_SCHANNEL=ON",
+        "CURL_WINDOWS_SSPI=ON",
+      ]
+    } else {
+      cmake_options += [ "CURL_USE_OPENSSL=ON" ]
+    }
+    if (is_debug) {
+      cmake_options += [
+        "ENABLE_DEBUG=ON",
+        "ENABLE_CURLDEBUG=ON",
+      ]
+    }
+    cmake_install_dir = "$target_gen_dir/curl"
+    cmake_outputs = [ "$target_gen_dir/curl/include/curl/curl.h" ]
+    if (is_win) {
+      if (is_debug) {
+        cmake_outputs += [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
+      } else {
+        cmake_outputs += [ "$target_gen_dir/curl/lib/libcurl.lib" ]
+      }
+    } else {
+      cmake_outputs += [ "$target_gen_dir/curl/lib/libcurl.a" ]
+    }
+
+    public_configs = [ ":curl_public_config" ]
   }
 }
 

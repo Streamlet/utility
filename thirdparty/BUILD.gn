@@ -76,6 +76,7 @@ if (is_win && !winhttp) {
   config("curl_public_config") {
     include_dirs = [ "$target_gen_dir/curl/include" ]
     lib_dirs = [ "$target_gen_dir/curl/lib" ]
+    libs = [ "crypt32.lib" ]
     defines = []
     if (static_link_crt) {
       defines += [ "CURL_STATICLIB" ]
@@ -153,21 +154,24 @@ group("rapidjson") {
 }
 
 # libressl
-if (is_win) {
-  config("libressl_public_config") {
+if (is_win || is_mac) {
+  config("openssl_public_config") {
     include_dirs = [ "$target_gen_dir/libressl/include" ]
     lib_dirs = [ "$target_gen_dir/libressl/lib" ]
+    if (is_mac) {
+      cflags = [ "-Wno-deprecated-declarations" ]
+    }
     if (is_win) {
       libs = [
         "crypto-51.lib",
         "ws2_32.lib",
       ]
     } else {
-      libs = [ "crypto-51" ]
+      libs = [ "crypto" ]
     }
   }
 
-  cmake("libressl") {
+  cmake("openssl") {
     cmake_root_dir = "libressl"
     cmake_options = [
       "LIBRESSL_APPS=OFF",
@@ -180,50 +184,19 @@ if (is_win) {
     if (is_win) {
       cmake_outputs = [ "$target_gen_dir/libressl/lib/crypto-51.lib" ]
     } else {
-      cmake_outputs = [ "$target_gen_dir/libressl/lib/libcrypto-51.a" ]
+      cmake_outputs = [ "$target_gen_dir/libressl/lib/libcrypto.a" ]
     }
-    public_configs = [ ":libressl_public_config" ]
+    public_configs = [ ":openssl_public_config" ]
   }
 }
 
 # openssl
 if (is_linux) {
+  print("using openssl-devel")
   config("openssl_public_config") {
     cflags = [ "-Wno-deprecated-declarations" ]
   }
   group("openssl") {
-    public_configs = [ ":openssl_public_config" ]
-  }
-}
-
-if (is_mac) {
-  config("openssl_public_config") {
-    include_dirs = [ "$target_gen_dir/openssl/include" ]
-    lib_dirs = [ "$target_gen_dir/openssl/lib" ]
-    cflags = [ "-Wno-deprecated-declarations" ]
-  }
-
-  makefile("openssl") {
-    makefile_root_dir = "openssl"
-    makefile_config_cmd = "./config"
-    makefile_prefix = "$target_gen_dir/openssl"
-    makefile_config_options = [
-      "threads",
-      "no-shared",
-    ]
-    if (is_debug) {
-      makefile_config_options += [ "--debug" ]
-    } else {
-      makefile_config_options += [ "--release" ]
-    }
-    makefile_config_options +=
-        [ "--openssldir=" +
-          rebase_path("$target_gen_dir/openssl", root_build_dir) ]
-    makefile_outputs = [
-      "$target_gen_dir/openssl/include/openssl/opensslconf.h",
-      "$target_gen_dir/openssl/lib/libcrypto.a",
-      "$target_gen_dir/openssl/lib/libssl.a",
-    ]
     public_configs = [ ":openssl_public_config" ]
   }
 }

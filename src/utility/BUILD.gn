@@ -14,7 +14,7 @@ source_set("utility") {
   deps = [ "../../thirdparty:loki" ]
 
   if (is_win) {
-    libs += [ "crypt32.lib" ]
+    deps += [ "../../thirdparty:libressl" ]
     if (winhttp) {
       sources += [
         "encoding.h",

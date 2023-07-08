@@ -152,6 +152,40 @@ group("rapidjson") {
   public_configs = [ ":rapidjson_public_config" ]
 }
 
+# libressl
+if (is_win) {
+  config("libressl_public_config") {
+    include_dirs = [ "$target_gen_dir/libressl/include" ]
+    lib_dirs = [ "$target_gen_dir/libressl/lib" ]
+    if (is_win) {
+      libs = [
+        "crypto-51.lib",
+        "ws2_32.lib",
+      ]
+    } else {
+      libs = [ "crypto-51" ]
+    }
+  }
+
+  cmake("libressl") {
+    cmake_root_dir = "libressl"
+    cmake_options = [
+      "LIBRESSL_APPS=OFF",
+      "LIBRESSL_TESTS=OFF",
+    ]
+    if (static_link_crt) {
+      cmake_options += [ "USE_STATIC_MSVC_RUNTIMES=ON" ]
+    }
+    cmake_install_dir = "$target_gen_dir/libressl"
+    if (is_win) {
+      cmake_outputs = [ "$target_gen_dir/libressl/lib/crypto-51.lib" ]
+    } else {
+      cmake_outputs = [ "$target_gen_dir/libressl/lib/libcrypto-51.a" ]
+    }
+    public_configs = [ ":libressl_public_config" ]
+  }
+}
+
 # openssl
 if (is_linux) {
   config("openssl_public_config") {

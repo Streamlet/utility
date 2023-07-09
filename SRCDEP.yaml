@@ -7,10 +7,10 @@ DEPS:
     GIT_TAG: master
 
   thirdparty/boost:
-    URL: https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz
-    ROOT_DIR: boost_1_80_0
+    URL: https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz
+    ROOT_DIR: boost_1_82_0
     URL_HASH:
-      SHA256: 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847
+      SHA256: 66a469b6e608a51f8347236f4912e27dc5c60c60d7d53ae9bfe4683316c6f04c
 
   thirdparty/loki:
     URL: https://sourceforge.net/projects/loki-lib/files/Loki/Loki%200.1.7/loki-0.1.7.tar.bz2/download

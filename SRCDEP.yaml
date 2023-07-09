@@ -19,10 +19,6 @@ DEPS:
     URL_HASH:
       SHA1: 006c630217b1e1fd33015dc0597d2d743d8ee4e3
 
-  thirdparty/googletest:
-    GIT_REPO: https://github.com/google/googletest.git
-    GIT_TAG: release-1.12.1
-
   thirdparty/curl:
     URL: https://curl.se/download/curl-7.86.0.tar.bz2
     ROOT_DIR: curl-7.86.0

@@ -59,20 +59,13 @@ executable("utility_test") {
 
   sources = [
     "crypto_test.cc",
-    "test.cc",
+    "unittest.cc",
     "url_test.cc",
   ]
 
-  libs = []
-  if (is_win) {
-    libs += [ "gtest.lib" ]
-  } else {
-    libs += [ "gtest" ]
-  }
-
   deps = [
     ":utility",
-    "../../thirdparty:googletest",
+    "../../thirdparty:boost",
   ]
 }
 

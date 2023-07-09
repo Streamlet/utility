@@ -7,6 +7,8 @@ config("boost_public_config") {
     "BOOST_AUTO_LINK_SYSTEM",
     "BOOST_DLL_USE_STD_FS",
     "BOOST_PROCESS_USE_STD_FS",
+    "BOOST_JSON_NO_LIB",
+    "BOOST_CONTAINER_NO_LIB",
   ]
   include_dirs = [ "boost" ]
   lib_dirs = [ "$target_gen_dir/boost/lib" ]

@@ -25,10 +25,6 @@ DEPS:
     URL_HASH:
       SHA256: f5ca69db03eea17fa8705bdfb1a9f58d76a46c9010518109bb38f313137e0a28
 
-  thirdparty/rapidjson:
-    GIT_REPO: https://github.com/Tencent/rapidjson.git
-    GIT_TAG: v1.1.0
-
   thirdparty/libressl:
     URL: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.0.tar.gz
     ROOT_DIR: libressl-3.8.0

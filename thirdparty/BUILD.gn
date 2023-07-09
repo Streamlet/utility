@@ -123,7 +123,7 @@ if (is_linux) {
 
 # curl
 # for posix: install libcurl-devel before compiling
-if (is_linux) {
+if (is_linux || is_mac) {
   group("curl") {
   }
 } else if (!is_win || !winhttp) {

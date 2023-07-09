@@ -12,13 +12,6 @@ DEPS:
     URL_HASH:
       SHA256: 66a469b6e608a51f8347236f4912e27dc5c60c60d7d53ae9bfe4683316c6f04c
 
-  thirdparty/loki:
-    URL: https://sourceforge.net/projects/loki-lib/files/Loki/Loki%200.1.7/loki-0.1.7.tar.bz2/download
-    URL_FORMAT: tar.bz2
-    ROOT_DIR: loki-0.1.7
-    URL_HASH:
-      SHA1: 006c630217b1e1fd33015dc0597d2d743d8ee4e3
-
   thirdparty/curl:
     URL: https://curl.se/download/curl-7.86.0.tar.bz2
     ROOT_DIR: curl-7.86.0

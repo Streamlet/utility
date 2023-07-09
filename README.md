@@ -19,11 +19,9 @@ A library used for self update of client programs, and also its server side prog
 
 ## Getting Start
 
-1. Run `srcdep` to fetch dependencies. (ref: https://github.com/Streamlet/srcdep)
-2. Run `build_thirdparty.py` to compile dependencies.
-3. Run `gn gen out` and `ninja -C out` to build this project.
-4. Run `src/sample/run_server.py` to launch server. It will make `out/test` and listen to local port 8080.
-5. Run `out/test/client/client` to perform an upgrade progress. `out/test/client/client` will be replaced to new version if upgrading succeeded.
+1. Run `srcdep` if [srcdep](https://github.com/Streamlet/srcdep) is installed, or run `fetch_deps` instead, to fetch dependencies.
+2. Run `gn gen out` and `ninja -C out` to build this project.
+3. Run `python src/sample/run_server.py out` to test.
 
 ## Developing
 

@@ -45,7 +45,7 @@ source_set("utility") {
   }
 
   deps = [
-    "../../thirdparty:loki",
+    "../../thirdparty:boost",
     "../../thirdparty:openssl",
   ]
   if (!is_win || !winhttp) {
@@ -76,7 +76,6 @@ executable("utility_test") {
   deps = [
     ":utility",
     "../../thirdparty:boost",
-    "../../thirdparty:loki",
   ]
 }
 
@@ -84,10 +83,7 @@ executable("http_client_test") {
   testonly = true
   sources = [ "http_client_test.cc" ]
 
-  deps = [
-    ":utility",
-    "../../thirdparty:loki",
-  ]
+  deps = [ ":utility" ]
 }
 
 executable("cmdline_options_echo") {
@@ -105,7 +101,7 @@ executable("cmdline_options_echo") {
   }
   deps = [
     ":utility",
-    "../../thirdparty:loki",
+    "../../thirdparty:boost",
   ]
 }
 
@@ -126,7 +122,7 @@ if (is_win) {
 
     deps = [
       ":utility",
-      "../../thirdparty:loki",
+      "../../thirdparty:boost",
     ]
   }
 }

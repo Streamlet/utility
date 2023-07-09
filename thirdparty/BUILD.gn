@@ -12,23 +12,19 @@ config("boost_public_config") {
   lib_dirs = [ "$target_gen_dir/boost/lib" ]
 }
 
-group("boost") {
+boost("boost") {
+  boost_source_dir = "boost"
+  boost_libraries = [ "program_options" ]
+  boost_install_dir = "$target_gen_dir/boost"
+  boost_layout = "system"
+  if (is_win) {
+    boost_outputs = [ "$target_gen_dir/boost/lib/libboost_program_options.lib" ]
+  } else {
+    boost_outputs = [ "$target_gen_dir/boost/lib/libboost_program_options.a" ]
+  }
+
   public_configs = [ ":boost_public_config" ]
 }
-
-# boost("boost") {
-#   boost_source_dir = "boost"
-#   boost_libraries = []
-#   boost_install_dir = "$target_gen_dir/boost"
-#   boost_layout = "system"
-#   if (is_win) {
-#     boost_outputs = []
-#   } else {
-#     boost_outputs = []
-#   }
-
-#   public_configs = [ ":boost_public_config" ]
-# }
 
 # loki
 

@@ -44,43 +44,6 @@ group("loki") {
   public_configs = [ ":loki_public_config" ]
 }
 
-#googletest
-
-config("googletest_public_config") {
-  include_dirs = [ "$target_gen_dir/googletest/include" ]
-  lib_dirs = [ "$target_gen_dir/googletest/lib" ]
-}
-
-cmake("googletest") {
-  testonly = true
-  cmake_root_dir = "googletest"
-  cmake_options = [
-    "BUILD_GMOCK=OFF",
-    "CMAKE_INSTALL_LIBDIR=lib",
-  ]
-  if (!is_win || !static_link_crt) {
-    cmake_options += [ "googletest_force_shared_crt=ON" ]
-  }
-  cmake_install_dir = "$target_gen_dir/googletest"
-  if (is_win) {
-    cmake_outputs = [ "$target_gen_dir/googletest/lib/gtest.lib" ]
-  } else {
-    cmake_outputs = [ "$target_gen_dir/googletest/lib/libgtest.a" ]
-  }
-  public_configs = [ ":googletest_public_config" ]
-}
-
-#rapidjson
-
-config("rapidjson_public_config") {
-  include_dirs = [ "rapidjson/include" ]
-  defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
-}
-
-group("rapidjson") {
-  public_configs = [ ":rapidjson_public_config" ]
-}
-
 # openssl
 # for posix: install openssl-devel before compiling
 if (is_linux) {
@@ -131,7 +94,7 @@ if (is_linux || is_mac) {
     include_dirs = [ "$target_gen_dir/curl/include" ]
     lib_dirs = [ "$target_gen_dir/curl/lib" ]
     defines = []
-    if (static_link_crt) {
+    if (is_win && static_link_crt) {
       defines += [ "CURL_STATICLIB" ]
     }
     if (is_win) {
@@ -180,6 +143,17 @@ if (is_linux || is_mac) {
 
     public_configs = [ ":curl_public_config" ]
   }
+}
+
+#rapidjson
+
+config("rapidjson_public_config") {
+  include_dirs = [ "rapidjson/include" ]
+  defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
+}
+
+group("rapidjson") {
+  public_configs = [ ":rapidjson_public_config" ]
 }
 
 # zlibwrap

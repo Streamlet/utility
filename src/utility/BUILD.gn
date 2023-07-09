@@ -3,6 +3,8 @@ import("../../build_options.gni")
 source_set("utility") {
   defines = []
   sources = [
+    "cmdline_options.cc",
+    "cmdline_options.h",
     "crypto.cc",
     "crypto.h",
     "http_client.cc",
@@ -10,12 +12,14 @@ source_set("utility") {
     "url.cc",
     "url.h",
   ]
-  if (is_win && winhttp) {
+  if (is_win) {
     sources += [
       "encoding.h",
       "encoding_win.cc",
-      "http_client_winhttp.cc",
     ]
+  }
+  if (is_win && winhttp) {
+    sources += [ "http_client_winhttp.cc" ]
   } else {
     sources += [ "http_client_curl.cc" ]
   }
@@ -58,6 +62,7 @@ executable("utility_test") {
   testonly = true
 
   sources = [
+    "cmdline_options_test.cc",
     "crypto_test.cc",
     "unittest.cc",
     "url_test.cc",
@@ -74,4 +79,20 @@ executable("http_client_test") {
   sources = [ "http_client_test.cc" ]
 
   deps = [ ":utility" ]
+}
+
+executable("cmdline_options_echo") {
+  testonly = true
+  sources = [ "cmdline_options_echo.cc" ]
+
+  deps = [ ":utility" ]
+}
+
+if (is_win) {
+  executable("cmdline_options_echo_win") {
+    testonly = true
+    sources = [ "cmdline_options_echo_win.cc" ]
+
+    deps = [ ":utility" ]
+  }
 }

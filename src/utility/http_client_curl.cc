@@ -6,13 +6,6 @@
 
 namespace {
 
-const unsigned HTTP_VERSION = 11;
-const char *PROTOCOL_HTTPS = "https";
-const char *PROTOCOL_HTTP = "http";
-const char *INTERNET_DEFAULT_HTTPS_PORT = "443";
-const char *INTERNET_DEFAULT_HTTP_PORT = "80";
-const unsigned CLOSE_CONNECTION_MAX_TIMEOUT = 1000;
-
 enum class HttpMethod : int {
   Head = 0,
   Get,

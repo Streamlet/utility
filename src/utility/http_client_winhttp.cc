@@ -12,9 +12,8 @@
 
 namespace {
 
-const unsigned HTTP_VERSION = 11;
-const char *PROTOCOL_HTTPS = "https";
-const char *PROTOCOL_HTTP = "http";
+const wchar_t *PROTOCOL_HTTPS = L"https";
+const wchar_t *PROTOCOL_HTTP = L"http";
 
 class winhttp_error_category : public std::error_category {
   const char *name() const noexcept override {
@@ -71,27 +70,29 @@ public:
     if (timeout > 0)
       ::WinHttpSetTimeouts(session_, timeout, timeout, timeout, timeout);
 
-    Url url = Url::Parse(url_string);
-    if (!url.valid)
+    std::wstring url = encoding::UTF8ToUCS2(url_string);
+    URL_COMPONENTS urlComp = {sizeof(urlComp)};
+    urlComp.dwSchemeLength = (DWORD)-1;
+    urlComp.dwHostNameLength = (DWORD)-1;
+    urlComp.dwUrlPathLength = (DWORD)-1;
+    urlComp.dwExtraInfoLength = (DWORD)-1;
+    if (!::WinHttpCrackUrl(url.c_str(), (DWORD)url.length(), 0, &urlComp))
       return std::make_error_code(std::errc::invalid_argument);
-    if (url.protocol != PROTOCOL_HTTPS && url.protocol != PROTOCOL_HTTP)
+    std::wstring_view url_protocol(urlComp.lpszScheme, urlComp.dwSchemeLength);
+    std::wstring url_host(urlComp.lpszHostName, urlComp.dwHostNameLength);
+    std::wstring url_path(urlComp.lpszUrlPath, urlComp.dwUrlPathLength);
+    std::wstring url_query(urlComp.lpszExtraInfo, urlComp.dwExtraInfoLength);
+
+    if (url_protocol != PROTOCOL_HTTPS && url_protocol != PROTOCOL_HTTP)
       return std::make_error_code(std::errc::protocol_not_supported);
-    bool ssl = url.protocol == PROTOCOL_HTTPS;
+    bool ssl = url_protocol == PROTOCOL_HTTPS;
 
-    std::wstring host = encoding::UTF8ToUCS2(url.domain);
-    std::wstring path = encoding::UTF8ToUCS2(url.full_path);
-    INTERNET_PORT port = INTERNET_DEFAULT_PORT;
-    if (url.port.empty())
-      port = ssl ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
-    else
-      std::from_chars(url.port.data(), url.port.data() + url.port.length(), port);
-
-    HINTERNET connection = Connect(session_, host, port);
+    HINTERNET connection = Connect(session_, url_host, urlComp.nPort);
     if (connection == nullptr)
       return make_winhttp_error(::GetLastError());
     LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, connection);
 
-    HINTERNET request = OpenRequest(connection, ssl, method, path);
+    HINTERNET request = OpenRequest(connection, ssl, method, url_path + url_query);
     if (request == nullptr)
       return make_winhttp_error(::GetLastError());
     LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, request);

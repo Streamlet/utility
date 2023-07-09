@@ -19,11 +19,9 @@
 
 ## 开始使用
 
-1. 运行 `srcdep` 来下载本项目依赖的包。（参见：https://github.com/Streamlet/srcdep）
-2. 运行 `build_thirdparty.py` 来编译依赖的包。
-3. 运行 `gn gen out` 和 `ninja -C out` 来编译本项目。
-4. 运行 `src/sample/run_server.py` 来启动服务器进程。它会创建 `out/test` 并监听本地 8080 端口。
-5. 运行 `out/test/client/client` 进行一次升级流程。如果升级成功的话，`out/test/client/client` 会被替换成新版本。
+1. 如果已安装 [srcdep](https://github.com/Streamlet/srcdep)，运行 `srcdep`来下载依赖包，否则运行 `fetch_deps`。
+2. 运行 `gn gen out` 和 `ninja -C out` 来编译本项目。
+3. 运行 `python src/sample/test.py out` 进行测试。
 
 ## 开发
 

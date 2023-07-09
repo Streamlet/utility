@@ -1,8 +1,8 @@
 
 #include "cmdline_options.h"
+#include <boost/scope_exit.hpp>
 #include <cstring>
 #include <cwchar>
-#include <loki/ScopeGuard.h>
 #ifdef _WIN32
 #include "encoding.h"
 #include <shellapi.h>
@@ -71,7 +71,10 @@ std::map<std::wstring, std::wstring> parse(const wchar_t *cmdline) {
   LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
   if (argv == NULL)
     return {};
-  LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
+  BOOST_SCOPE_EXIT(argv) {
+    ::LocalFree(argv);
+  }
+  BOOST_SCOPE_EXIT_END
   return parseT(argc, (LPCWSTR *)argv);
 }
 

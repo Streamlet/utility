@@ -1,5 +1,5 @@
 #include "crypto.h"
-#include <loki/ScopeGuard.h>
+#include <boost/scope_exit.hpp>
 #include <memory>
 #include <openssl/crypto.h>
 #include <openssl/md5.h>
@@ -71,7 +71,10 @@ std::string MD5File(const std::filesystem::path &file_path) {
 #endif
   if (f == nullptr)
     return "";
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  BOOST_SCOPE_EXIT(f) {
+    fclose(f);
+  }
+  BOOST_SCOPE_EXIT_END
   MD5_CTX c;
   static unsigned char m[MD5_DIGEST_LENGTH];
   ::MD5_Init(&c);
@@ -94,7 +97,10 @@ std::string SHA1File(const std::filesystem::path &file_path) {
 #endif
   if (f == nullptr)
     return "";
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  BOOST_SCOPE_EXIT(f) {
+    fclose(f);
+  }
+  BOOST_SCOPE_EXIT_END
   SHA_CTX c;
   static unsigned char m[SHA_DIGEST_LENGTH];
   ::SHA1_Init(&c);
@@ -117,7 +123,10 @@ std::string SHA224File(const std::filesystem::path &file_path) {
 #endif
   if (f == nullptr)
     return "";
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  BOOST_SCOPE_EXIT(f) {
+    fclose(f);
+  }
+  BOOST_SCOPE_EXIT_END
   SHA256_CTX c;
   static unsigned char m[SHA224_DIGEST_LENGTH];
   ::SHA224_Init(&c);
@@ -140,7 +149,10 @@ std::string SHA256File(const std::filesystem::path &file_path) {
 #endif
   if (f == nullptr)
     return "";
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  BOOST_SCOPE_EXIT(f) {
+    fclose(f);
+  }
+  BOOST_SCOPE_EXIT_END
   SHA256_CTX c;
   static unsigned char m[SHA256_DIGEST_LENGTH];
   ::SHA256_Init(&c);
@@ -163,7 +175,10 @@ std::string SHA384File(const std::filesystem::path &file_path) {
 #endif
   if (f == nullptr)
     return "";
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  BOOST_SCOPE_EXIT(f) {
+    fclose(f);
+  }
+  BOOST_SCOPE_EXIT_END
   SHA512_CTX c;
   static unsigned char m[SHA384_DIGEST_LENGTH];
   ::SHA384_Init(&c);
@@ -186,7 +201,10 @@ std::string SHA512File(const std::filesystem::path &file_path) {
 #endif
   if (f == nullptr)
     return "";
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  BOOST_SCOPE_EXIT(f) {
+    fclose(f);
+  }
+  BOOST_SCOPE_EXIT_END
   SHA512_CTX c;
   static unsigned char m[SHA512_DIGEST_LENGTH];
   ::SHA512_Init(&c);

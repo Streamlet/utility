@@ -4,8 +4,8 @@
 #include "encoding.h"
 #include "http_client.h"
 #include "url.h"
+#include <boost/scope_exit.hpp>
 #include <charconv>
-#include <loki/ScopeGuard.h>
 #include <memory>
 #include <sstream>
 #include <string_view>
@@ -24,8 +24,10 @@ class winhttp_error_category : public std::error_category {
     LPSTR buffer = nullptr;
     ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                      nullptr, _Errval, 0, reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
-
-    LOKI_ON_BLOCK_EXIT(::LocalFree, buffer);
+    BOOST_SCOPE_EXIT(buffer) {
+      ::LocalFree(buffer);
+    }
+    BOOST_SCOPE_EXIT_END
     return buffer == nullptr ? "unknown error" : buffer;
   }
 };
@@ -90,12 +92,18 @@ public:
     HINTERNET connection = Connect(session_, url_host, urlComp.nPort);
     if (connection == nullptr)
       return make_winhttp_error(::GetLastError());
-    LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, connection);
+    BOOST_SCOPE_EXIT(connection) {
+      ::WinHttpCloseHandle(connection);
+    }
+    BOOST_SCOPE_EXIT_END
 
     HINTERNET request = OpenRequest(connection, ssl, method, url_path + url_query);
     if (request == nullptr)
       return make_winhttp_error(::GetLastError());
-    LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, request);
+    BOOST_SCOPE_EXIT(request) {
+      ::WinHttpCloseHandle(request);
+    }
+    BOOST_SCOPE_EXIT_END
 
     std::error_code ec = SendRequest(request, request_header, request_body);
     if (ec)

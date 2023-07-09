@@ -81,8 +81,16 @@ group("rapidjson") {
   public_configs = [ ":rapidjson_public_config" ]
 }
 
-# libressl
-if (is_win || is_mac) {
+# openssl
+# for posix: install openssl-devel before compiling
+if (is_linux) {
+  config("openssl_public_config") {
+    cflags = [ "-Wno-deprecated-declarations" ]
+  }
+  group("openssl") {
+    public_configs = [ ":openssl_public_config" ]
+  }
+} else if (is_win || is_mac) {
   config("openssl_public_config") {
     include_dirs = [ "$target_gen_dir/libressl/include" ]
     lib_dirs = [ "$target_gen_dir/libressl/lib" ]
@@ -113,20 +121,12 @@ if (is_win || is_mac) {
   }
 }
 
-# openssl
-# for posix: install openssl-devel before compiling
-if (is_linux) {
-  config("openssl_public_config") {
-    cflags = [ "-Wno-deprecated-declarations" ]
-  }
-  group("openssl") {
-    public_configs = [ ":openssl_public_config" ]
-  }
-}
-
 # curl
-# for posix: install openssl-devel, zlib-devel before compiling
-if (!is_win || !winhttp) {
+# for posix: install libcurl-devel before compiling
+if (is_linux) {
+  group("curl") {
+  }
+} else if (!is_win || !winhttp) {
   config("curl_public_config") {
     include_dirs = [ "$target_gen_dir/curl/include" ]
     lib_dirs = [ "$target_gen_dir/curl/lib" ]
@@ -136,12 +136,8 @@ if (!is_win || !winhttp) {
     }
     if (is_win) {
       libs = [ "crypt32.lib" ]
-    } else {
-      libs = [
-        "crypto",
-        "ssl",
-        "z",
-      ]
+    } else if (is_mac) {
+      libs = [ "crypto" ]
     }
   }
 

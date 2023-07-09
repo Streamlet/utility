@@ -22,23 +22,27 @@ source_set("utility") {
 
   libs = []
   if (is_win) {
-    libs += [ "crypto-51.lib" ]
+    libs += [ "crypto-51.lib" ]  # for crypto.cc
     if (winhttp) {
-      libs += [ "winhttp.lib" ]
+      libs += [ "winhttp.lib" ]  # for http_client_winhttp.cc
     } else {
-      libs += [
-        "normaliz.lib",
-        "ws2_32.lib",
-        "wldap32.lib",
-      ]
+      # for http_client_curl.cc
       if (is_debug) {
         libs += [ "libcurl-d.lib" ]
       } else {
         libs += [ "libcurl.lib" ]
       }
+      libs += [
+        "normaliz.lib",
+        "wldap32.lib",
+        "ws2_32.lib",
+      ]
     }
   } else {
-    libs += [ "curl" ]
+    libs += [
+      "crypto",  # for crypto.cc
+      "curl",  # for http_client_curl.cc
+    ]
   }
 
   deps = [

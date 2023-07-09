@@ -30,6 +30,7 @@ jobs:
     - name: Fetch dependencies
       run: |
         ./fetch_deps
+        sudo apt install libcurl4-openssl-dev
 
     - name: Fetch gn and ninja
       run: |

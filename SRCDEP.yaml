@@ -4,7 +4,7 @@
 DEPS:
   build:
     GIT_REPO: https://github.com/Streamlet/gn_toolchain.git
-    GIT_TAG: master
+    GIT_TAG: v1.0
 
   thirdparty/boost:
     URL: https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz
@@ -26,4 +26,4 @@ DEPS:
 
   thirdparty/ZLibWrap:
     GIT_REPO: https://github.com/Streamlet/ZLibWrap.git
-    GIT_TAG: master
+    GIT_TAG: v1.0.0.5

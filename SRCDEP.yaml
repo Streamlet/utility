@@ -13,10 +13,8 @@ DEPS:
       SHA256: 66a469b6e608a51f8347236f4912e27dc5c60c60d7d53ae9bfe4683316c6f04c
 
   thirdparty/curl:
-    URL: https://curl.se/download/curl-7.86.0.tar.bz2
-    ROOT_DIR: curl-7.86.0
-    URL_HASH:
-      SHA256: f5ca69db03eea17fa8705bdfb1a9f58d76a46c9010518109bb38f313137e0a28
+    GIT_REPO: https://github.com/curl/curl.git
+    GIT_TAG: curl-8_1_2
 
   thirdparty/libressl:
     URL: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.0.tar.gz

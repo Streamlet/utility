@@ -11,15 +11,15 @@ int main(int argc, char *argv[]) {
   std::string body;
   auto ec = http.Get(argv[1], {}, &status, &header, &body);
   if (ec) {
-    std::cout << ec.value() << ": " << ec.message() << std::endl;
+    std::cout << ec.value() << ": " << ec.message().c_str() << std::endl;
     return -1;
   }
 
   std::cout << status << std::endl;
   for (auto &h : header) {
-    std::cout << h.first << ": " << h.second << std::endl;
+    std::cout << h.first.c_str() << ": " << h.second.c_str() << std::endl;
   }
-  std::cout << body << std::endl;
+  std::cout << body.c_str() << std::endl;
 
   return 0;
 }

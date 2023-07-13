@@ -4,12 +4,18 @@ import("../build_options.gni")
 
 config("boost_public_config") {
   defines = [
+    "BOOST_ALL_NO_LIB",
     "BOOST_AUTO_LINK_SYSTEM",
     "BOOST_DLL_USE_STD_FS",
+    "BOOST_LOG_USE_STD_REGEX",
     "BOOST_PROCESS_USE_STD_FS",
-    "BOOST_JSON_NO_LIB",
-    "BOOST_CONTAINER_NO_LIB",
   ]
+  if (is_win && is_winxp) {
+    defines += [
+      "BOOST_USE_WINAPI_VERSION=$winver",
+      "BOOST_SYSTEM_DISABLE_THREADS",
+    ]
+  }
   include_dirs = [ "boost" ]
   lib_dirs = [ "$target_gen_dir/boost/lib" ]
 }

@@ -1,7 +1,5 @@
-if (is_win) {
-  declare_args() {
-    # On Posix, cURL is the default and only HTTP client.
-    # On Windows, WinHTTP is used by default. Set winhttp = false to use cURL if needed.
-    winhttp = true
-  }
+declare_args() {
+  # On Posix, cURL is the default and only HTTP client.
+  # On Windows, WinHTTP is used by default. Set winhttp = false to use cURL if needed.
+  winhttp = is_win
 }

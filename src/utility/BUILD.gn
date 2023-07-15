@@ -9,12 +9,15 @@ source_set("utility") {
     "http_client.h",
   ]
 
-  if (is_win && winhttp) {
+  if (is_win) {
     sources += [
       "encoding.h",
       "encoding_win.cc",
-      "http_client_winhttp.cc",
     ]
+  }
+
+  if (is_win && winhttp) {
+    sources += [ "http_client_winhttp.cc" ]
   } else {
     sources += [ "http_client_curl.cc" ]
   }

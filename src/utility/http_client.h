@@ -9,7 +9,7 @@ public:
   HttpClient(std::string user_agent = DEFAULT_USER_AGENT);
   ~HttpClient();
 
-  typedef std::multimap<std::string_view, std::string> RequestHeader;
+  typedef std::multimap<std::string, std::string> RequestHeader;
   typedef std::multimap<std::string, std::string> ResponseHeader;
   typedef std::function<void(const void *data, size_t length)> ResponseBodyReceiver;
 

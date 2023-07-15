@@ -1,6 +1,6 @@
 # selfupdate
 
-![](https://github.com/Streamlet/selfupdate/actions/workflows/windows.yml/badge.svg) ![](https://github.com/Streamlet/selfupdate/actions/workflows/linux.yml/badge.svg) ![](https://github.com/Streamlet/selfupdate/actions/workflows/macos.yml/badge.svg)
+![](https://github.com/Streamlet/selfupdate/actions/workflows/windows.yml/badge.svg) ![](https://github.com/Streamlet/selfupdate/actions/workflows/winxp.yml/badge.svg) ![](https://github.com/Streamlet/selfupdate/actions/workflows/linux.yml/badge.svg) ![](https://github.com/Streamlet/selfupdate/actions/workflows/macos.yml/badge.svg)
 ---
 [（中文版本见这里）](README_zh.md)
 

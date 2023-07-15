@@ -69,12 +69,6 @@ executable("utility_test") {
     "url.h",
     "url_test.cc",
   ]
-  if (is_win && !winhttp) {
-    sources += [
-      "encoding.h",
-      "encoding_win.cc",
-    ]
-  }
 
   deps = [
     ":utility",
@@ -96,12 +90,7 @@ executable("cmdline_options_echo") {
     "cmdline_options.h",
     "cmdline_options_echo.cc",
   ]
-  if (is_win && !winhttp) {
-    sources += [
-      "encoding.h",
-      "encoding_win.cc",
-    ]
-  }
+
   deps = [
     ":utility",
     "../../thirdparty:boost",
@@ -116,12 +105,6 @@ if (is_win) {
       "cmdline_options.h",
       "cmdline_options_echo_win.cc",
     ]
-    if (!winhttp) {
-      sources += [
-        "encoding.h",
-        "encoding_win.cc",
-      ]
-    }
 
     deps = [
       ":utility",

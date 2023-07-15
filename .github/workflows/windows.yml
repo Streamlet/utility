@@ -26,7 +26,6 @@ jobs:
     - name: Setup python environment
       run: |
         pip install PyYAML
-        pip install psutil
 
     - name: Check out code
       uses: actions/checkout@v3

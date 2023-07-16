@@ -26,7 +26,12 @@ ParsedOption parse_native(int argc, const TCHAR *argv[]) {
         result.insert(std::make_pair(k, v));
       } else {
         native_string k = arg.substr(2);
-        result.insert(std::make_pair(k, native_string()));
+        if (i + 1 < argc && argv[i + 1][0] != _T('-')) {
+          result.insert(std::make_pair(k, argv[i + 1]));
+          ++i;
+        } else {
+          result.insert(std::make_pair(k, native_string()));
+        }
       }
     } else if (arg.length() >= 1 && arg[0] == _T('-')) {
       native_string k = arg.substr(1);

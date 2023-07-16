@@ -3,17 +3,9 @@
 #include <tchar.h>
 
 #ifdef _UNICODE
-
-#define native_string std::wstring
-#define native_string_view std::wstring_view
-#define native_string_stream std::wstringstream
-
+#define to_native_string std::to_wstring
 #else
-
-#define native_string std::string
-#define native_string_view std::string_view
-#define native_string_stream std::stringstream
-
+#define to_native_string std::to_string
 #endif
 
 #else
@@ -21,9 +13,15 @@
 #define _T(s) s
 #define TCHAR char
 
-#define native_string std::string
-#define native_string_view std::string_view
-#define native_string_stream std::stringstream
+#define to_native_string std::to_string
+
+#endif
+
+#define native_string std::basic_string<TCHAR>
+#define native_string_view std::basic_string_view<TCHAR>
+#define native_string_stream std::basic_stringstream<TCHAR>
+
+#ifndef _WIN32
 
 // Program
 #define _tmain main

@@ -14,6 +14,15 @@ BOOST_AUTO_TEST_CASE(key_value) {
   BOOST_CHECK(result.parsed_map == expected);
 }
 
+BOOST_AUTO_TEST_CASE(key_value_no_equal) {
+  const TCHAR *argv[] = {_T("exe_path"), _T("--k"), _T("v")};
+  auto result = cmdline_options::parse(3, argv);
+  std::map<native_string, native_string> expected = {
+      {_T("k"), _T("v")},
+  };
+  BOOST_CHECK(result.parsed_map == expected);
+}
+
 BOOST_AUTO_TEST_CASE(key_value_no_value) {
   const TCHAR *argv[] = {_T("exe_path"), _T("--k")};
   auto result = cmdline_options::parse(2, argv);

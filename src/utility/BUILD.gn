@@ -10,19 +10,28 @@ source_set("utility") {
     "http_client.cc",
     "http_client.h",
     "native_string.h",
+    "process_util.h",
   ]
 
   if (is_win) {
     sources += [
       "encoding.h",
       "encoding_win.cc",
+      "process_util_win.cc",
     ]
+  } else {
+    sources += [ "process_util_posix.cc" ]
   }
 
   if (is_win && winhttp) {
     sources += [ "http_client_winhttp.cc" ]
   } else {
     sources += [ "http_client_curl.cc" ]
+  }
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result"]
   }
 
   libs = []
@@ -99,4 +108,11 @@ if (is_win) {
 
     deps = [ ":utility" ]
   }
+}
+
+executable("process_util_test") {
+  testonly = true
+  sources = [ "process_util_test.cc" ]
+
+  deps = [ ":utility" ]
 }

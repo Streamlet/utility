@@ -9,6 +9,7 @@ on:
 jobs:
 
   build:
+    if: ${{ !contains(github.event.head_commit.message, '[no-build]') }}
     name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.config }} winhttp=${{ matrix.winhttp }}
     runs-on: ${{ matrix.os }}
     defaults:

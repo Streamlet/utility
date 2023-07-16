@@ -25,6 +25,9 @@
 #define native_string_view std::string_view
 #define native_string_stream std::stringstream
 
+// Program
+#define _tmain main
+
 // Locale-specific Information
 #define _tsetlocale setlocale
 

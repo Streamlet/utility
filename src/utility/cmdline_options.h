@@ -9,26 +9,27 @@
 
 #ifdef _WIN32
 #include <tchar.h>
+#else
+#define TCHAR char
 #endif
 
 namespace cmdline_options {
 
-template <typename CharType>
 struct ParsedOption {
-  std::map<std::basic_string<CharType>, std::basic_string<CharType>> parsed_map;
+  std::map<std::basic_string<TCHAR>, std::basic_string<TCHAR>> parsed_map;
 
-  bool has(const CharType *option_name) {
+  bool has(const TCHAR *option_name) const {
     return parsed_map.find(option_name) != parsed_map.end();
   }
 
-  std::basic_string<CharType> get(const CharType *option_name) {
+  std::basic_string<TCHAR> get(const TCHAR *option_name) const {
     auto it = parsed_map.find(option_name);
-    return it != parsed_map.end() ? it->second : std::basic_string<CharType>();
+    return it != parsed_map.end() ? it->second : std::basic_string<TCHAR>();
   }
 
   template <typename T>
-  T get_as(const CharType *option_name) {
-    std::basic_stringstream<CharType> ss;
+  T get_as(const TCHAR *option_name) const {
+    std::basic_stringstream<TCHAR> ss;
     ss << get(option_name);
     T t = {};
     ss >> t;
@@ -36,11 +37,10 @@ struct ParsedOption {
   }
 };
 
+ParsedOption parse(int argc, const TCHAR *argv[]);
+
 #ifdef _WIN32
-ParsedOption<TCHAR> parse(int argc, const TCHAR *argv[]);
-ParsedOption<TCHAR> parse(const TCHAR *cmdline);
-#else
-ParsedOption<char> parse(int argc, const char *argv[]);
+ParsedOption parse(const TCHAR *cmdline);
 #endif
 
 } // namespace cmdline_options

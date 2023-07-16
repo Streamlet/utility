@@ -1,5 +1,6 @@
 
 #include "cmdline_options.h"
+#include "native_string.h"
 #include <cstring>
 #include <cwchar>
 #include <loki/ScopeGuard.h>
@@ -13,66 +14,79 @@ namespace cmdline_options {
 
 namespace {
 
-template <typename CharType>
-std::map<std::basic_string<CharType>, std::basic_string<CharType>> parseT(int argc, const CharType *argv[]) {
-  typedef std::basic_string<CharType> string_type;
-  std::map<std::basic_string<CharType>, std::basic_string<CharType>> result;
+ParsedOption<TCHAR> parse_native(int argc, const TCHAR *argv[]) {
+  std::map<native_string, native_string> result;
   for (int i = 1; i < argc; ++i) {
-    string_type arg = argv[i];
-    if (arg.length() >= 2 && arg[0] == (CharType)'-' && arg[1] == (CharType)'-') {
-      auto equal_pos = arg.find_first_of((CharType)'=', 2);
-      if (equal_pos != string_type::npos) {
-        string_type k = arg.substr(2, equal_pos - 2);
-        string_type v = arg.substr(equal_pos + 1);
+    native_string arg = argv[i];
+    if (arg.length() >= 2 && arg[0] == _T('-') && arg[1] == _T('-')) {
+      auto equal_pos = arg.find_first_of(_T('='), 2);
+      if (equal_pos != native_string::npos) {
+        native_string k = arg.substr(2, equal_pos - 2);
+        native_string v = arg.substr(equal_pos + 1);
         result.insert(std::make_pair(k, v));
       } else {
-        string_type k = arg.substr(2);
-        result.insert(std::make_pair(k, string_type()));
+        native_string k = arg.substr(2);
+        result.insert(std::make_pair(k, native_string()));
       }
-    } else if (arg.length() >= 1 && arg[0] == (CharType)'-') {
-      string_type k = arg.substr(1);
-      if (i + 1 < argc && argv[i + 1][0] != (CharType)'-') {
+    } else if (arg.length() >= 1 && arg[0] == _T('-')) {
+      native_string k = arg.substr(1);
+      if (i + 1 < argc && argv[i + 1][0] != _T('-')) {
         result.insert(std::make_pair(k, argv[i + 1]));
         ++i;
       } else {
-        result.insert(std::make_pair(k, string_type()));
+        result.insert(std::make_pair(k, native_string()));
       }
     } else {
-      result.insert(std::make_pair(arg, string_type()));
+      result.insert(std::make_pair(arg, native_string()));
     }
   }
-  return std::move(result);
+  return {std::move(result)};
 }
 
 } // namespace
 
-std::map<std::string, std::string> parse(int argc, const char *argv[]) {
-  return parseT(argc, argv);
-}
-
-std::map<std::wstring, std::wstring> parse(int argc, const wchar_t *argv[]) {
-  return parseT(argc, argv);
-}
-
 #ifdef _WIN32
 
-std::map<std::string, std::string> parse(const char *cmdline) {
-  std::wstring wstr = encoding::ANSIToUCS2(cmdline);
-  std::map<std::wstring, std::wstring> wresult = parse(wstr.c_str());
-  std::map<std::string, std::string> result;
-  for (const auto &item : wresult) {
-    result.insert(std::make_pair(encoding::UCS2ToANSI(item.first), encoding::UCS2ToANSI(item.second)));
-  }
-  return std::move(result);
+ParsedOption<TCHAR> parse(int argc, const TCHAR *argv[]) {
+  return parse_native(argc, argv);
 }
 
-std::map<std::wstring, std::wstring> parse(const wchar_t *cmdline) {
+#ifdef _UNICODE
+ParsedOption<wchar_t> parse(const wchar_t *cmdline) {
   int argc = 0;
   LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
   if (argv == NULL)
     return {};
   LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
-  return parseT(argc, (LPCWSTR *)argv);
+  return parse_native(argc, (LPCWSTR *)argv);
+}
+
+#else
+
+ParsedOption<char> parse(const char *cmdline) {
+  std::wstring wstr = encoding::ANSIToUCS2(cmdline);
+  int argc = 0;
+  LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
+  if (argv == NULL)
+    return {};
+  LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
+  std::vector<std::string> argv_str;
+  for (int i = 0; i < argc; ++i) {
+    argv_str.push_back(encoding::UCS2ToANSI(argv[i]));
+  }
+  std::vector<const char *> argv_cstr;
+  for (int i = 0; i < argc; ++i) {
+    argv_cstr.push_back(argv_str[i].c_str());
+  }
+  return parse_native(argc, &argv_cstr[0]);
+}
+
+#endif
+
+#else
+
+ParsedOption<char> parse(int argc, const char *argv[]) {
+  return parse_native(argc, argv);
 }
 
 #endif

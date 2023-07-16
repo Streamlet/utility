@@ -3,10 +3,13 @@ import("../../build_options.gni")
 source_set("utility") {
   defines = []
   sources = [
+    "cmdline_options.cc",
+    "cmdline_options.h",
     "crypto.cc",
     "crypto.h",
     "http_client.cc",
     "http_client.h",
+    "native_string.h",
   ]
 
   if (is_win) {
@@ -61,8 +64,6 @@ executable("utility_test") {
   testonly = true
 
   sources = [
-    "cmdline_options.cc",
-    "cmdline_options.h",
     "cmdline_options_test.cc",
     "crypto_test.cc",
     "unittest.cc",
@@ -74,7 +75,6 @@ executable("utility_test") {
   deps = [
     ":utility",
     "../../thirdparty:boost",
-    "../../thirdparty:loki",
   ]
 }
 
@@ -87,32 +87,16 @@ executable("http_client_test") {
 
 executable("cmdline_options_echo") {
   testonly = true
-  sources = [
-    "cmdline_options.cc",
-    "cmdline_options.h",
-    "cmdline_options_echo.cc",
-  ]
+  sources = [ "cmdline_options_echo.cc" ]
 
-  deps = [
-    ":utility",
-    "../../thirdparty:boost",
-    "../../thirdparty:loki",
-  ]
+  deps = [ ":utility" ]
 }
 
 if (is_win) {
   executable("cmdline_options_echo_win") {
     testonly = true
-    sources = [
-      "cmdline_options.cc",
-      "cmdline_options.h",
-      "cmdline_options_echo_win.cc",
-    ]
+    sources = [ "cmdline_options_echo_win.cc" ]
 
-    deps = [
-      ":utility",
-      "../../thirdparty:boost",
-      "../../thirdparty:loki",
-    ]
+    deps = [ ":utility" ]
   }
 }

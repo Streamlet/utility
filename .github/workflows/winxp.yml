@@ -27,7 +27,7 @@ jobs:
       run: |
         pip install PyYAML
 
-    - name: Setup install Microsoft.VisualStudio.Component.WinXP
+    - name: Install Microsoft.VisualStudio.Component.WinXP
       run: |
         "%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\setup.exe" modify --quiet --productId  Microsoft.VisualStudio.Product.Enterprise --channelId VisualStudio.17.Release --add Microsoft.VisualStudio.Component.WinXP
 

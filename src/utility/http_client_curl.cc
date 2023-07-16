@@ -1,7 +1,7 @@
 #include "http_client.h"
-#include <boost/scope_exit.hpp>
 #include <cstring>
 #include <curl/curl.h>
+#include <loki/ScopeGuard.h>
 #include <memory>
 
 namespace {
@@ -92,10 +92,7 @@ public:
     CURL *curl = curl_easy_init();
     if (curl == nullptr)
       return make_curl_error(CURLE_FAILED_INIT);
-    BOOST_SCOPE_EXIT(curl) {
-      curl_easy_cleanup(curl);
-    }
-    BOOST_SCOPE_EXIT_END
+    LOKI_ON_BLOCK_EXIT(curl_easy_cleanup, curl);
 
     CURLcode error = curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent_.empty() ? "cURL" : user_agent_.c_str());
     if (error != CURLE_OK)
@@ -133,11 +130,7 @@ public:
       return make_curl_error(error);
 
     curl_slist *header = nullptr;
-    BOOST_SCOPE_EXIT(header) {
-      if (header != nullptr)
-        curl_slist_free_all(header);
-    }
-    BOOST_SCOPE_EXIT_END
+    LOKI_ON_BLOCK_EXIT(curl_slist_free_all, header);
     if (!request_header.empty()) {
       for (const auto &h : request_header) {
         std::string header_line;

@@ -14,7 +14,7 @@ namespace cmdline_options {
 
 namespace {
 
-ParsedOption<TCHAR> parse_native(int argc, const TCHAR *argv[]) {
+ParsedOption parse_native(int argc, const TCHAR *argv[]) {
   std::map<native_string, native_string> result;
   for (int i = 1; i < argc; ++i) {
     native_string arg = argv[i];
@@ -45,14 +45,15 @@ ParsedOption<TCHAR> parse_native(int argc, const TCHAR *argv[]) {
 
 } // namespace
 
-#ifdef _WIN32
-
-ParsedOption<TCHAR> parse(int argc, const TCHAR *argv[]) {
+ParsedOption parse(int argc, const TCHAR *argv[]) {
   return parse_native(argc, argv);
 }
 
+#ifdef _WIN32
+
 #ifdef _UNICODE
-ParsedOption<wchar_t> parse(const wchar_t *cmdline) {
+
+ParsedOption parse(const wchar_t *cmdline) {
   int argc = 0;
   LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
   if (argv == NULL)
@@ -63,7 +64,7 @@ ParsedOption<wchar_t> parse(const wchar_t *cmdline) {
 
 #else
 
-ParsedOption<char> parse(const char *cmdline) {
+ParsedOption parse(const char *cmdline) {
   std::wstring wstr = encoding::ANSIToUCS2(cmdline);
   int argc = 0;
   LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
@@ -82,12 +83,6 @@ ParsedOption<char> parse(const char *cmdline) {
 }
 
 #endif
-
-#else
-
-ParsedOption<char> parse(int argc, const char *argv[]) {
-  return parse_native(argc, argv);
-}
 
 #endif
 

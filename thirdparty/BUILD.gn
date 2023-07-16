@@ -34,6 +34,19 @@ boost("boost") {
   public_configs = [ ":boost_public_config" ]
 }
 
+# loki
+
+config("loki_public_config") {
+  include_dirs = [ "loki/include" ]
+  if (is_win) {
+    cflags = [ "/wd4828" ]
+  }
+}
+
+group("loki") {
+  public_configs = [ ":loki_public_config" ]
+}
+
 # openssl
 # for posix: install openssl-devel before compiling
 if (is_linux) {
@@ -89,9 +102,6 @@ if (is_linux || is_mac) {
     }
     if (is_win) {
       libs = [ "crypt32.lib" ]
-      if (!is_winxp) {
-        libs += [ "bcrypt.lib" ]
-      }
     } else if (is_mac) {
       libs = [ "crypto" ]
     }
@@ -105,17 +115,14 @@ if (is_linux || is_mac) {
       "CURL_ENABLE_SSL=ON",
     ]
     if (is_win) {
+      if (static_link_crt) {
+        cmake_options += [ "CURL_STATIC_CRT=ON" ]
+      }
       cmake_options += [
         "ENABLE_UNICODE=ON",
         "CURL_USE_SCHANNEL=ON",
         "CURL_WINDOWS_SSPI=ON",
       ]
-      if (static_link_crt) {
-        cmake_options += [ "CURL_STATIC_CRT=ON" ]
-      }
-      if (is_winxp) {
-        cmake_options += [ "CURL_TARGET_WINDOWS_VERSION=0x0501" ]
-      }
     } else {
       cmake_options += [ "CURL_USE_OPENSSL=ON" ]
     }
@@ -139,6 +146,17 @@ if (is_linux || is_mac) {
 
     public_configs = [ ":curl_public_config" ]
   }
+}
+
+#rapidjson
+
+config("rapidjson_public_config") {
+  include_dirs = [ "rapidjson/include" ]
+  defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
+}
+
+group("rapidjson") {
+  public_configs = [ ":rapidjson_public_config" ]
 }
 
 # zlibwrap

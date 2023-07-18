@@ -31,12 +31,11 @@ source_set("utility") {
 
   cflags = []
   if (is_posix) {
-    cflags += [ "-Wno-unused-result"]
+    cflags += [ "-Wno-unused-result" ]
   }
 
   libs = []
   if (is_win) {
-    libs += [ "crypto-51.lib" ]  # for crypto.cc
     if (winhttp) {
       libs += [ "winhttp.lib" ]  # for http_client_winhttp.cc
     } else {
@@ -54,9 +53,13 @@ source_set("utility") {
     }
   } else {
     libs += [
-      "crypto",  # for crypto.cc
       "curl",  # for http_client_curl.cc
     ]
+    if (is_linux) {
+      libs += [
+        "crypto",  # for crypto.cc
+      ]
+    }
   }
 
   deps = [

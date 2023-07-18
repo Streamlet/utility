@@ -48,8 +48,7 @@ if (is_linux) {
   }
 } else if (is_win || is_mac) {
   config("openssl_public_config") {
-    include_dirs = [ "$target_gen_dir/libressl/include" ]
-    lib_dirs = [ "$target_gen_dir/libressl/lib" ]
+    include_dirs = [ "libressl/include" ]
     if (is_posix) {
       cflags = [ "-Wno-deprecated-declarations" ]
     }
@@ -58,21 +57,42 @@ if (is_linux) {
     }
   }
 
-  cmake("openssl") {
-    cmake_root_dir = "libressl"
-    cmake_options = [
-      "LIBRESSL_APPS=OFF",
-      "LIBRESSL_TESTS=OFF",
+  static_library("openssl") {
+    defines = [
+      "__BEGIN_HIDDEN_DECLS=",
+      "__END_HIDDEN_DECLS=",
     ]
-    if (static_link_crt) {
-      cmake_options += [ "USE_STATIC_MSVC_RUNTIMES=ON" ]
+
+    if (is_mac) {
+      defines += [
+        "HAVE_STRLCPY",
+        "HAVE_STRLCAT",
+      ]
     }
-    cmake_install_dir = "$target_gen_dir/libressl"
+    if (is_posix) {
+      configs -= [ "//build/config:c_std" ]
+      cflags_c = [ "-std=gnu17" ]
+    }
+
+    sources = [
+      "libressl/crypto/md5/md5_dgst.c",
+      "libressl/crypto/md5/md5_one.c",
+      "libressl/crypto/sha/sha1.c",
+      "libressl/crypto/sha/sha256.c",
+      "libressl/crypto/sha/sha3.c",
+      "libressl/crypto/sha/sha512.c",
+    ]
     if (is_win) {
-      cmake_outputs = [ "$target_gen_dir/libressl/lib/crypto-51.lib" ]
+      sources += [ "libressl/crypto/compat/explicit_bzero_win.c" ]
     } else {
-      cmake_outputs = [ "$target_gen_dir/libressl/lib/libcrypto.a" ]
+      sources += [ "libressl/crypto/compat/explicit_bzero.c" ]
     }
+
+    include_dirs = [
+      "libressl/crypto",
+      "libressl/include/compat",
+    ]
+
     public_configs = [ ":openssl_public_config" ]
   }
 }

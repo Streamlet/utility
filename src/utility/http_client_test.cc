@@ -1,4 +1,5 @@
 #include "http_client.h"
+#include "process_util.h"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -9,9 +10,17 @@ int main(int argc, char *argv[]) {
   unsigned status = 0;
   HttpClient::ResponseHeader header;
   std::string body;
-  auto ec = http.Get(argv[1], {}, &status, &header, &body);
+  std::error_code ec = {};
+  const int RETRY_TIMES = 3;
+  for (int i = 0; i < RETRY_TIMES; ++i) {
+    ec = http.Get(argv[1], {}, &status, &header, &body);
+    if (!ec)
+      break;
+    std::cout << ec.value() << ": " << ec.message().c_str() << (i + i < RETRY_TIMES ? ", retrying..." : ", failed")
+              << std::endl;
+    process_util::Sleep(1000);
+  }
   if (ec) {
-    std::cout << ec.value() << ": " << ec.message().c_str() << std::endl;
     return -1;
   }
 

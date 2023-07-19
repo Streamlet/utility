@@ -16,7 +16,7 @@ namespace {
 
 ParsedOption parse_native(int argc, const TCHAR *argv[]) {
   std::map<native_string, native_string> result;
-  for (int i = 1; i < argc; ++i) {
+  for (int i = 0; i < argc; ++i) {
     native_string arg = argv[i];
     if (arg.length() >= 2 && arg[0] == _T('-') && arg[1] == _T('-')) {
       auto equal_pos = arg.find_first_of(_T('='), 2);
@@ -51,7 +51,7 @@ ParsedOption parse_native(int argc, const TCHAR *argv[]) {
 } // namespace
 
 ParsedOption parse(int argc, const TCHAR *argv[]) {
-  return parse_native(argc, argv);
+  return parse_native(argc - 1, &argv[1]);
 }
 
 #ifdef _WIN32

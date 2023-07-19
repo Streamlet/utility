@@ -85,7 +85,7 @@ executable("utility_test") {
 
   deps = [
     ":utility",
-    "../../thirdparty:boost",
+    "../../thirdparty:googletest",
   ]
 }
 

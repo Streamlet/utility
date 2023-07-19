@@ -39,6 +39,9 @@ if (is_linux) {
       "__END_HIDDEN_DECLS=",
     ]
 
+    if (is_win) {
+      cflags = [ "/wd5105" ]
+    }
     if (is_mac) {
       defines += [
         "HAVE_STRLCPY",

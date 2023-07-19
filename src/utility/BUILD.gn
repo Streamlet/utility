@@ -63,7 +63,6 @@ source_set("utility") {
   }
 
   deps = [
-    "../../thirdparty:boost",
     "../../thirdparty:loki",
     "../../thirdparty:openssl",
   ]

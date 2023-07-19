@@ -29,6 +29,10 @@ DEPS:
     URL_HASH:
       SHA256: 12531c1ec808c5c6abeb311899664b0cfed04d4648f456dc959bb93c5f21acac
 
+  thirdparty/rapidjson:
+    GIT_REPO: https://github.com/Tencent/rapidjson.git
+    GIT_TAG: v1.1.0
+
   thirdparty/ZLibWrap:
     GIT_REPO: https://github.com/Streamlet/ZLibWrap.git
     GIT_TAG: v1.1

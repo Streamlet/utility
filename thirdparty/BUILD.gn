@@ -168,7 +168,10 @@ if (is_linux || is_mac) {
 
 config("rapidjson_public_config") {
   include_dirs = [ "rapidjson/include" ]
-  defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
+  defines = [
+    "RAPIDJSON_HAS_STDSTRING=1",
+    "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS",
+  ]
 }
 
 group("rapidjson") {

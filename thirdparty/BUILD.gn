@@ -1,29 +1,5 @@
 import("../build_options.gni")
 
-# boost
-
-config("boost_public_config") {
-  defines = [
-    "BOOST_ALL_NO_LIB",
-    "BOOST_AUTO_LINK_SYSTEM",
-    "BOOST_DLL_USE_STD_FS",
-    "BOOST_LOG_USE_STD_REGEX",
-    "BOOST_PROCESS_USE_STD_FS",
-  ]
-  if (is_win && is_winxp) {
-    defines += [
-      "BOOST_USE_WINAPI_VERSION=$winver",
-      "BOOST_SYSTEM_DISABLE_THREADS",
-    ]
-  }
-  include_dirs = [ "boost" ]
-  lib_dirs = [ "$target_gen_dir/boost/lib" ]
-}
-
-group("boost") {
-  public_configs = [ ":boost_public_config" ]
-}
-
 # loki
 
 config("loki_public_config") {
@@ -164,7 +140,7 @@ if (is_linux || is_mac) {
   }
 }
 
-#rapidjson
+# rapidjson
 
 config("rapidjson_public_config") {
   include_dirs = [ "rapidjson/include" ]
@@ -187,4 +163,16 @@ config("zlibwrap_public_config") {
 group("zlibwrap") {
   public_configs = [ ":zlibwrap_public_config" ]
   deps = [ "ZLibWrap/src:zlibwrap" ]
+}
+
+# googletest
+
+config("googletest_public_config") {
+  include_dirs = [ "googletest/googletest/include" ]
+}
+
+static_library("googletest") {
+  sources = [ "googletest/googletest/src/gtest-all.cc" ]
+  include_dirs = [ "googletest/googletest" ]
+  public_configs = [ ":googletest_public_config" ]
 }

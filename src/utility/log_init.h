@@ -39,7 +39,7 @@ enum LogContent {
 };
 
 bool setup(const TCHAR *app_name,
-           int level = LOG_LEVEL_OFF,
+           int level = LOG_LEVEL_DEFAULT,
            int content = LOG_CONTENT_DEFAULT,
            int target = LOG_TARGET_DEFAULT,
            const TCHAR *log_file = NULL);
@@ -53,7 +53,7 @@ bool setup_from_file(const TCHAR *log_setting_file);
  *
  * ; texts after semicolon will be recognized as comments
  * AppName    = MyApp   ; AppName defines app_name arguments of setuo_log
- * LogLevel   = Info    ; valid values are: Off, Fatal, Error, Warn, Info or Debug. Case insensitive.
+ * LogLevel   = Default ; valid values are: Off, Fatal, Error, Warn, Info, Debug or Default. Case insensitive.
  * LogContent = Default ; valid values are: Time, Level, AppName, FileName, FullFileName,
  *                      ;                   FuncName, FullFuncName, Line, PID, TID, All or Default.
  *                      ; Case insensitive, order insensitive. Can be combined by commas.

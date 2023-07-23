@@ -318,6 +318,7 @@ const char *VALUE_LOG_LEVEL_ERROR = "Error";
 const char *VALUE_LOG_LEVEL_WARN = "Warn";
 const char *VALUE_LOG_LEVEL_INFO = "Info";
 const char *VALUE_LOG_LEVEL_DEBUG = "Debug";
+const char *VALUE_LOG_LEVEL_DEFAULT = "Default";
 
 const char *VALUE_LOG_CONTENT_TIME = "Time";
 const char *VALUE_LOG_CONTENT_LEVEL = "Level";
@@ -369,6 +370,8 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
         level = LOG_LEVEL_INFO;
       } else if (strnicmp(VALUE_LOG_LEVEL_DEBUG, l.data(), l.length()) == 0) {
         level = LOG_LEVEL_DEBUG;
+      } else if (strnicmp(VALUE_LOG_LEVEL_DEFAULT, l.data(), l.length()) == 0) {
+        level = LOG_LEVEL_DEFAULT;
       } else {
         // ignore illegal values
       }

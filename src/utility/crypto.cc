@@ -10,8 +10,9 @@ namespace {
 std::string DigestToHexString(unsigned char *digest, size_t length) {
   std::string hex;
   hex.resize(length * 2);
-  for (size_t i = 0; i < length; ++i)
+  for (size_t i = 0; i < length; ++i) {
     snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
+  }
   return std::move(hex);
 }
 
@@ -69,8 +70,9 @@ std::string MD5File(const std::filesystem::path &file_path) {
 #else
   FILE *f = fopen(file_path.c_str(), "rb");
 #endif
-  if (f == nullptr)
+  if (f == nullptr) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
   MD5_CTX c;
   static unsigned char m[MD5_DIGEST_LENGTH];
@@ -92,8 +94,9 @@ std::string SHA1File(const std::filesystem::path &file_path) {
 #else
   FILE *f = fopen(file_path.c_str(), "rb");
 #endif
-  if (f == nullptr)
+  if (f == nullptr) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
   SHA_CTX c;
   static unsigned char m[SHA_DIGEST_LENGTH];
@@ -115,8 +118,9 @@ std::string SHA224File(const std::filesystem::path &file_path) {
 #else
   FILE *f = fopen(file_path.c_str(), "rb");
 #endif
-  if (f == nullptr)
+  if (f == nullptr) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
   SHA256_CTX c;
   static unsigned char m[SHA224_DIGEST_LENGTH];
@@ -138,8 +142,9 @@ std::string SHA256File(const std::filesystem::path &file_path) {
 #else
   FILE *f = fopen(file_path.c_str(), "rb");
 #endif
-  if (f == nullptr)
+  if (f == nullptr) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
   SHA256_CTX c;
   static unsigned char m[SHA256_DIGEST_LENGTH];
@@ -161,8 +166,9 @@ std::string SHA384File(const std::filesystem::path &file_path) {
 #else
   FILE *f = fopen(file_path.c_str(), "rb");
 #endif
-  if (f == nullptr)
+  if (f == nullptr) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
   SHA512_CTX c;
   static unsigned char m[SHA384_DIGEST_LENGTH];
@@ -184,8 +190,9 @@ std::string SHA512File(const std::filesystem::path &file_path) {
 #else
   FILE *f = fopen(file_path.c_str(), "rb");
 #endif
-  if (f == nullptr)
+  if (f == nullptr) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
   SHA512_CTX c;
   static unsigned char m[SHA512_DIGEST_LENGTH];

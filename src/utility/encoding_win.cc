@@ -7,8 +7,9 @@ namespace {
 std::wstring ANSIToUCS2(const char *ansi, size_t length, UINT code_page) {
   std::wstring ucs2;
   int size = ::MultiByteToWideChar(code_page, 0, ansi, (int)length, nullptr, 0);
-  if (size == 0)
+  if (size == 0) {
     return ucs2;
+  }
   ucs2.resize(length == -1 || ansi[length - 1] == '\0' ? size - 1 : size);
   ::MultiByteToWideChar(code_page, 0, ansi, (int)length, &ucs2[0], size);
   return ucs2;
@@ -17,8 +18,9 @@ std::wstring ANSIToUCS2(const char *ansi, size_t length, UINT code_page) {
 std::string UCS2ToANSI(const wchar_t *ucs2, size_t length, UINT code_page) {
   std::string ansi;
   int size = ::WideCharToMultiByte(code_page, 0, ucs2, (int)length, nullptr, 0, nullptr, nullptr);
-  if (size == 0)
+  if (size == 0) {
     return ansi;
+  }
   ansi.resize(length == -1 || ucs2[length - 1] == L'\0' ? size - 1 : size);
   ::WideCharToMultiByte(code_page, 0, ucs2, (int)length, &ansi[0], size, nullptr, nullptr);
   return ansi;

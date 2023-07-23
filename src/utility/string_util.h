@@ -23,8 +23,9 @@ template <class _Elem,
 inline std::vector<_Result>
 str_split(const _Elem *str, size_t str_len, const _Elem *delimiter, size_t delimiter_len, size_t max = 0) {
   std::vector<_Result> r;
-  if (delimiter_len == (_Elem)'\0')
+  if (delimiter_len == (_Elem)'\0') {
     return r;
+  }
   const _Elem *p = str;
   for (size_t count = 0; p <= str + str_len && (max == 0 || count < max); ++count) {
     const _Elem *f = (max > 0 && count == max - 1)
@@ -507,14 +508,16 @@ str_join(const std::vector<_Source> &str_list, const _Elem *delimiter, size_t de
   std::basic_string<_Elem, _Traits, _Alloc> ret;
   size_t total_len = 0;
   for (typename std::vector<_Source>::const_iterator it = str_list.begin(); it != str_list.end(); ++it) {
-    if (it != str_list.begin())
+    if (it != str_list.begin()) {
       total_len += delimiter_len;
+    }
     total_len += it->length();
   }
   ret.reserve(total_len);
   for (typename std::vector<_Source>::const_iterator it = str_list.begin(); it != str_list.end(); ++it) {
-    if (it != str_list.begin())
+    if (it != str_list.begin()) {
       ret.append(delimiter, delimiter_len);
+    }
     ret.append(it->data(), it->c_str() + it->length());
   }
   return ret;
@@ -589,14 +592,16 @@ inline _Elem *str_replace_inplace(_Elem *str,
                                   size_t replace_len,
                                   size_t max = 0) {
   assert(find_len >= replace_len);
-  if (find_len == 0)
+  if (find_len == 0) {
     return str;
+  }
   _Elem *dest = str;
   const _Elem *src = str;
   for (size_t count = 0; src < str + str_len && (max == 0 || count < max); ++count) {
     const _Elem *f = std::search(src, (const _Elem *)str + str_len, find, find + find_len);
-    if (find_len != replace_len)
+    if (find_len != replace_len) {
       memcpy(dest, src, sizeof(_Elem) * (f - src));
+    }
     dest += (f - src);
     src = f;
     if (f < str + str_len) {
@@ -606,8 +611,9 @@ inline _Elem *str_replace_inplace(_Elem *str,
     }
   }
   if (src < str + str_len) {
-    if (find_len != replace_len)
+    if (find_len != replace_len) {
       memcpy(dest, src, sizeof(_Elem) * (str + str_len - src));
+    }
     dest += (str + str_len - src);
   }
   *dest = (_Elem)'\0';

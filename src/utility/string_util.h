@@ -1,8 +1,9 @@
 #pragma once
 
 #include <algorithm>
-#include <string>
+#include <cassert>
 #include <string_view>
+#include <string>
 #include <vector>
 
 namespace string_util {
@@ -756,7 +757,7 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
   if (find_len <= replace_len) {
     ret.assign(str, str_len);
     str_replace_inplace(&ret[0], str_len, find, find_len, replace, replace_len, max);
-    ret.resize(std::basic_string_view<_Elem, _Traits>(ret.c_str()).length(()));
+    ret.resize(std::basic_string_view<_Elem, _Traits>(ret.c_str()).length());
     return ret;
   } else {
     ret = str_join(str_split(str, str_len, find, find_len, max), replace, replace_len);

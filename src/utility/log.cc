@@ -1,5 +1,4 @@
 #include "log.h"
-#include "encoding.h"
 #include "log_init.h"
 #include "native_string.h"
 #include "process_util.h"
@@ -10,9 +9,12 @@
 #include <iomanip>
 #include <loki/ScopeGuard.h>
 #include <map>
+#include <cstring>
 #include <string_view>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include "encoding.h"
+#else
 #include <strings.h>
 #define strnicmp strncasecmp
 #endif
@@ -339,7 +341,7 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
 #if defined(_WIN32) && defined(_UNICODE)
       app_name = encoding::UTF8ToUCS2(v);
 #else
-      app_name.assign(v.date(), v.length());
+      app_name.assign(v.data(), v.length());
 #endif
     } else if (strnicmp(KEY_LOG_LEVEL, k.data(), k.length()) == 0) {
       auto l = trim_spaces(v);
@@ -416,7 +418,7 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
 #if defined(_WIN32) && defined(_UNICODE)
       log_file = encoding::UTF8ToUCS2(v);
 #else
-      log_file.assign(v.date(), v.length());
+      log_file.assign(v.data(), v.length());
 #endif
     } else {
       // ignore illegal keys

@@ -457,7 +457,7 @@ bool setup_from_file(const TCHAR *log_setting_file) {
   }
 
   native_string app_name;
-  int level = LOG_LEVEL_OFF;
+  int level = LOG_LEVEL_DEFAULT;
   int content = LOG_CONTENT_DEFAULT;
   int target = LOG_TARGET_ALL;
   native_string log_file;

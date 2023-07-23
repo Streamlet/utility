@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include <string_view>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace string_util {
@@ -836,8 +836,8 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::basic_string<_Elem, _Traits, _Alloc>
 str_replace(const _Elem *str, const _Elem *find, const _Elem *replace, size_t max = 0) {
-  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), find.data(),
-                     std::basic_string_view<_Elem, _Traits>(find).length(), replace.data(),
+  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), find,
+                     std::basic_string_view<_Elem, _Traits>(find).length(), replace,
                      std::basic_string_view<_Elem, _Traits>(replace).length(), max);
 }
 

@@ -8,6 +8,7 @@
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #include <sys/param.h>
+#include <sys/syscall.h>
 #endif
 
 namespace process_util {
@@ -54,7 +55,11 @@ long GetPid() {
 }
 
 long GetTid() {
+#ifdef __APPLE__
+  return ::syscall(SYS_thread_selfid);
+#else
   return ::gettid();
+#endif
 }
 
 long StartProcess(const std::string &executable,

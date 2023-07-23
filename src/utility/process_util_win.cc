@@ -18,8 +18,9 @@ native_string GetExecutablePath() {
   }
   native_string long_path(last_error == ERROR_SUCCESS ? length : 32768, _T('\0'));
   length = ::GetModuleFileName(NULL, &long_path[0], (DWORD)long_path.length());
-  if (last_error != ERROR_SUCCESS)
+  if (last_error != ERROR_SUCCESS) {
     return _T("");
+  }
   long_path.resize(length);
   return std::move(long_path);
 }
@@ -35,8 +36,9 @@ long GetTid() {
 namespace {
 
 native_string quote(const native_string &s) {
-  if (s.empty() || s.find(_T(' ')) == s.npos || (*s.begin() == _T('"') && *s.rbegin() == _T('"')))
+  if (s.empty() || s.find(_T(' ')) == s.npos || (*s.begin() == _T('"') && *s.rbegin() == _T('"'))) {
     return s;
+  }
   return _T("\"") + s + _T("\"");
 }
 
@@ -59,8 +61,9 @@ long StartProcess(const native_string &executable,
                       &si, &pi) == 0) {
     return 0;
   }
-  if (milliseconds > 0)
+  if (milliseconds > 0) {
     ::WaitForSingleObject(pi.hProcess, milliseconds);
+  }
 
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
@@ -69,21 +72,25 @@ long StartProcess(const native_string &executable,
 
 bool WaitProcess(long pid, unsigned int milliseconds) {
   HANDLE hProcess = ::OpenProcess(SYNCHRONIZE, FALSE, (DWORD)pid);
-  if (hProcess == NULL)
+  if (hProcess == NULL) {
     return true;
+  }
   LOKI_ON_BLOCK_EXIT(::CloseHandle, hProcess);
-  if (::WaitForSingleObject(hProcess, milliseconds) == WAIT_OBJECT_0)
+  if (::WaitForSingleObject(hProcess, milliseconds) == WAIT_OBJECT_0) {
     return true;
+  }
   return false;
 }
 
 bool KillProcess(long pid) {
   HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
-  if (hProcess == NULL)
+  if (hProcess == NULL) {
     return false;
+  }
   LOKI_ON_BLOCK_EXIT(::CloseHandle, hProcess);
-  if (!::TerminateProcess(hProcess, -1))
+  if (!::TerminateProcess(hProcess, -1)) {
     return false;
+  }
   return true;
 }
 

@@ -5,11 +5,11 @@
 #include "string_util.h"
 #include <chrono>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
 #include <loki/ScopeGuard.h>
 #include <map>
-#include <cstring>
 #include <string_view>
 
 #ifdef _WIN32
@@ -86,10 +86,12 @@ format(int level, const CharType *file, const CharType *function, int line, std:
   }
   if ((log_context_.content & LOG_CONTENT_LEVEL) != 0) {
     ss << GROUP_BEGIN;
-    if (level < LOG_LEVEL_OFF)
+    if (level < LOG_LEVEL_OFF) {
       level = LOG_LEVEL_OFF;
-    if (level > LOG_LEVEL_DEBUG)
+    }
+    if (level > LOG_LEVEL_DEBUG) {
       level = LOG_LEVEL_DEBUG;
+    }
 #if defined(_WIN32) && defined(_UNICODE)
     if constexpr (std::is_same<CharType, wchar_t>()) {
       ss << LOG_LEVEL_WSTRING[level];
@@ -226,27 +228,31 @@ void thread_log(int level, const wchar_t *file, const wchar_t *function, int lin
 } // namespace
 
 void log(int level, const char *file, const char *function, int line, std::string message) {
-  if (log_context_.level < level || log_context_.target == 0)
+  if (log_context_.level < level || log_context_.target == 0) {
     return;
+  }
   thread_log(level, file, function, line, std::move(message));
 }
 
 #if defined(_WIN32) && defined(_UNICODE)
 void log(int level, const wchar_t *file, const wchar_t *function, int line, std::wstring message) {
-  if (log_context_.level < level || log_context_.target == 0)
+  if (log_context_.level < level || log_context_.target == 0) {
     return;
+  }
   thread_log(level, file, function, line, std::move(message));
 }
 #endif
 
 bool setup(const TCHAR *app_name, int level, int content, int target, const TCHAR *log_file) {
-  if (level <= LOG_LEVEL_OFF)
+  if (level <= LOG_LEVEL_OFF) {
     return false;
+  }
   FILE *f = NULL;
   if ((target & LOG_TARGET_FILE) != 0 && log_file != NULL) {
     f = _tfopen(log_file, _T("a"));
-    if (f == NULL)
+    if (f == NULL) {
       return false;
+    }
   }
   thread_setup(app_name, level, content, target, f);
   return true;
@@ -256,14 +262,17 @@ namespace {
 
 std::string read_string(const TCHAR *log_setting_file) {
   FILE *f = _tfopen(log_setting_file, _T("r"));
-  if (f == NULL)
+  if (f == NULL) {
     return "";
+  }
   LOKI_ON_BLOCK_EXIT(fclose, f);
-  if (fseek(f, 0, SEEK_END) != 0)
+  if (fseek(f, 0, SEEK_END) != 0) {
     return "";
+  }
   long length = ftell(f);
-  if (fseek(f, 0, SEEK_SET) != 0)
+  if (fseek(f, 0, SEEK_SET) != 0) {
     return "";
+  }
   std::string s;
   s.resize(length);
   fread(&s[0], 1, length, f);
@@ -272,8 +281,9 @@ std::string read_string(const TCHAR *log_setting_file) {
 std::string_view trim_spaces(const std::string_view &s) {
   size_t begin = s.find_first_not_of(" \t\r\n");
   size_t end = s.find_last_not_of(" \t\r\n");
-  if (begin == s.npos || end == s.npos || begin > end)
+  if (begin == s.npos || end == s.npos || begin > end) {
     return std::string_view();
+  }
   return std::string_view(s.data() + begin, end - begin + 1);
 };
 
@@ -282,11 +292,13 @@ std::map<std::string_view, std::string_view> split_kv(const std::string &s) {
   std::map<std::string_view, std::string_view> m;
   for (auto line : lines) {
     size_t semicolon_pos = line.find_first_of(";");
-    if (semicolon_pos != line.npos)
+    if (semicolon_pos != line.npos) {
       line = line.substr(0, semicolon_pos);
+    }
     size_t equal_pos = line.find_first_of("=");
-    if (equal_pos == line.npos)
+    if (equal_pos == line.npos) {
       continue;
+    }
     std::string_view key = trim_spaces(line.substr(0, equal_pos));
     std::string_view value = trim_spaces(line.substr(equal_pos + 1));
     m.insert(std::make_pair(key, value));
@@ -424,19 +436,22 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
       // ignore illegal keys
     }
   }
-  if ((target & LOG_TARGET_FILE) == 0 && !log_file.empty())
+  if ((target & LOG_TARGET_FILE) == 0 && !log_file.empty()) {
     log_file.clear();
+  }
 }
 
 } // namespace
 
 bool setup_from_file(const TCHAR *log_setting_file) {
   std::string s = read_string(log_setting_file);
-  if (s.empty())
+  if (s.empty()) {
     return false;
+  }
   std::map<std::string_view, std::string_view> kv = split_kv(s);
-  if (kv.empty())
+  if (kv.empty()) {
     return false;
+  }
 
   native_string app_name;
   int level = LOG_LEVEL_OFF;

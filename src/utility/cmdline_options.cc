@@ -61,8 +61,9 @@ ParsedOption parse(int argc, const TCHAR *argv[]) {
 ParsedOption parse(const wchar_t *cmdline) {
   int argc = 0;
   LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
-  if (argv == NULL)
+  if (argv == NULL) {
     return {};
+  }
   LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
   return parse_native(argc, (LPCWSTR *)argv);
 }
@@ -73,8 +74,9 @@ ParsedOption parse(const char *cmdline) {
   std::wstring wstr = encoding::ANSIToUCS2(cmdline);
   int argc = 0;
   LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
-  if (argv == NULL)
+  if (argv == NULL) {
     return {};
+  }
   LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
   std::vector<std::string> argv_str;
   for (int i = 0; i < argc; ++i) {

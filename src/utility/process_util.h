@@ -14,6 +14,7 @@ namespace process_util {
 std::basic_string<TCHAR> GetExecutablePath();
 
 long GetPid();
+long GetTid();
 
 long StartProcess(const std::basic_string<TCHAR> &executable,
                   const std::vector<std::basic_string<TCHAR>> &arguments,

@@ -9,8 +9,12 @@ source_set("utility") {
     "crypto.h",
     "http_client.cc",
     "http_client.h",
+    "log.cc",
+    "log.h",
+    "log_init.h",
     "native_string.h",
     "process_util.h",
+    "string_util.h",
   ]
 
   if (is_win) {

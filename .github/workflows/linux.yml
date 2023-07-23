@@ -24,13 +24,17 @@ jobs:
       run: |
         pip install PyYAML
 
+    - name: Install libcurl-devel
+      run: |
+        sudo apt update
+        sudo apt install libcurl4-openssl-dev
+  
     - name: Check out code
       uses: actions/checkout@v3
 
     - name: Fetch dependencies
       run: |
         ./fetch_deps
-        sudo apt install libcurl4-openssl-dev
 
     - name: Fetch gn and ninja
       run: |

@@ -143,7 +143,7 @@ format(int level, const CharType *file, const CharType *function, int line, std:
       ss << (func_name == nullptr ? function : func_name + 1);
     } else {
       const char *func_name = strrchr(function, ':');
-      ss << (func_name == nullptr ? file : func_name + 1);
+      ss << (func_name == nullptr ? function : func_name + 1);
     }
 #else
     const char *func_name = strrchr(function, ':');

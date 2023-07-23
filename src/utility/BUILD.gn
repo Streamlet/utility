@@ -77,6 +77,9 @@ source_set("utility") {
 
 executable("utility_test") {
   testonly = true
+  if (is_win) {
+    configs += [ "../../build/config/win:console_subsystem" ]
+  }
 
   sources = [
     "cmdline_options_test.cc",
@@ -95,6 +98,10 @@ executable("utility_test") {
 
 executable("http_client_test") {
   testonly = true
+  if (is_win) {
+    configs += [ "../../build/config/win:console_subsystem" ]
+  }
+
   sources = [ "http_client_test.cc" ]
 
   deps = [ ":utility" ]
@@ -102,6 +109,10 @@ executable("http_client_test") {
 
 executable("cmdline_options_echo") {
   testonly = true
+  if (is_win) {
+    configs += [ "../../build/config/win:console_subsystem" ]
+  }
+
   sources = [ "cmdline_options_echo.cc" ]
 
   deps = [ ":utility" ]
@@ -110,6 +121,8 @@ executable("cmdline_options_echo") {
 if (is_win) {
   executable("cmdline_options_echo_win") {
     testonly = true
+    configs += [ "../../build/config/win:windows_subsystem" ]
+
     sources = [ "cmdline_options_echo_win.cc" ]
 
     deps = [ ":utility" ]
@@ -118,6 +131,10 @@ if (is_win) {
 
 executable("process_util_test") {
   testonly = true
+  if (is_win) {
+    configs += [ "../../build/config/win:console_subsystem" ]
+  }
+
   sources = [ "process_util_test.cc" ]
 
   deps = [ ":utility" ]

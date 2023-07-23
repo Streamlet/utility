@@ -1,8 +1,8 @@
 
 #include "cmdline_options.h"
 #include "native_string.h"
+#include <cstdio>
 #include <sstream>
-#include <stdio.h>
 #include <windows.h>
 
 int WINAPI _tWinMain(__in HINSTANCE hInstance,

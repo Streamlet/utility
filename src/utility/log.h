@@ -26,24 +26,24 @@ void log(int level, const wchar_t *file, const wchar_t *function, int line, std:
 #endif
 
 template <typename CharType, typename Tn>
-void log_va(std::basic_stringstream<CharType> &ss,
-            int level,
-            const CharType *file,
-            const CharType *function,
-            int line,
-            Tn argn) {
+inline void log_va(std::basic_stringstream<CharType> &ss,
+                   int level,
+                   const CharType *file,
+                   const CharType *function,
+                   int line,
+                   Tn argn) {
   ss << argn;
   log(level, file, function, line, std::move(ss.str()));
 }
 
 template <typename CharType, typename T0, typename... T>
-void log_va(std::basic_stringstream<CharType> &ss,
-            int level,
-            const CharType *file,
-            const CharType *function,
-            int line,
-            T0 arg0,
-            T... rest) {
+inline void log_va(std::basic_stringstream<CharType> &ss,
+                   int level,
+                   const CharType *file,
+                   const CharType *function,
+                   int line,
+                   T0 arg0,
+                   T... rest) {
   if constexpr (std::is_same<CharType, char>()) {
     static_assert(!std::is_same<T0, const wchar_t *>(), "LOG_* macro only support narrow char strings. If you want "
                                                         "to log wide char strings, please use WLOG_* macros.");
@@ -56,14 +56,14 @@ void log_va(std::basic_stringstream<CharType> &ss,
 }
 
 template <typename... T>
-void log_va(int level, const char *file, const char *function, int line, T... args) {
+inline void log_va(int level, const char *file, const char *function, int line, T... args) {
   std::stringstream ss;
   log_va<char>(ss, level, file, function, line, std::forward<T>(args)...);
 }
 
 #ifdef _WIN32
 template <typename... T>
-void wlog_va(int level, const wchar_t *file, const wchar_t *function, int line, T... args) {
+inline void wlog_va(int level, const wchar_t *file, const wchar_t *function, int line, T... args) {
   std::wstringstream ss;
   log_va<wchar_t>(ss, level, file, function, line, std::forward<T>(args)...);
 }
@@ -108,7 +108,7 @@ void wlog_va(int level, const wchar_t *file, const wchar_t *function, int line, 
 #endif
 #else
 #define LOG_ERROR(...)
-#define TOG_ERROR(...)
+#define TLOG_ERROR(...)
 #ifdef _WIN32
 #define WLOG_ERROR(...)
 #endif

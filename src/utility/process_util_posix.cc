@@ -1,9 +1,9 @@
 #include "process_util.h"
+#include <ctime>
 #include <signal.h>
 #include <spawn.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 #ifdef __APPLE__
 #include <mach-o/dyld.h>

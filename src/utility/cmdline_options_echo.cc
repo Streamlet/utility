@@ -1,7 +1,7 @@
 
 #include "cmdline_options.h"
 #include "native_string.h"
-#include <stdio.h>
+#include <cstdio>
 
 int _tmain(int argc, const TCHAR *argv[]) {
   auto options = cmdline_options::parse(argc, argv);

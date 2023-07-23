@@ -1,7 +1,7 @@
 
 #include "native_string.h"
 #include "process_util.h"
-#include <stdio.h>
+#include <cstdio>
 
 #if defined(_WIN32)
 #define SHELL_CMD _T("cmd")

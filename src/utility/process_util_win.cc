@@ -9,11 +9,13 @@ namespace process_util {
 native_string GetExecutablePath() {
   TCHAR path[MAX_PATH] = {0};
   DWORD length = ::GetModuleFileName(NULL, path, MAX_PATH);
-  DWORD last_error = ::GetLastError();
-  if (last_error == ERROR_SUCCESS && length < MAX_PATH)
+  if (length < MAX_PATH) {
     return path;
-  if (!(last_error == ERROR_SUCCESS && length > MAX_PATH || last_error == ERROR_INSUFFICIENT_BUFFER))
+  }
+  DWORD last_error = ::GetLastError();
+  if (!(length > MAX_PATH || last_error == ERROR_INSUFFICIENT_BUFFER)) {
     return _T("");
+  }
   native_string long_path(last_error == ERROR_SUCCESS ? length : 32768, _T('\0'));
   length = ::GetModuleFileName(NULL, &long_path[0], (DWORD)long_path.length());
   if (last_error != ERROR_SUCCESS)

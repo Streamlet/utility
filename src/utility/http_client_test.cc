@@ -4,8 +4,9 @@
 
 int main(int argc, char *argv[]) {
   HttpClient http;
-  if (argc <= 1)
+  if (argc <= 1) {
     return -1;
+  }
 
   unsigned status = 0;
   HttpClient::ResponseHeader header;
@@ -14,8 +15,9 @@ int main(int argc, char *argv[]) {
   const int RETRY_TIMES = 3;
   for (int i = 0; i < RETRY_TIMES; ++i) {
     ec = http.Get(argv[1], {}, &status, &header, &body);
-    if (!ec)
+    if (!ec) {
       break;
+    }
     std::cout << ec.value() << ": " << ec.message().c_str() << (i + i < RETRY_TIMES ? ", retrying..." : ", failed")
               << std::endl;
     process_util::Sleep(1000);

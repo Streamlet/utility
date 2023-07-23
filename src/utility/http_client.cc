@@ -10,20 +10,23 @@ const char *HttpClient::DEFAULT_USER_AGENT =
 
 void ParseHeader(const std::string &raw_header, HttpClient::ResponseHeader &parsed_header) {
   for (size_t i = 0; i < raw_header.length();) {
-    const char *p    = raw_header.c_str() + i;
+    const char *p = raw_header.c_str() + i;
     const char *crlf = strstr(p, "\r\n");
-    if (crlf == nullptr)
+    if (crlf == nullptr) {
       break;
+    }
     const char *colon = strstr(p, ": ");
-    if (colon != nullptr && colon <= crlf)
+    if (colon != nullptr && colon <= crlf) {
       parsed_header.insert(std::make_pair(std::string(p, colon), std::string(colon + 2, crlf)));
+    }
     i += crlf - p + 2;
   }
 }
 
 HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body) {
-  if (response_body == nullptr)
+  if (response_body == nullptr) {
     return nullptr;
+  }
   return [response_body](const void *data, size_t length) {
     response_body->append(static_cast<const char *>(data), length);
   };

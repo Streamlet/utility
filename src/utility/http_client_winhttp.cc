@@ -66,8 +66,9 @@ public:
                                  ResponseHeader *response_header,
                                  ResponseBodyReceiver response_body_receiver,
                                  unsigned timeout = 0) {
-    if (timeout > 0)
+    if (timeout > 0) {
       ::WinHttpSetTimeouts(session_, timeout, timeout, timeout, timeout);
+    }
 
     std::wstring url = encoding::UTF8ToUCS2(url_string);
     URL_COMPONENTS urlComp = {sizeof(urlComp)};
@@ -75,41 +76,48 @@ public:
     urlComp.dwHostNameLength = (DWORD)-1;
     urlComp.dwUrlPathLength = (DWORD)-1;
     urlComp.dwExtraInfoLength = (DWORD)-1;
-    if (!::WinHttpCrackUrl(url.c_str(), (DWORD)url.length(), 0, &urlComp))
+    if (!::WinHttpCrackUrl(url.c_str(), (DWORD)url.length(), 0, &urlComp)) {
       return std::make_error_code(std::errc::invalid_argument);
+    }
     std::wstring_view url_protocol(urlComp.lpszScheme, urlComp.dwSchemeLength);
     std::wstring url_host(urlComp.lpszHostName, urlComp.dwHostNameLength);
     std::wstring url_path(urlComp.lpszUrlPath, urlComp.dwUrlPathLength);
     std::wstring url_query(urlComp.lpszExtraInfo, urlComp.dwExtraInfoLength);
 
-    if (url_protocol != PROTOCOL_HTTPS && url_protocol != PROTOCOL_HTTP)
+    if (url_protocol != PROTOCOL_HTTPS && url_protocol != PROTOCOL_HTTP) {
       return std::make_error_code(std::errc::protocol_not_supported);
+    }
     bool ssl = url_protocol == PROTOCOL_HTTPS;
 
     HINTERNET connection = Connect(session_, url_host, urlComp.nPort);
-    if (connection == nullptr)
+    if (connection == nullptr) {
       return make_winhttp_error(::GetLastError());
+    }
     LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, connection);
 
     HINTERNET request = OpenRequest(connection, ssl, method, url_path + url_query);
-    if (request == nullptr)
+    if (request == nullptr) {
       return make_winhttp_error(::GetLastError());
+    }
     LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, request);
 
     std::error_code ec = SendRequest(request, request_header, request_body);
-    if (ec)
+    if (ec) {
       return ec;
+    }
 
     if (response_status != nullptr || response_header != nullptr) {
       ec = ReceiveHeader(request, response_status, response_header);
-      if (ec)
+      if (ec) {
         return ec;
+      }
     }
 
     if (response_body_receiver != nullptr) {
       ec = ReceiveBody(request, response_body_receiver);
-      if (ec)
+      if (ec) {
         return ec;
+      }
     }
 
     return {};
@@ -128,16 +136,18 @@ private:
   std::error_code
   SendRequest(HINTERNET request, const RequestHeader &request_header, const std::string_view &request_body) {
     std::stringstream ss;
-    for (const auto &h : request_header)
+    for (const auto &h : request_header) {
       ss << h.first << ": " << h.second << "\r\n";
+    }
     std::wstring header_string = encoding::UTF8ToUCS2(ss.str());
     if (!::WinHttpSendRequest(request, header_string.c_str(), (DWORD)header_string.length(),
                               const_cast<char *>(request_body.data()), (DWORD)request_body.length(),
                               (DWORD)request_body.length(), 0)) {
       return make_winhttp_error(::GetLastError());
     }
-    if (!::WinHttpReceiveResponse(request, nullptr))
+    if (!::WinHttpReceiveResponse(request, nullptr)) {
       return make_winhttp_error(::GetLastError());
+    }
 
     return {};
   }
@@ -148,8 +158,9 @@ private:
       if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
                                  WINHTTP_NO_OUTPUT_BUFFER, &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
         DWORD error = ::GetLastError();
-        if (error != ERROR_INSUFFICIENT_BUFFER)
+        if (error != ERROR_INSUFFICIENT_BUFFER) {
           return make_winhttp_error(error);
+        }
       }
       std::wstring status_code;
       status_code.resize(status_code_size * sizeof(wchar_t));
@@ -165,8 +176,9 @@ private:
       if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
                                  WINHTTP_NO_OUTPUT_BUFFER, &header_size, WINHTTP_NO_HEADER_INDEX)) {
         DWORD error = ::GetLastError();
-        if (error != ERROR_INSUFFICIENT_BUFFER)
+        if (error != ERROR_INSUFFICIENT_BUFFER) {
           return make_winhttp_error(error);
+        }
       }
       std::wstring buffer_w;
       buffer_w.resize(header_size);
@@ -185,15 +197,18 @@ private:
     DWORD bytes_available = 0;
     std::string buffer;
     while (true) {
-      if (!::WinHttpQueryDataAvailable(request, &bytes_available))
+      if (!::WinHttpQueryDataAvailable(request, &bytes_available)) {
         return make_winhttp_error(::GetLastError());
-      if (bytes_available == 0)
+      }
+      if (bytes_available == 0) {
         break;
+      }
       while (bytes_available > 0) {
         buffer.resize(bytes_available);
         DWORD bytes_read = 0;
-        if (!::WinHttpReadData(request, buffer.data(), bytes_available, &bytes_read))
+        if (!::WinHttpReadData(request, buffer.data(), bytes_available, &bytes_read)) {
           return make_winhttp_error(::GetLastError());
+        }
         if (bytes_read > 0) {
           response_body_receiver(buffer.data(), bytes_read);
         }

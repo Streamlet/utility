@@ -24,8 +24,9 @@ size_t read_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
   CUrlReadContext *ctx = static_cast<CUrlReadContext *>(userdata);
 
   size_t len = ctx->total - ctx->read;
-  if (len > size * nitems)
+  if (len > size * nitems) {
     len = size * nitems;
+  }
   memcpy(buffer, ctx->data + ctx->read, len);
   ctx->data += len;
   return len;
@@ -90,22 +91,26 @@ public:
                                  ResponseBodyReceiver response_body_receiver,
                                  unsigned timeout = 0) {
     CURL *curl = curl_easy_init();
-    if (curl == nullptr)
+    if (curl == nullptr) {
       return make_curl_error(CURLE_FAILED_INIT);
+    }
     LOKI_ON_BLOCK_EXIT(curl_easy_cleanup, curl);
 
     CURLcode error = curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent_.empty() ? "cURL" : user_agent_.c_str());
-    if (error != CURLE_OK)
+    if (error != CURLE_OK) {
       return make_curl_error(error);
+    }
 
     std::string url(url_string);
     error = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    if (error != CURLE_OK)
+    if (error != CURLE_OK) {
       return make_curl_error(error);
+    }
 
     error = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-    if (error != CURLE_OK)
+    if (error != CURLE_OK) {
       return make_curl_error(error);
+    }
 
     switch (method) {
     case HttpMethod::Head:
@@ -126,8 +131,9 @@ public:
     default:
       return make_curl_error(CURLE_UNSUPPORTED_PROTOCOL);
     }
-    if (error != CURLE_OK)
+    if (error != CURLE_OK) {
       return make_curl_error(error);
+    }
 
     curl_slist *header = nullptr;
     LOKI_ON_BLOCK_EXIT(curl_slist_free_all, header);
@@ -140,49 +146,58 @@ public:
         header = curl_slist_append(header, header_line.c_str());
       }
       error = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
     }
 
     CUrlReadContext read_ctx{request_body.data(), request_body.size(), 0};
     if (!request_body.empty()) {
       error = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
       error = curl_easy_setopt(curl, CURLOPT_READDATA, &read_ctx);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
     }
 
     std::string raw_header;
     CUrlWriteHeaderContext header_ctx{raw_header};
     if (response_header != nullptr) {
       error = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_header_callback);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
       error = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_ctx);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
     }
     CUrlWriteBodyContext write_ctx{response_body_receiver};
     if (response_body_receiver != nullptr) {
       error = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body_callback);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
       error = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_ctx);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
     }
 
     error = curl_easy_perform(curl);
-    if (error != CURLE_OK)
+    if (error != CURLE_OK) {
       return make_curl_error(error);
+    }
 
     if (response_status != nullptr) {
       long response_code = 0;
       error = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-      if (error != CURLE_OK)
+      if (error != CURLE_OK) {
         return make_curl_error(error);
+      }
       *response_status = (unsigned)response_code;
     }
 

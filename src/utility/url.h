@@ -16,5 +16,5 @@ struct UrlT {
   std::basic_string_view<CharType> fragment;
 };
 
-using Url  = UrlT<char>;
+using Url = UrlT<char>;
 using UrlW = UrlT<wchar_t>;

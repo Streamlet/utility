@@ -10,12 +10,14 @@
 #define LOG_LEVEL_INFO 4
 #define LOG_LEVEL_DEBUG 5
 
-#ifndef LOG_LEVEL
 #ifdef _DEBUG
-#define LOG_LEVEL LOG_LEVEL_DEBUG
+#define LOG_LEVEL_DEFAULT LOG_LEVEL_DEBUG
 #else
-#define LOG_LEVEL LOG_LEVEL_INFO
+#define LOG_LEVEL_DEFAULT LOG_LEVEL_INFO
 #endif
+
+#ifndef LOG_LEVEL
+#define LOG_LEVEL LOG_LEVEL_DEFAULT
 #endif
 
 namespace logging {

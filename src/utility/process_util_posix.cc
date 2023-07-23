@@ -53,6 +53,10 @@ long GetPid() {
   return ::getpid();
 }
 
+long GetTid() {
+  return ::gettid();
+}
+
 long StartProcess(const std::string &executable,
                   const std::vector<std::string> &arguments,
                   const std::string &start_dir,

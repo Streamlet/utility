@@ -26,6 +26,10 @@ long GetPid() {
   return ::GetCurrentProcessId();
 }
 
+long GetTid() {
+  return ::GetCurrentThreadId();
+}
+
 namespace {
 
 native_string quote(const native_string &s) {

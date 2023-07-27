@@ -22,7 +22,7 @@ jobs:
     - name: Build
       run: |
         cd src/server
-        go build -v .
+        CGO_ENABLED=0 go build -v .
 
     - name: Make package
       run: |

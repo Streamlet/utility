@@ -518,7 +518,7 @@ str_join(const std::vector<_Source> &str_list, const _Elem *delimiter, size_t de
     if (it != str_list.begin()) {
       ret.append(delimiter, delimiter_len);
     }
-    ret.append(it->data(), it->c_str() + it->length());
+    ret.append(it->data(), it->data() + it->length());
   }
   return ret;
 }

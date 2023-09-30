@@ -2,11 +2,25 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstring>
+#include <cwchar>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace string_util {
+
+//
+// str_length
+//
+
+size_t str_length(const char *s) {
+  return strlen(s);
+}
+
+size_t str_length(const wchar_t *s) {
+  return wcslen(s);
+}
 
 //
 // str_split
@@ -46,7 +60,7 @@ template <class _Elem,
           class _Alloc = std::allocator<_Elem>,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result> str_split(const _Elem *str, size_t str_len, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str, str_len, delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length(), max);
+  return str_split(str, str_len, delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -98,7 +112,7 @@ template <class _Elem,
           class _Alloc = std::allocator<_Elem>,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result> str_split(const _Elem *str, const _Elem *delimiter, size_t delimiter_len, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter, delimiter_len, max);
+  return str_split(str, str_length(str), delimiter, delimiter_len, max);
 }
 
 /**
@@ -110,8 +124,7 @@ template <class _Elem,
           class _Alloc = std::allocator<_Elem>,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result> str_split(const _Elem *str, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter,
-                   std::basic_string_view<_Elem, _Traits>(delimiter).length(), max);
+  return str_split(str, str_length(str), delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -124,8 +137,7 @@ template <class _Elem,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result>
 str_split(const _Elem *str, const std::basic_string<_Elem, _Traits, _Alloc> &delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter.c_str(), delimiter.length(),
-                   max);
+  return str_split(str, str_length(str), delimiter.c_str(), delimiter.length(), max);
 }
 
 /**
@@ -138,8 +150,7 @@ template <class _Elem,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result>
 str_split(const _Elem *str, const std::basic_string_view<_Elem, _Traits> &delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter.c_str(), delimiter.length(),
-                   max);
+  return str_split(str, str_length(str), delimiter.c_str(), delimiter.length(), max);
 }
 
 /**
@@ -151,7 +162,7 @@ template <class _Elem,
           class _Alloc = std::allocator<_Elem>,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result> str_split(const _Elem *str, const _Elem delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), &delimiter, 1, max);
+  return str_split(str, str_length(str), &delimiter, 1, max);
 }
 
 /**
@@ -179,8 +190,7 @@ template <class _Elem,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result>
 str_split(const std::basic_string<_Elem, _Traits, _Alloc> &str, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str.c_str(), str.length(), delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length(),
-                   max);
+  return str_split(str.c_str(), str.length(), delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -249,8 +259,7 @@ template <class _Elem,
           class _Result = std::basic_string_view<_Elem, _Traits>>
 inline std::vector<_Result>
 str_split(const std::basic_string_view<_Elem, _Traits> &str, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str.data(), str.length(), delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length(),
-                   max);
+  return str_split(str.data(), str.length(), delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -302,7 +311,7 @@ str_split_copy(const _Elem *str, size_t str_len, const _Elem *delimiter, size_t 
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const _Elem *str, size_t str_len, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str, str_len, delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length(), max);
+  return str_split(str, str_len, delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -342,7 +351,7 @@ str_split_copy(const _Elem *str, size_t str_len, const _Elem delimiter, size_t m
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const _Elem *str, const _Elem *delimiter, size_t delimiter_len, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter, delimiter_len, max);
+  return str_split(str, str_length(str), delimiter, delimiter_len, max);
 }
 
 /**
@@ -352,8 +361,7 @@ str_split_copy(const _Elem *str, const _Elem *delimiter, size_t delimiter_len, s
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const _Elem *str, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter,
-                   std::basic_string_view<_Elem, _Traits>(delimiter).length(), max);
+  return str_split(str, str_length(str), delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -363,8 +371,7 @@ str_split_copy(const _Elem *str, const _Elem *delimiter, size_t max = 0) {
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const _Elem *str, const std::basic_string<_Elem, _Traits, _Alloc> &delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter.c_str(), delimiter.length(),
-                   max);
+  return str_split(str, str_length(str), delimiter.c_str(), delimiter.length(), max);
 }
 
 /**
@@ -374,8 +381,7 @@ str_split_copy(const _Elem *str, const std::basic_string<_Elem, _Traits, _Alloc>
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const _Elem *str, const std::basic_string_view<_Elem, _Traits> &delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), delimiter.c_str(), delimiter.length(),
-                   max);
+  return str_split(str, str_length(str), delimiter.c_str(), delimiter.length(), max);
 }
 
 /**
@@ -385,7 +391,7 @@ str_split_copy(const _Elem *str, const std::basic_string_view<_Elem, _Traits> &d
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const _Elem *str, const _Elem delimiter, size_t max = 0) {
-  return str_split(str, std::basic_string_view<_Elem, _Traits>(str).length(), &delimiter, 1, max);
+  return str_split(str, str_length(str), &delimiter, 1, max);
 }
 
 /**
@@ -408,8 +414,7 @@ str_split_copy(const std::basic_string<_Elem, _Traits, _Alloc> &str,
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const std::basic_string<_Elem, _Traits, _Alloc> &str, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str.c_str(), str.length(), delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length(),
-                   max);
+  return str_split(str.c_str(), str.length(), delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -463,8 +468,7 @@ inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>> str_split_copy(
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::vector<std::basic_string<_Elem, _Traits, _Alloc>>
 str_split_copy(const std::basic_string_view<_Elem, _Traits> &str, const _Elem *delimiter, size_t max = 0) {
-  return str_split(str.data(), str.length(), delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length(),
-                   max);
+  return str_split(str.data(), str.length(), delimiter, str_length(delimiter), max);
 }
 
 /**
@@ -533,7 +537,7 @@ template <class _Elem,
           class _Source = std::basic_string_view<_Elem, _Traits>>
 inline std::basic_string<_Elem, _Traits, _Alloc> str_join(const std::vector<_Source> &str_list,
                                                           const _Elem *delimiter) {
-  return str_join(str_list, delimiter, std::basic_string_view<_Elem, _Traits>(delimiter).length());
+  return str_join(str_list, delimiter, str_length(delimiter));
 }
 
 /**
@@ -627,8 +631,35 @@ inline _Elem *str_replace_inplace(_Elem *str,
  */
 template <class _Elem>
 inline _Elem *str_replace_inplace(_Elem *str, size_t str_len, const _Elem *find, const _Elem *replace, size_t max = 0) {
-  return str_replace_inplace(str, str_len, find, std::basic_string_view<_Elem>(find).length(), replace,
-                             std::basic_string_view<_Elem>(replace).length(), max);
+  return str_replace_inplace(str, str_len, find, str_length(find), replace, str_length(replace), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    null-terminated
+ * replace: std::string
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline _Elem *str_replace_inplace(_Elem *str,
+                                  size_t str_len,
+                                  const _Elem *find,
+                                  const std::basic_string<_Elem, _Traits, _Alloc> &replace,
+                                  size_t max = 0) {
+  return str_replace_inplace(str, str_len, find, str_length(find), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    std::string
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline _Elem *str_replace_inplace(_Elem *str,
+                                  size_t str_len,
+                                  const std::basic_string<_Elem, _Traits, _Alloc> &find,
+                                  const _Elem *replace,
+                                  size_t max = 0) {
+  return str_replace_inplace(str, str_len, find.c_str(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -643,6 +674,34 @@ inline _Elem *str_replace_inplace(_Elem *str,
                                   const std::basic_string<_Elem, _Traits, _Alloc> &replace,
                                   size_t max = 0) {
   return str_replace_inplace(str, str_len, find.c_str(), find.length(), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    null-terminated
+ * replace: std::string_view
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline _Elem *str_replace_inplace(_Elem *str,
+                                  size_t str_len,
+                                  const _Elem *find,
+                                  const std::basic_string_view<_Elem, _Traits> &replace,
+                                  size_t max = 0) {
+  return str_replace_inplace(str, str_len, find, str_length(find), replace.data(), replace.length(), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    std::string_view
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline _Elem *str_replace_inplace(_Elem *str,
+                                  size_t str_len,
+                                  const std::basic_string_view<_Elem, _Traits> &find,
+                                  const _Elem *replace,
+                                  size_t max = 0) {
+  return str_replace_inplace(str, str_len, find.data(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -697,8 +756,7 @@ inline std::basic_string<_Elem, _Traits, _Alloc> &str_replace_inplace(std::basic
                                                                       const _Elem *find,
                                                                       const _Elem *replace,
                                                                       size_t max = 0) {
-  return str_replace_inplace(str, find, std::basic_string_view<_Elem, _Traits>(find).length(), replace,
-                             std::basic_string_view<_Elem, _Traits>(replace).length(), max);
+  return str_replace_inplace(str, find, str_length(find), replace, str_length(replace), max);
 }
 
 /**
@@ -760,7 +818,7 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
                                                              size_t replace_len,
                                                              size_t max = 0) {
   std::basic_string<_Elem, _Traits, _Alloc> ret;
-  if (find_len <= replace_len) {
+  if (find_len >= replace_len) {
     ret.assign(str, str_len);
     str_replace_inplace(&ret[0], str_len, find, find_len, replace, replace_len, max);
     ret.resize(std::basic_string_view<_Elem, _Traits>(ret.c_str()).length());
@@ -779,8 +837,35 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::basic_string<_Elem, _Traits, _Alloc>
 str_replace(const _Elem *str, size_t str_len, const _Elem *find, const _Elem *replace, size_t max = 0) {
-  return str_replace(str, str_len, find, std::basic_string_view<_Elem, _Traits>(find).length(), replace,
-                     std::basic_string_view<_Elem, _Traits>(replace).length(), max);
+  return str_replace(str, str_len, find, str_length(find), replace, str_length(replace), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    null-terminated
+ * replace: std::string
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             size_t str_len,
+                                                             const _Elem *find,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_len, find, str_length(find), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    std::string
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             size_t str_len,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_len, find.c_str(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -795,6 +880,34 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
                                                              const std::basic_string<_Elem, _Traits, _Alloc> &replace,
                                                              size_t max = 0) {
   return str_replace(str, str_len, find.c_str(), find.length(), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    null-terminated
+ * replace: std::string_view
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             size_t str_len,
+                                                             const _Elem *find,
+                                                             const std::basic_string_view<_Elem, _Traits> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_len, find, str_length(find), replace.data(), replace.length(), max);
+}
+
+/**
+ * source:  char*+len
+ * find:    std::string_view
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             size_t str_len,
+                                                             const std::basic_string_view<_Elem, _Traits> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_len, find.data(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -830,8 +943,7 @@ str_replace(const _Elem *str, size_t str_len, const _Elem find, const _Elem repl
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(
     const _Elem *str, const _Elem *find, size_t find_len, const _Elem *replace, size_t replace_len, size_t max = 0) {
-  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), find, find_len, replace, replace_len,
-                     max);
+  return str_replace(str, str_length(str), find, find_len, replace, replace_len, max);
 }
 
 /**
@@ -842,9 +954,33 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::basic_string<_Elem, _Traits, _Alloc>
 str_replace(const _Elem *str, const _Elem *find, const _Elem *replace, size_t max = 0) {
-  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), find,
-                     std::basic_string_view<_Elem, _Traits>(find).length(), replace,
-                     std::basic_string_view<_Elem, _Traits>(replace).length(), max);
+  return str_replace(str, str_length(str), find, str_length(find), replace, str_length(replace), max);
+}
+
+/**
+ * source:  null-terminated
+ * find:    null-terminated
+ * replace: std::string
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             const _Elem *find,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_length(str), find, str_length(find), replace.data(), replace.length(), max);
+}
+
+/**
+ * source:  null-terminated
+ * find:    std::string
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_length(str), find.data(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -857,8 +993,33 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
                                                              const std::basic_string<_Elem, _Traits, _Alloc> &find,
                                                              const std::basic_string<_Elem, _Traits, _Alloc> &replace,
                                                              size_t max = 0) {
-  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), find.data(), find.length(),
-                     replace.data(), replace.length(), max);
+  return str_replace(str, str_length(str), find.data(), find.length(), replace.data(), replace.length(), max);
+}
+
+/**
+ * source:  null-terminated
+ * find:    null-terminated
+ * replace: std::string_view
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             const _Elem *find,
+                                                             const std::basic_string_view<_Elem, _Traits> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_length(str), find, str_length(find), replace.data(), replace.length(), max);
+}
+
+/**
+ * source:  null-terminated
+ * find:    std::string_view
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
+                                                             const std::basic_string_view<_Elem, _Traits> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, str_length(str), find.data(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -871,8 +1032,7 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
                                                              const std::basic_string_view<_Elem, _Traits> &find,
                                                              const std::basic_string_view<_Elem, _Traits> &replace,
                                                              size_t max = 0) {
-  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), find.data(), find.length(),
-                     replace.data(), replace.length(), max);
+  return str_replace(str, str_length(str), find.data(), find.length(), replace.data(), replace.length(), max);
 }
 
 /**
@@ -883,7 +1043,7 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const _Elem *str,
 template <class _Elem, class _Traits = std::char_traits<_Elem>, class _Alloc = std::allocator<_Elem>>
 inline std::basic_string<_Elem, _Traits, _Alloc>
 str_replace(const _Elem *str, const _Elem find, const _Elem replace, size_t max = 0) {
-  return str_replace(str, std::basic_string_view<_Elem, _Traits>(str).length(), &find, 1, &replace, 1, max);
+  return str_replace(str, str_length(str), &find, 1, &replace, 1, max);
 }
 
 /**
@@ -911,8 +1071,33 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_st
                                                              const _Elem *find,
                                                              const _Elem *replace,
                                                              size_t max = 0) {
-  return str_replace(str, find, std::basic_string_view<_Elem, _Traits>(find).length(), replace,
-                     std::basic_string_view<_Elem, _Traits>(replace).length(), max);
+  return str_replace(str, find, str_length(find), replace, str_length(replace), max);
+}
+
+/**
+ * source:  std::string
+ * find:    null-terminated
+ * replace: std::string
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string<_Elem, _Traits, _Alloc> &str,
+                                                             const _Elem *find,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, find, str_length(find), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  std::string
+ * find:    std::string
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string<_Elem, _Traits, _Alloc> &str,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, find.c_str(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -926,6 +1111,32 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_st
                                                              const std::basic_string<_Elem, _Traits, _Alloc> &replace,
                                                              size_t max = 0) {
   return str_replace(str, find.c_str(), find.length(), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  std::string
+ * find:    null-terminated
+ * replace: std::string_view
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string<_Elem, _Traits, _Alloc> &str,
+                                                             const _Elem *find,
+                                                             const std::basic_string_view<_Elem, _Traits> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, find, str_length(find), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  std::string
+ * find:    std::string_view
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string<_Elem, _Traits, _Alloc> &str,
+                                                             const std::basic_string_view<_Elem, _Traits> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, find.c_str(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -979,8 +1190,33 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_st
                                                              const _Elem *find,
                                                              const _Elem *replace,
                                                              size_t max = 0) {
-  return str_replace(str, find, std::basic_string_view<_Elem, _Traits>(find).length(), replace,
-                     std::basic_string_view<_Elem, _Traits>(replace).length(), max);
+  return str_replace(str, find, str_length(find), replace, str_length(replace), max);
+}
+
+/**
+ * source:  std::string_view
+ * find:    null-terminated
+ * replace: std::string
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string_view<_Elem, _Traits> &str,
+                                                             const _Elem *find,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str, find, str_length(find), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  std::string_view
+ * find:    std::string
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string_view<_Elem, _Traits> &str,
+                                                             const std::basic_string<_Elem, _Traits, _Alloc> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str, find.c_str(), find.length(), replace, str_length(replace), max);
 }
 
 /**
@@ -994,6 +1230,32 @@ inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_st
                                                              const std::basic_string<_Elem, _Traits, _Alloc> &replace,
                                                              size_t max = 0) {
   return str_replace(str, find.c_str(), find.length(), replace.c_str(), replace.length(), max);
+}
+
+/**
+ * source:  std::string_view
+ * find:    null-terminated
+ * replace: std::string_view
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string_view<_Elem, _Traits> &str,
+                                                             const _Elem *find,
+                                                             const std::basic_string_view<_Elem, _Traits> &replace,
+                                                             size_t max = 0) {
+  return str_replace(str.data(), str.length(), find, str_length(find), replace.data(), replace.length(), max);
+}
+
+/**
+ * source:  std::string_view
+ * find:    std::string_view
+ * replace: null-terminated
+ */
+template <class _Elem, class _Traits, class _Alloc>
+inline std::basic_string<_Elem, _Traits, _Alloc> str_replace(const std::basic_string_view<_Elem, _Traits> &str,
+                                                             const std::basic_string_view<_Elem, _Traits> &find,
+                                                             const _Elem *replace,
+                                                             size_t max = 0) {
+  return str_replace(str.data(), str.length(), find.data(), find.length(), replace, str_length(replace), max);
 }
 
 /**

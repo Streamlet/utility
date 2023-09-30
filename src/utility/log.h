@@ -53,7 +53,7 @@ inline void log_va(std::basic_stringstream<CharType> &ss,
     static_assert(!std::is_same<T0, const char *>(), "WLOG_* macro only support wide char strings. If you want to "
                                                      "log narrow char strings, please use LOG_* macros.");
   }
-  ss << arg0 << (CharType)' ';
+  ss << arg0;
   log_va(ss, level, file, function, line, std::forward<T>(rest)...);
 }
 

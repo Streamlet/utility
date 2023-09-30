@@ -14,11 +14,11 @@ namespace string_util {
 // str_length
 //
 
-size_t str_length(const char *s) {
+inline size_t str_length(const char *s) {
   return strlen(s);
 }
 
-size_t str_length(const wchar_t *s) {
+inline size_t str_length(const wchar_t *s) {
   return wcslen(s);
 }
 

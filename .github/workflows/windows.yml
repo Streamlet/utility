@@ -2,12 +2,12 @@ name: windows
 
 on:
   push:
-  pull_request:
+    branches:
+      - "master"
   release:
-    types: published
+    types: [published]
 
 jobs:
-
   build:
     if: ${{ !contains(github.event.head_commit.message, '[no-build]') }}
     name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.config }} winhttp=${{ matrix.winhttp }}
@@ -17,38 +17,37 @@ jobs:
         shell: cmd
     strategy:
       matrix:
-        os: [ windows-latest ]
-        arch: [ x64, x86 ]
-        config: [ debug, release ]
-        winhttp: [ true, false ]
+        os: [windows-latest]
+        arch: [x64, x86]
+        config: [debug, release]
+        winhttp: [true, false]
 
     steps:
+      - name: Setup python environment
+        run: |
+          pip install PyYAML
 
-    - name: Setup python environment
-      run: |
-        pip install PyYAML
+      - name: Check out code
+        uses: actions/checkout@v3
 
-    - name: Check out code
-      uses: actions/checkout@v3
+      - name: Fetch dependencies
+        run: |
+          fetch_deps.bat
 
-    - name: Fetch dependencies
-      run: |
-        fetch_deps.bat
+      - name: Fetch gn and ninja
+        run: |
+          python build\\fetch_binaries.py
 
-    - name: Fetch gn and ninja
-      run: |
-        python build\\fetch_binaries.py
+      - name: Compile
+        run: |
+          build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }} winhttp=${{ matrix.winhttp }}"
+          build\\bin\\ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
 
-    - name: Compile
-      run: |
-        build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }} winhttp=${{ matrix.winhttp }}"
-        build\\bin\\ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
+      - name: Unittest
+        run: |
+          out\\${{ matrix.config }}_${{ matrix.arch }}\\utility_test
+          out\\${{ matrix.config }}_${{ matrix.arch }}\\http_client_test https://httpbin.org/get
 
-    - name: Unittest
-      run: |
-        out\\${{ matrix.config }}_${{ matrix.arch }}\\utility_test
-        out\\${{ matrix.config }}_${{ matrix.arch }}\\http_client_test https://httpbin.org/get
-
-    - name: Test
-      run: |
-        python src\\sample\\test.py out\\${{ matrix.config }}_${{ matrix.arch }}
+      - name: Test
+        run: |
+          python src\\sample\\test.py out\\${{ matrix.config }}_${{ matrix.arch }}

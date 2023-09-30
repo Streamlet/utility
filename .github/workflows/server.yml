@@ -3,7 +3,7 @@ name: server
 on:
   push:
     branches:
-      - "master"
+      - master
     tags:
       - v[0-9]+.*
 

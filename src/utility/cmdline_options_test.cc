@@ -133,18 +133,22 @@ TEST(cmdline_options_test, mixed_no_order_no_value) {
 }
 
 TEST(cmdline_options_test, case_translate) {
-  const TCHAR *argv[] = {_T("exe_path"), _T("--k1=v1"), _T("-k2"), _T("2"), _T("k3")};
+  const TCHAR *argv[] = {_T("exe_path"), _T("--k1=v1"), _T("-k2"), _T("1"), _T("k3")};
   auto result = cmdline_options::parse(5, argv);
   ASSERT_EQ(result.has(_T("k1")), true);
   ASSERT_EQ(result.has(_T("k2")), true);
   ASSERT_EQ(result.has(_T("k3")), true);
   ASSERT_EQ(result.has(_T("k4")), false);
   ASSERT_EQ(result.get(_T("k1")), _T("v1"));
-  ASSERT_EQ(result.get(_T("k2")), _T("2"));
+  ASSERT_EQ(result.get(_T("k2")), _T("1"));
   ASSERT_EQ(result.get(_T("k3")), _T(""));
   ASSERT_EQ(result.get(_T("k4")), _T(""));
   ASSERT_EQ(result.get_as<int>(_T("k1")), 0);
-  ASSERT_EQ(result.get_as<int>(_T("k2")), 2);
+  ASSERT_EQ(result.get_as<int>(_T("k2")), 1);
   ASSERT_EQ(result.get_as<int>(_T("k3")), 0);
   ASSERT_EQ(result.get_as<int>(_T("k4")), 0);
+  ASSERT_EQ(result.get_as<bool>(_T("k1")), false);
+  ASSERT_EQ(result.get_as<bool>(_T("k2")), true);
+  ASSERT_EQ(result.get_as<bool>(_T("k3")), false);
+  ASSERT_EQ(result.get_as<bool>(_T("k4")), false);
 }

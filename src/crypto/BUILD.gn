@@ -1,0 +1,32 @@
+source_set("crypto") {
+  sources = [
+    "crypto.cc",
+    "crypto.h",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  libs = []
+  if (is_linux) {
+    libs = [
+      "crypto",  # for crypto.cc
+    ]
+  }
+
+  deps = [
+    "../../thirdparty:loki",
+    "../../thirdparty:openssl_crypto",
+  ]
+}
+
+source_set("unittest") {
+  testonly = true
+  sources = [ "crypto_test.cc" ]
+  deps = [
+    ":crypto",
+    "../../thirdparty:googletest",
+  ]
+}

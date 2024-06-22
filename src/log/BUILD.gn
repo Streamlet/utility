@@ -1,0 +1,14 @@
+source_set("log") {
+  sources = [
+    "log.cc",
+    "log.h",
+    "log_init.h",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../../thirdparty:loki" ]
+}

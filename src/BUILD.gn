@@ -1,0 +1,18 @@
+group("src") {
+  deps = [
+    "crypto",
+    "log",
+    "process",
+    "string",
+  ]
+}
+
+executable("unittest") {
+  testonly = true
+  sources = [ "unittest.cc" ]
+  deps = [
+    "../thirdparty:googletest",
+    "crypto:unittest",
+    "process:unittest",
+  ]
+}

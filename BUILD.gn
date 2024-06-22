@@ -1,16 +1,13 @@
+config("utility_public_config") {
+  include_dirs = [ "src" ]
+}
+
 group("all") {
-  deps = [
-    "src/client:installer",
-    "src/client:selfupdate",
-    "src/server",
-  ]
+  deps = [ "src" ]
+  public_configs = [ ":utility_public_config" ]
 }
 
 group("test") {
   testonly = true
-  deps = [
-    "src/sample:new_client",
-    "src/sample:old_client",
-    "src/utility:utility_test",
-  ]
+  deps = [ "src:unittest" ]
 }

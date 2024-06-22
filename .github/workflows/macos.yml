@@ -14,7 +14,6 @@ jobs:
       matrix:
         os: [macOS-latest]
         arch: [x64]
-        config: [debug, release]
 
     steps:
       - name: Setup python environment

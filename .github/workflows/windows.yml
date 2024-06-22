@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     if: ${{ !contains(github.event.head_commit.message, '[no-build]') }}
-    name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.config }} winhttp=${{ matrix.winhttp }}
+    name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.config }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -18,7 +18,6 @@ jobs:
         os: [windows-latest]
         arch: [x64, x86]
         config: [debug, release]
-        winhttp: [true, false]
 
     steps:
       - name: Setup python environment
@@ -38,7 +37,7 @@ jobs:
 
       - name: Compile
         run: |
-          build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }} winhttp=${{ matrix.winhttp }}"
+          build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }}"
           build\\bin\\ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
 
       - name: Unittest

@@ -1,8 +1,8 @@
 #include "log.h"
+#include "../process/process_util.h"
+#include "../string/native_string.h"
+#include "../string/string_util.h"
 #include "log_init.h"
-#include "native_string.h"
-#include "process_util.h"
-#include "string_util.h"
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -13,7 +13,7 @@
 #include <string_view>
 
 #ifdef _WIN32
-#include "encoding.h"
+#include "../string/encoding.h"
 #else
 #include <strings.h>
 #define strnicmp strncasecmp

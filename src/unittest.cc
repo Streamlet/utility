@@ -1,4 +1,4 @@
-#include "native_string.h"
+#include "string/native_string.h"
 #include <gtest/gtest.h>
 
 int _tmain(int argc, TCHAR *argv[]) {

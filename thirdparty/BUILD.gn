@@ -1,5 +1,3 @@
-import("../build_options.gni")
-
 # loki
 
 config("loki_public_config") {
@@ -16,14 +14,14 @@ group("loki") {
 # openssl
 # for posix: install openssl-devel before compiling
 if (is_linux) {
-  config("openssl_public_config") {
+  config("openssl_crypto_public_config") {
     cflags = [ "-Wno-deprecated-declarations" ]
   }
-  group("openssl") {
-    public_configs = [ ":openssl_public_config" ]
+  group("openssl_crypto") {
+    public_configs = [ ":openssl_crypto_public_config" ]
   }
 } else if (is_win || is_mac) {
-  config("openssl_public_config") {
+  config("openssl_crypto_public_config") {
     include_dirs = [ "libressl/include" ]
     if (is_posix) {
       cflags = [ "-Wno-deprecated-declarations" ]
@@ -33,7 +31,7 @@ if (is_linux) {
     }
   }
 
-  static_library("openssl") {
+  static_library("openssl_crypto") {
     defines = [
       "__BEGIN_HIDDEN_DECLS=",
       "__END_HIDDEN_DECLS=",
@@ -72,100 +70,8 @@ if (is_linux) {
       "libressl/include/compat",
     ]
 
-    public_configs = [ ":openssl_public_config" ]
+    public_configs = [ ":openssl_crypto_public_config" ]
   }
-}
-
-# curl
-# for posix: install libcurl-devel before compiling
-if (is_linux || is_mac) {
-  group("curl") {
-  }
-} else if (!is_win || !winhttp) {
-  config("curl_public_config") {
-    include_dirs = [ "$target_gen_dir/curl/include" ]
-    lib_dirs = [ "$target_gen_dir/curl/lib" ]
-    defines = []
-    if (is_win && static_link_crt) {
-      defines += [ "CURL_STATICLIB" ]
-    }
-    if (is_win) {
-      libs = [ "crypt32.lib" ]
-      if (!is_winxp) {
-        libs += [ "bcrypt.lib" ]
-      }
-    } else if (is_mac) {
-      libs = [ "crypto" ]
-    }
-  }
-
-  cmake("curl") {
-    cmake_root_dir = "curl"
-    cmake_options = [
-      "BUILD_CURL_EXE=OFF",
-      "BUILD_SHARED_LIBS=OFF",
-      "CURL_ENABLE_SSL=ON",
-    ]
-    if (is_win) {
-      cmake_options += [
-        "ENABLE_UNICODE=ON",
-        "CURL_USE_SCHANNEL=ON",
-        "CURL_WINDOWS_SSPI=ON",
-      ]
-      if (static_link_crt) {
-        cmake_options += [ "CURL_STATIC_CRT=ON" ]
-      }
-      if (is_winxp) {
-        cmake_options += [ "CURL_TARGET_WINDOWS_VERSION=0x0501" ]
-      }
-    } else {
-      cmake_options += [ "CURL_USE_OPENSSL=ON" ]
-    }
-    if (is_debug) {
-      cmake_options += [
-        "ENABLE_DEBUG=ON",
-        "ENABLE_CURLDEBUG=ON",
-      ]
-    }
-    cmake_install_dir = "$target_gen_dir/curl"
-    cmake_outputs = [ "$target_gen_dir/curl/include/curl/curl.h" ]
-    if (is_win) {
-      if (is_debug) {
-        cmake_outputs += [ "$target_gen_dir/curl/lib/libcurl-d.lib" ]
-      } else {
-        cmake_outputs += [ "$target_gen_dir/curl/lib/libcurl.lib" ]
-      }
-    } else {
-      cmake_outputs += [ "$target_gen_dir/curl/lib/libcurl.a" ]
-    }
-
-    public_configs = [ ":curl_public_config" ]
-  }
-}
-
-# rapidjson
-
-config("rapidjson_public_config") {
-  include_dirs = [ "rapidjson/include" ]
-  defines = [
-    "RAPIDJSON_HAS_STDSTRING=1",
-    "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS",
-  ]
-}
-
-group("rapidjson") {
-  public_configs = [ ":rapidjson_public_config" ]
-}
-
-# zlibwrap
-
-config("zlibwrap_public_config") {
-  include_dirs = [ "ZLibWrap/include" ]
-}
-
-group("zlibwrap") {
-  public_configs = [ ":zlibwrap_public_config" ]
-  deps = [ "ZLibWrap/src:zlibwrap" ]
 }
 
 # googletest

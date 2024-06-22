@@ -1,4 +1,4 @@
-#include "native_string.h"
+#include "../string/native_string.h"
 #include "process_util.h"
 #include <Loki/ScopeGuard.h>
 #include <sstream>

@@ -1,11 +1,11 @@
 
 #include "cmdline_options.h"
-#include "native_string.h"
+#include "../string/native_string.h"
 #include <cstring>
 #include <cwchar>
 #include <loki/ScopeGuard.h>
 #ifdef _WIN32
-#include "encoding.h"
+#include "../string/encoding.h"
 #include <shellapi.h>
 #include <windows.h>
 #endif

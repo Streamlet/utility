@@ -32,7 +32,7 @@ int _tmain(int argc, const TCHAR *argv[]) {
   _tprintf(_T("Waited 20s: %d\n"), (int)waited);
 
   pid = process_util::StartProcess(SHELL_CMD, {SHELL_SWITCH, PING_CMD_20S});
-  _tprintf(_T("New Process for 10s: %ld\n"), pid);
+  _tprintf(_T("New Process for 20s: %ld\n"), pid);
 
   _tprintf(_T("Waiting 5s\n"));
   waited = process_util::WaitProcess(pid, 5000);

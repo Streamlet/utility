@@ -44,9 +44,4 @@ jobs:
 
       - name: Unittest
         run: |
-          out/${{ matrix.config }}_${{ matrix.arch }}/utility_test
-          out/${{ matrix.config }}_${{ matrix.arch }}/http_client_test https://httpbin.org/get
-
-      - name: Test
-        run: |
-          python src/sample/test.py out/${{ matrix.config }}_${{ matrix.arch }}
+          out/${{ matrix.config }}_${{ matrix.arch }}/unittest

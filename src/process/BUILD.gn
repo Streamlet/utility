@@ -34,12 +34,18 @@ source_set("unittest") {
 
 executable("process_test") {
   testonly = true
+  if (is_win) {
+    configs += [ "../../build/config/win:console_subsystem" ]
+  }
   sources = [ "process_util_test.cc" ]
   deps = [ ":process" ]
 }
 
 executable("cmdline_options_echo") {
   testonly = true
+  if (is_win) {
+    configs += [ "../../build/config/win:console_subsystem" ]
+  }
   sources = [ "cmdline_options_echo.cc" ]
   deps = [ ":process" ]
 }

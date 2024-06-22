@@ -9,6 +9,9 @@ group("src") {
 
 executable("unittest") {
   testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
   sources = [ "unittest.cc" ]
   deps = [
     "../thirdparty:googletest",

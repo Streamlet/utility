@@ -21,7 +21,7 @@ source_set("process") {
 
 source_set("unittest") {
   testonly = true
-  sources = []
+  sources = [ "cmdline_options_test.cc" ]
   deps = [
     ":cmdline_options_echo",
     ":process",

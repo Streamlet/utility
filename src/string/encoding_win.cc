@@ -1,4 +1,9 @@
 #include "encoding.h"
+#include <Windows.h>
+
+#if MSC_VER < 1600
+#define nullptr NULL
+#endif
 
 namespace encoding {
 
@@ -32,9 +37,11 @@ std::wstring UTF8ToUCS2(const std::string &utf8) {
   return UTF8ToUCS2(utf8.c_str(), utf8.length());
 }
 
+#if __cplusplus >= 201703L
 std::wstring UTF8ToUCS2(const std::string_view &utf8) {
   return UTF8ToUCS2(utf8.data(), utf8.length());
 }
+#endif
 
 std::wstring UTF8ToUCS2(const char *utf8) {
   return UTF8ToUCS2(utf8, -1);
@@ -48,9 +55,11 @@ std::string UCS2ToUTF8(const std::wstring &ucs2) {
   return UCS2ToUTF8(ucs2.c_str(), ucs2.length());
 }
 
+#if __cplusplus >= 201703L
 std::string UCS2ToUTF8(const std::wstring_view &ucs2) {
   return UCS2ToUTF8(ucs2.data(), ucs2.length());
 }
+#endif
 
 std::string UCS2ToUTF8(const wchar_t *ucs2) {
   return UCS2ToUTF8(ucs2, -1);
@@ -64,9 +73,11 @@ std::wstring ANSIToUCS2(const std::string &ansi) {
   return ANSIToUCS2(ansi.c_str(), ansi.length());
 }
 
+#if __cplusplus >= 201703L
 std::wstring ANSIToUCS2(const std::string_view &ansi) {
   return ANSIToUCS2(ansi.data(), ansi.length());
 }
+#endif
 
 std::wstring ANSIToUCS2(const char *ansi) {
   return ANSIToUCS2(ansi, -1);
@@ -80,9 +91,11 @@ std::string UCS2ToANSI(const std::wstring &ucs2) {
   return UCS2ToANSI(ucs2.c_str(), ucs2.length());
 }
 
+#if __cplusplus >= 201703L
 std::string UCS2ToANSI(const std::wstring_view &ucs2) {
   return UCS2ToANSI(ucs2.data(), ucs2.length());
 }
+#endif
 
 std::string UCS2ToANSI(const wchar_t *ucs2) {
   return UCS2ToANSI(ucs2, -1);

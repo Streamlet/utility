@@ -5,7 +5,6 @@
 #include <sstream>
 #include <windows.h>
 
-
 int WINAPI _tWinMain(__in HINSTANCE hInstance,
                      __in_opt HINSTANCE hPrevInstance,
                      __in LPTSTR lpCmdLine,

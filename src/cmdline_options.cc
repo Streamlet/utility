@@ -1,13 +1,16 @@
 
 #include "cmdline_options.h"
-#include "../string/native_string.h"
+#include "native_string.h"
 #include <cstring>
 #include <cwchar>
 #include <loki/ScopeGuard.h>
 #ifdef _WIN32
-#include "../string/encoding.h"
-#include <shellapi.h>
-#include <windows.h>
+#include "encoding.h"
+// clang-format off
+// Windows.h MUST be included before ShellAPI.h
+#include <Windows.h>
+// clang-format on
+#include <ShellAPI.h>
 #endif
 
 namespace cmdline_options {

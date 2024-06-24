@@ -1,9 +1,90 @@
+source_set("crypto") {
+  sources = [
+    "crypto.cc",
+    "crypto.h",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  libs = []
+  if (is_linux) {
+    libs = [
+      "crypto",  # for crypto.cc
+    ]
+  }
+
+  deps = [
+    "../thirdparty:loki",
+    "../thirdparty:openssl_crypto",
+  ]
+}
+
+source_set("log") {
+  sources = [
+    "log.cc",
+    "log.h",
+    "log_init.h",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../thirdparty:loki" ]
+}
+
+source_set("process") {
+  sources = [
+    "cmdline_options.cc",
+    "cmdline_options.h",
+    "process_util.h",
+  ]
+
+  if (is_win) {
+    sources += [ "process_util_win.cc" ]
+  } else {
+    sources += [ "process_util_posix.cc" ]
+  }
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../thirdparty:loki" ]
+}
+
+source_set("string") {
+  sources = [
+    "native_string.h",
+    "string_util.h",
+  ]
+
+  if (is_win) {
+    sources += [
+      "encoding.h",
+      "encoding_win.cc",
+    ]
+  }
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../thirdparty:loki" ]
+}
+
 group("src") {
   deps = [
-    "crypto",
-    "log",
-    "process",
-    "string",
+    ":crypto",
+    ":log",
+    ":process",
+    ":string",
   ]
 }
 
@@ -12,10 +93,46 @@ executable("unittest") {
   if (is_win) {
     configs += [ "../build/config/win:console_subsystem" ]
   }
-  sources = [ "unittest.cc" ]
-  deps = [
-    "../thirdparty:googletest",
-    "crypto:unittest",
-    "process:unittest",
+  sources = [
+    "cmdline_options_test.cc",
+    "crypto_test.cc",
+    "unittest.cc",
   ]
+  deps = [
+    ":cmdline_options_echo",
+    ":crypto",
+    ":process",
+    ":process_test",
+    "../thirdparty:googletest",
+  ]
+  if (is_win) {
+    deps += [ ":cmdline_options_echo_win" ]
+  }
+}
+
+executable("process_test") {
+  testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "process_util_test.cc" ]
+  deps = [ ":process" ]
+}
+
+executable("cmdline_options_echo") {
+  testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "cmdline_options_echo.cc" ]
+  deps = [ ":process" ]
+}
+
+if (is_win) {
+  executable("cmdline_options_echo_win") {
+    testonly = true
+    configs += [ "../build/config/win:windows_subsystem" ]
+    sources = [ "cmdline_options_echo_win.cc" ]
+    deps = [ ":process" ]
+  }
 }

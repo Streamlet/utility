@@ -1,6 +1,6 @@
 
-#include "../string/native_string.h"
 #include "cmdline_options.h"
+#include "native_string.h"
 #include <gtest/gtest.h>
 
 TEST(cmdline_options_test, key_value) {

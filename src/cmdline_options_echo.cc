@@ -1,6 +1,6 @@
 
-#include "../string/native_string.h"
 #include "cmdline_options.h"
+#include "native_string.h"
 #include <cstdio>
 
 int _tmain(int argc, const TCHAR *argv[]) {

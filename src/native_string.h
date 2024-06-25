@@ -34,6 +34,9 @@ inline native_string to_native_string(T _Val) {
 
 #ifndef _WIN32
 
+// Cross platfoem
+#define strnicmp strncasecmp
+
 // Program
 #define _tmain main
 

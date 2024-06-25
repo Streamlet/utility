@@ -13,6 +13,8 @@
 #include <ShellAPI.h>
 #endif
 
+namespace xl {
+
 namespace cmdline_options {
 
 namespace {
@@ -97,3 +99,5 @@ ParsedOption parse(const char *cmdline) {
 #endif
 
 } // namespace cmdline_options
+
+} // namespace xl

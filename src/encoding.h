@@ -1,38 +1,27 @@
 #pragma once
 
 #include <string>
-#if __cplusplus >= 201703L
-#include <string_view>
-#endif
+
+namespace xl {
 
 namespace encoding {
 
-std::wstring UTF8ToUCS2(const std::string &utf8);
-#if __cplusplus >= 201703L
-std::wstring UTF8ToUCS2(const std::string_view &utf8);
-#endif
-std::wstring UTF8ToUCS2(const char *utf8);
-std::wstring UTF8ToUCS2(const char *utf8, size_t length);
+std::wstring utf8_to_utf16(const char *utf8, size_t length = -1);
+std::wstring utf8_to_utf16(const std::string &utf8);
 
-std::string UCS2ToUTF8(const std::wstring &ucs2);
-#if __cplusplus >= 201703L
-std::string UCS2ToUTF8(const std::wstring_view &ucs2);
-#endif
-std::string UCS2ToUTF8(const wchar_t *ucs2);
-std::string UCS2ToUTF8(const wchar_t *ucs2, size_t length);
+std::string utf16_to_utf8(const wchar_t *utf16, size_t length = -1);
+std::string utf16_to_utf8(const std::wstring &utf16);
 
-std::wstring ANSIToUCS2(const std::string &ansi);
-#if __cplusplus >= 201703L
-std::wstring ANSIToUCS2(const std::string_view &ansi);
-#endif
-std::wstring ANSIToUCS2(const char *ansi);
-std::wstring ANSIToUCS2(const char *ansi, size_t length);
+#ifdef _WIN32
 
-std::string UCS2ToANSI(const std::wstring &ucs2);
-#if __cplusplus >= 201703L
-std::string UCS2ToANSI(const std::wstring_view &ucs2);
+std::wstring ansi_to_utf16(const char *ansi, size_t length = -1);
+std::wstring ansi_to_utf16(const std::string &ansi);
+
+std::string utf16_to_ansi(const wchar_t *ucs2, size_t length = -1);
+std::string utf16_to_ansi(const std::wstring &ucs2);
+
 #endif
-std::string UCS2ToANSI(const wchar_t *ucs2);
-std::string UCS2ToANSI(const wchar_t *ucs2, size_t length);
 
 } // namespace encoding
+
+} // namespace xl

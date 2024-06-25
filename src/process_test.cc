@@ -1,6 +1,6 @@
 
 #include "native_string.h"
-#include "process_util.h"
+#include "process.h"
 #include <cstdio>
 
 #if defined(_WIN32)
@@ -21,28 +21,28 @@
 #endif
 
 int _tmain(int argc, const TCHAR *argv[]) {
-  native_string exe_path = process_util::GetExecutablePath();
+  xl::native_string exe_path = xl::process::executable_path();
   _tprintf(_T("Exe Path: %s\n"), exe_path.c_str());
 
-  long pid = process_util::StartProcess(SHELL_CMD, {SHELL_SWITCH, PING_CMD_10S});
+  long pid = xl::process::start(SHELL_CMD, {SHELL_SWITCH, PING_CMD_10S});
   _tprintf(_T("New Process for 10s: %ld\n"), pid);
 
   _tprintf(_T("Waiting 20s\n"));
-  bool waited = process_util::WaitProcess(pid, 20000);
+  bool waited = xl::process::wait(pid, 20000);
   _tprintf(_T("Waited 20s: %d\n"), (int)waited);
 
-  pid = process_util::StartProcess(SHELL_CMD, {SHELL_SWITCH, PING_CMD_20S});
+  pid = xl::process::start(SHELL_CMD, {SHELL_SWITCH, PING_CMD_20S});
   _tprintf(_T("New Process for 20s: %ld\n"), pid);
 
   _tprintf(_T("Waiting 5s\n"));
-  waited = process_util::WaitProcess(pid, 5000);
+  waited = xl::process::wait(pid, 5000);
   _tprintf(_T("Waited 5s: %d\n"), (int)waited);
 
-  bool terminated = process_util::KillProcess(pid);
+  bool terminated = xl::process::kill(pid);
   _tprintf(_T("Terminated: %d\n"), (int)terminated);
 
   _tprintf(_T("Sleep 5s\n"));
-  process_util::Sleep(5000);
+  xl::process::sleep(5000);
 
   _tprintf(_T("OK\n"));
   return 0;

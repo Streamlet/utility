@@ -1,25 +1,36 @@
+#pragma once
+
 #ifdef _WIN32
-
 #include <tchar.h>
-
-#ifdef _UNICODE
-#define to_native_string std::to_wstring
 #else
-#define to_native_string std::to_string
-#endif
-
-#else
-
 #define _T(s) s
 #define TCHAR char
-
-#define to_native_string std::to_string
-
 #endif
 
-#define native_string std::basic_string<TCHAR>
-#define native_string_view std::basic_string_view<TCHAR>
-#define native_string_stream std::basic_stringstream<TCHAR>
+#include <string>
+
+namespace xl {
+
+using native_string = std::basic_string<TCHAR>;
+using native_string_stream = std::basic_stringstream<TCHAR>;
+#if __cplusplus >= 201703L
+using native_string_view = std::basic_string_view<TCHAR>;
+#endif
+
+#if __cplusplus >= 201103L
+#if defined(_WIN32) && defined(_UNICODE)
+template <typename T>
+inline native_string to_native_string(T _Val) {
+  return std::to_wstring(_Val);
+}
+#else
+inline native_string to_native_string(T _Val) {
+  return std::to_string(_Val);
+}
+#endif
+#endif
+
+} // namespace xl
 
 #ifndef _WIN32
 

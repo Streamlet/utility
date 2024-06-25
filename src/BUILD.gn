@@ -41,13 +41,13 @@ source_set("process") {
   sources = [
     "cmdline_options.cc",
     "cmdline_options.h",
-    "process_util.h",
+    "process.h",
   ]
 
   if (is_win) {
-    sources += [ "process_util_win.cc" ]
+    sources += [ "process_win.cc" ]
   } else {
-    sources += [ "process_util_posix.cc" ]
+    sources += [ "process_posix.cc" ]
   }
 
   cflags = []
@@ -60,15 +60,15 @@ source_set("process") {
 
 source_set("string") {
   sources = [
+    "encoding.h",
     "native_string.h",
-    "string_util.h",
+    "string.h",
   ]
 
   if (is_win) {
-    sources += [
-      "encoding.h",
-      "encoding_win.cc",
-    ]
+    sources += [ "encoding_win.cc" ]
+  } else {
+    sources += [ "encoding_posic.cc" ]
   }
 
   cflags = []
@@ -96,6 +96,8 @@ executable("unittest") {
   sources = [
     "cmdline_options_test.cc",
     "crypto_test.cc",
+    "encoding_test.cc",
+    "string_test.cc",
     "unittest.cc",
   ]
   deps = [
@@ -103,6 +105,7 @@ executable("unittest") {
     ":crypto",
     ":process",
     ":process_test",
+    ":string",
     "../thirdparty:googletest",
   ]
   if (is_win) {
@@ -115,7 +118,7 @@ executable("process_test") {
   if (is_win) {
     configs += [ "../build/config/win:console_subsystem" ]
   }
-  sources = [ "process_util_test.cc" ]
+  sources = [ "process_test.cc" ]
   deps = [ ":process" ]
 }
 

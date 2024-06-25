@@ -1,12 +1,14 @@
 #include "native_string.h"
-#include "process_util.h"
+#include "process.h"
 #include <Loki/ScopeGuard.h>
 #include <sstream>
 #include <Windows.h>
 
-namespace process_util {
+namespace xl {
 
-native_string GetExecutablePath() {
+namespace process {
+
+native_string executable_path() {
   TCHAR path[MAX_PATH] = {0};
   DWORD length = ::GetModuleFileName(NULL, path, MAX_PATH);
   if (length < MAX_PATH) {
@@ -25,11 +27,11 @@ native_string GetExecutablePath() {
   return std::move(long_path);
 }
 
-long GetPid() {
+long pid() {
   return ::GetCurrentProcessId();
 }
 
-long GetTid() {
+long tid() {
   return ::GetCurrentThreadId();
 }
 
@@ -44,10 +46,10 @@ native_string quote(const native_string &s) {
 
 } // namespace
 
-long StartProcess(const native_string &executable,
-                  const std::vector<native_string> &arguments,
-                  const native_string &start_dir,
-                  unsigned int milliseconds) {
+long start(const native_string &executable,
+           const std::vector<native_string> &arguments,
+           const native_string &start_dir,
+           unsigned int milliseconds) {
   native_string_stream ss;
   ss << std::move(quote(executable));
   for (const auto &argument : arguments) {
@@ -70,7 +72,7 @@ long StartProcess(const native_string &executable,
   return pi.dwProcessId;
 }
 
-bool WaitProcess(long pid, unsigned int milliseconds) {
+bool wait(long pid, unsigned int milliseconds) {
   HANDLE hProcess = ::OpenProcess(SYNCHRONIZE, FALSE, (DWORD)pid);
   if (hProcess == NULL) {
     return true;
@@ -82,7 +84,7 @@ bool WaitProcess(long pid, unsigned int milliseconds) {
   return false;
 }
 
-bool KillProcess(long pid) {
+bool kill(long pid) {
   HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
   if (hProcess == NULL) {
     return false;
@@ -94,8 +96,10 @@ bool KillProcess(long pid) {
   return true;
 }
 
-void Sleep(unsigned int milliseconds) {
+void sleep(unsigned int milliseconds) {
   ::Sleep(milliseconds);
 }
 
-} // namespace process_util
+} // namespace process
+
+} // namespace xl

@@ -1,0 +1,50 @@
+#pragma once
+
+#include "native_string.h"
+#include <cstdio>
+#include <string>
+
+#ifdef _WIN32
+#define ftell _ftelli64
+#define fseek _fseeki64
+#else
+#define _FILE_OFFSET_BITS 64
+#define ftell ftello
+#define fseek fseeko
+#endif
+
+namespace xl {
+
+namespace file {
+
+bool exists(const TCHAR *path);
+
+long long size(const TCHAR *path);
+
+std::string read(const TCHAR *path);
+
+std::string read_text_auto(const TCHAR *path);
+
+std::string read_text_utf8_bom(const TCHAR *path);
+
+std::wstring read_text_utf16_le(const TCHAR *path);
+
+std::wstring read_text_utf16_be(const TCHAR *path);
+
+bool touch(const TCHAR *path);
+
+bool write(const TCHAR *path, const std::string &text);
+
+bool write_text_uft8_bom(const TCHAR *path, const std::string &text);
+
+bool write_text_utf16_le(const TCHAR *path, const std::wstring &text);
+
+bool write_text_utf16_be(const TCHAR *path, const std::wstring &text);
+
+bool remove(const TCHAR *path);
+
+bool rename(const TCHAR *path, const TCHAR *new_path);
+
+} // namespace file
+
+} // namespace xl

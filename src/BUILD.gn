@@ -1,3 +1,24 @@
+source_set("string") {
+  sources = [
+    "encoding.h",
+    "native_string.h",
+    "string.h",
+  ]
+
+  if (is_win) {
+    sources += [ "encoding_win.cc" ]
+  } else {
+    sources += [ "encoding_posic.cc" ]
+  }
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../thirdparty:loki" ]
+}
+
 source_set("crypto") {
   sources = [
     "crypto.cc",
@@ -20,6 +41,20 @@ source_set("crypto") {
     "../thirdparty:loki",
     "../thirdparty:openssl_crypto",
   ]
+}
+
+source_set("file") {
+  sources = [
+    "file.cc",
+    "file.h",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../thirdparty:loki" ]
 }
 
 source_set("log") {
@@ -58,30 +93,10 @@ source_set("process") {
   deps = [ "../thirdparty:loki" ]
 }
 
-source_set("string") {
-  sources = [
-    "encoding.h",
-    "native_string.h",
-    "string.h",
-  ]
-
-  if (is_win) {
-    sources += [ "encoding_win.cc" ]
-  } else {
-    sources += [ "encoding_posic.cc" ]
-  }
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  deps = [ "../thirdparty:loki" ]
-}
-
 group("src") {
   deps = [
     ":crypto",
+    ":file",
     ":log",
     ":process",
     ":string",
@@ -97,16 +112,19 @@ executable("unittest") {
     "cmdline_options_test.cc",
     "crypto_test.cc",
     "encoding_test.cc",
+    "file_test.cc",
     "string_test.cc",
     "unittest.cc",
   ]
   deps = [
     ":cmdline_options_echo",
     ":crypto",
+    ":file",
     ":process",
     ":process_test",
     ":string",
     "../thirdparty:googletest",
+    "../thirdparty:loki",
   ]
   if (is_win) {
     deps += [ ":cmdline_options_echo_win" ]

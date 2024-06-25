@@ -35,12 +35,20 @@ std::wstring utf8_to_utf16(const char *utf8, size_t length) {
   return a2w(utf8, length, CP_UTF8);
 }
 
+std::wstring utf8_to_utf16(const char *utf8) {
+  return utf8_to_utf16(utf8, -1);
+}
+
 std::wstring utf8_to_utf16(const std::string &utf8) {
   return utf8_to_utf16(utf8.c_str(), utf8.length());
 }
 
 std::string utf16_to_utf8(const wchar_t *ucs2, size_t length) {
   return w2a(ucs2, length, CP_UTF8);
+}
+
+std::string utf16_to_utf8(const wchar_t *ucs2) {
+  return utf16_to_utf8(ucs2, -1);
 }
 
 std::string utf16_to_utf8(const std::wstring &ucs2) {
@@ -51,12 +59,20 @@ std::wstring ansi_to_utf16(const char *ansi, size_t length) {
   return a2w(ansi, length, CP_ACP);
 }
 
+std::wstring ansi_to_utf16(const char *ansi) {
+  return ansi_to_utf16(ansi, -1);
+}
+
 std::wstring ansi_to_utf16(const std::string &ansi) {
   return ansi_to_utf16(ansi.c_str(), ansi.length());
 }
 
 std::string utf16_to_ansi(const wchar_t *ucs2, size_t length) {
   return w2a(ucs2, length, CP_ACP);
+}
+
+std::string utf16_to_ansi(const wchar_t *ucs2) {
+  return utf16_to_ansi(ucs2, -1);
 }
 
 std::string utf16_to_ansi(const std::wstring &ucs2) {

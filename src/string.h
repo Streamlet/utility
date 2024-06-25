@@ -13,6 +13,18 @@
 
 namespace xl {
 
+namespace string {
+
+size_t length(const char *s) {
+  return strlen(s);
+}
+
+size_t length(const wchar_t *s) {
+  return wcslen(s);
+}
+
+} // namespace string
+
 template <typename CharType>
 class basic_string_ref {
 public:
@@ -51,15 +63,6 @@ using string_ref = basic_string_ref<char>;
 using wstring_ref = basic_string_ref<wchar_t>;
 
 namespace string {
-
-size_t length(const char *s) {
-  return strlen(s);
-}
-
-size_t length(const wchar_t *s) {
-  return wcslen(s);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Split
 

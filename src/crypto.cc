@@ -13,7 +13,7 @@ std::string DigestToHexString(unsigned char *digest, size_t length) {
   std::string hex;
   hex.resize(length * 2);
   for (size_t i = 0; i < length; ++i) {
-    snprintf(hex.data() + i * 2, 3, "%02x", digest[i]);
+    snprintf(&hex[0] + i * 2, 3, "%02x", digest[i]);
   }
   return std::move(hex);
 }

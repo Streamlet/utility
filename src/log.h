@@ -20,6 +20,7 @@
 #define LOG_LEVEL LOG_LEVEL_DEFAULT
 #endif
 
+namespace xl {
 namespace logging {
 
 void log(int level, const char *file, const char *function, int line, std::string message);
@@ -77,9 +78,11 @@ inline void wlog_va(int level, const wchar_t *file, const wchar_t *function, int
 
 } // namespace logging
 
-#define LOG(level, ...) logging::log_va(level, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+} // namespace xl
+
+#define LOG(level, ...) ::xl::logging::log_va(level, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 #ifdef _WIN32
-#define WLOG(level, ...) logging::wlog_va(level, _W(__FILE__), _W(__FUNCTION__), __LINE__, __VA_ARGS__)
+#define WLOG(level, ...) ::xl::logging::wlog_va(level, _W(__FILE__), _W(__FUNCTION__), __LINE__, __VA_ARGS__)
 #endif
 
 #if defined(_WIN32) && defined(_UNICODE)

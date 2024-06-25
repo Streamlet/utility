@@ -13,6 +13,8 @@
 #define TCHAR char
 #endif
 
+namespace xl {
+
 namespace cmdline_options {
 
 struct ParsedOption {
@@ -44,3 +46,5 @@ ParsedOption parse(const TCHAR *cmdline);
 #endif
 
 } // namespace cmdline_options
+
+} // namespace xl

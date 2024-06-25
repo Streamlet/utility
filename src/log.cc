@@ -1,8 +1,8 @@
 #include "log.h"
 #include "log_init.h"
 #include "native_string.h"
-#include "process_util.h"
-#include "string_util.h"
+#include "process.h"
+#include "string.h"
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -19,6 +19,8 @@
 #include <strings.h>
 #define strnicmp strncasecmp
 #endif
+
+namespace xl {
 
 namespace logging {
 
@@ -53,7 +55,7 @@ void thread_setup(native_string app_name, int level, int content, int target, FI
     log_context_.log_file = NULL;
   }
 #if defined(_WIN32) && defined(_UNICODE)
-  log_context_.app_name = std::move(encoding::UCS2ToUTF8(app_name));
+  log_context_.app_name = std::move(encoding::utf16_to_utf8(app_name));
   log_context_.app_name_w = std::move(app_name);
 #else
   log_context_.app_name = std::move(app_name);
@@ -160,10 +162,10 @@ format(int level, const CharType *file, const CharType *function, int line, std:
     ss << GROUP_BEGIN << (CharType)'L' << line << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_PID) != 0) {
-    ss << GROUP_BEGIN << (CharType)'P' << process_util::GetPid() << GROUP_END;
+    ss << GROUP_BEGIN << (CharType)'P' << xl::process::pid() << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_TID) != 0) {
-    ss << GROUP_BEGIN << (CharType)'T' << process_util::GetTid() << GROUP_END;
+    ss << GROUP_BEGIN << (CharType)'T' << xl::process::tid() << GROUP_END;
   }
   ss << message.c_str() << std::endl;
   return std::move(ss.str());
@@ -200,7 +202,7 @@ void print(std::basic_string<CharType> log) {
   if ((log_context_.target & LOG_TARGET_FILE) != 0 && log_context_.log_file != NULL) {
 #if defined(_WIN32) && defined(_UNICODE)
     if constexpr (std::is_same<CharType, wchar_t>()) {
-      std::string log_utf8 = encoding::UCS2ToUTF8(log);
+      std::string log_utf8 = encoding::utf16_to_utf8(log);
       fprintf(log_context_.log_file, "%s", log_utf8.c_str());
     } else {
       fprintf(log_context_.log_file, "%s", log.c_str());
@@ -289,9 +291,10 @@ std::string_view trim_spaces(const std::string_view &s) {
 };
 
 std::map<std::string_view, std::string_view> split_kv(const std::string &s) {
-  std::vector<std::string_view> lines = string_util::str_split(s, "\n");
+  std::vector<string_ref> lines = string::split_ref(s, "\n");
   std::map<std::string_view, std::string_view> m;
-  for (auto line : lines) {
+  for (const auto &ref : lines) {
+    std::string_view line = (std::string_view)ref;
     size_t semicolon_pos = line.find_first_of(";");
     if (semicolon_pos != line.npos) {
       line = line.substr(0, semicolon_pos);
@@ -353,7 +356,7 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
     const auto &v = item.second;
     if (strnicmp(KEY_APP_NAME, k.data(), k.length()) == 0) {
 #if defined(_WIN32) && defined(_UNICODE)
-      app_name = encoding::UTF8ToUCS2(v);
+      app_name = encoding::utf8_to_utf16(v.data(), v.length());
 #else
       app_name.assign(v.data(), v.length());
 #endif
@@ -378,8 +381,9 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
       }
     } else if (strnicmp(KEY_LOG_CONTENT, k.data(), k.length()) == 0) {
       content = 0;
-      auto contents = string_util::str_split(v, ",");
-      for (auto c : contents) {
+      auto contents = string::split_ref(v.data(), ",", 0, v.length());
+      for (const auto &ref : contents) {
+        std::string_view c = (std::string_view)ref;
         c = trim_spaces(c);
         if (strnicmp(VALUE_LOG_CONTENT_TIME, c.data(), c.length()) == 0) {
           content |= LOG_CONTENT_TIME;
@@ -411,8 +415,9 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
       }
     } else if (strnicmp(KEY_LOG_TARGET, k.data(), k.length()) == 0) {
       target = 0;
-      auto targets = string_util::str_split(v, ",");
-      for (auto t : targets) {
+      auto targets = string::split_ref(v.data(), ",", 0, v.length());
+      for (const auto &ref : targets) {
+        std::string_view t = (std::string_view)ref;
         t = trim_spaces(t);
         if (strnicmp(VALUE_LOG_TARGET_STDOUT, t.data(), t.length()) == 0) {
           target |= LOG_TARGET_STDOUT;
@@ -432,7 +437,7 @@ void parse_settings(const std::map<std::string_view, std::string_view> &kv,
       }
     } else if (strnicmp(KEY_LOG_FILE, k.data(), k.length()) == 0) {
 #if defined(_WIN32) && defined(_UNICODE)
-      log_file = encoding::UTF8ToUCS2(v);
+      log_file = encoding::utf8_to_utf16(v.data(), v.length());
 #else
       log_file.assign(v.data(), v.length());
 #endif
@@ -468,3 +473,5 @@ bool setup_from_file(const TCHAR *log_setting_file) {
 }
 
 } // namespace logging
+
+} // namespace xl

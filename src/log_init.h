@@ -7,6 +7,8 @@
 #define TCHAR char
 #endif
 
+namespace xl {
+
 namespace logging {
 
 enum LogTarget {
@@ -63,3 +65,5 @@ bool setup_from_file(const TCHAR *log_setting_file);
  */
 
 } // namespace logging
+
+} // namespace xl

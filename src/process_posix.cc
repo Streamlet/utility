@@ -1,4 +1,4 @@
-#include "process_util.h"
+#include "process.h"
 #include <ctime>
 #include <signal.h>
 #include <spawn.h>
@@ -11,11 +11,13 @@
 #include <sys/syscall.h>
 #endif
 
-namespace process_util {
+namespace xl {
+
+namespace process {
 
 #ifdef __APPLE__
 
-std::string GetExecutablePath() {
+std::string executable_path() {
   char path[MAXPATHLEN];
   uint32_t size = sizeof(path);
   if (::_NSGetExecutablePath(path, &size) == 0) {
@@ -32,7 +34,7 @@ std::string GetExecutablePath() {
 
 #else
 
-std::string GetExecutablePath() {
+std::string executable_path() {
   const unsigned int SHORT_PATH_LENGTH = 1024, LONG_PATH_LENGTH = 32768;
   char path[SHORT_PATH_LENGTH] = {0};
   const char *PROC_SELF_EXE = "/proc/self/exe";
@@ -52,11 +54,11 @@ std::string GetExecutablePath() {
 
 #endif
 
-long GetPid() {
+long pid() {
   return ::getpid();
 }
 
-long GetTid() {
+long tid() {
 #ifdef __APPLE__
   return ::syscall(SYS_thread_selfid);
 #else
@@ -64,10 +66,10 @@ long GetTid() {
 #endif
 }
 
-long StartProcess(const std::string &executable,
-                  const std::vector<std::string> &arguments,
-                  const std::string &start_dir,
-                  unsigned int milliseconds) {
+long start(const std::string &executable,
+           const std::vector<std::string> &arguments,
+           const std::string &start_dir,
+           unsigned int milliseconds) {
   std::string executable_copied = executable;
   std::vector<std::string> arguments_copied = arguments;
   std::vector<char *> argv;
@@ -96,7 +98,7 @@ long StartProcess(const std::string &executable,
   return pid;
 }
 
-bool WaitProcess(long pid, unsigned int milliseconds) {
+bool wait(long pid, unsigned int milliseconds) {
   timespec begin = {};
   ::clock_gettime(CLOCK_MONOTONIC, &begin);
   while (true) {
@@ -132,16 +134,18 @@ bool WaitProcess(long pid, unsigned int milliseconds) {
   return false;
 }
 
-bool KillProcess(long pid) {
+bool kill(long pid) {
   if (::kill(pid, SIGKILL) != 0) {
     return false;
   }
   return true;
 }
 
-void Sleep(unsigned int milliseconds) {
+void sleep(unsigned int milliseconds) {
   timespec ts{milliseconds / 1000, (milliseconds % 1000) * 1000000};
   ::nanosleep(&ts, NULL);
 }
 
-} // namespace process_util
+} // namespace process
+
+} // namespace xl

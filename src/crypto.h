@@ -1,25 +1,29 @@
-#include <filesystem>
+#include "native_string.h"
 #include <string>
+
+namespace xl {
 
 namespace crypto {
 
-std::string MD5(const void *data, size_t length);
-std::string MD5(const std::string &s);
-std::string MD5File(const std::filesystem::path &file_path);
-std::string SHA1(const void *data, size_t length);
-std::string SHA1(const std::string &s);
-std::string SHA1File(const std::filesystem::path &file_path);
-std::string SHA224(const void *data, size_t length);
-std::string SHA224(const std::string &s);
-std::string SHA224File(const std::filesystem::path &file_path);
-std::string SHA256(const void *data, size_t length);
-std::string SHA256(const std::string &s);
-std::string SHA256File(const std::filesystem::path &file_path);
-std::string SHA384(const void *data, size_t length);
-std::string SHA384(const std::string &s);
-std::string SHA384File(const std::filesystem::path &file_path);
-std::string SHA512(const void *data, size_t length);
-std::string SHA512(const std::string &s);
-std::string SHA512File(const std::filesystem::path &file_path);
+std::string md5(const void *data, size_t length);
+std::string md5(const std::string &s);
+std::string md5(const TCHAR *file_path);
+std::string sha1(const void *data, size_t length);
+std::string sha1(const std::string &s);
+std::string sha1(const TCHAR *file_path);
+std::string sha224(const void *data, size_t length);
+std::string sha224(const std::string &s);
+std::string sha224(const TCHAR *file_path);
+std::string sha256(const void *data, size_t length);
+std::string sha256(const std::string &s);
+std::string sha256(const TCHAR *file_path);
+std::string sha384(const void *data, size_t length);
+std::string sha384(const std::string &s);
+std::string sha384(const TCHAR *file_path);
+std::string sha512(const void *data, size_t length);
+std::string sha512(const std::string &s);
+std::string sha512(const TCHAR *file_path);
 
 } // namespace crypto
+
+} // namespace xl

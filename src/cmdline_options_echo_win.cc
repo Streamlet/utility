@@ -10,9 +10,9 @@ int WINAPI _tWinMain(__in HINSTANCE hInstance,
                      __in LPTSTR lpCmdLine,
                      __in int nShowCmd) {
   LPCTSTR cmdline = ::GetCommandLine();
-  native_string_stream ss;
+  xl::native_string_stream ss;
   ss << _T("Original: ") << cmdline << _T("\n");
-  auto options = cmdline_options::parse(cmdline);
+  auto options = xl::cmdline_options::parse(cmdline);
   for (const auto &item : options.parsed_map) {
     ss << item.first << _T(": ") << item.second << _T("\n");
   }

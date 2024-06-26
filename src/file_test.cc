@@ -18,14 +18,22 @@ TEST(file_test, fs_operation) {
 
 TEST(file_test, bin_and_utf8) {
   ASSERT_EQ(xl::file::write(_T("f"), "\xef\xbb\xbf"
-                                     "abc123"),
+                                     "你好"),
             true);
   ASSERT_EQ(xl::file::read(_T("f")), "\xef\xbb\xbf"
-                                     "abc123");
-  ASSERT_EQ(xl::file::read_text_utf8_bom(_T("f")), "abc123");
+                                     "你好");
+  ASSERT_EQ(xl::file::read_text_utf8_bom(_T("f")), "你好");
   ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"");
-  ASSERT_EQ(xl::file::read_text_auto(_T("f")), "abc123");
+  ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
+
+  ASSERT_EQ(xl::file::write(_T("f"), "你好"), true);
+  ASSERT_EQ(xl::file::read(_T("f")), "你好");
+  ASSERT_EQ(xl::file::read_text_utf8_bom(_T("f")), "");
+  ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"");
+  ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"");
+  ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
+
   ASSERT_EQ(xl::file::remove(_T("f")), true);
 }
 

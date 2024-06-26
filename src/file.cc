@@ -178,8 +178,10 @@ std::string read_text_auto(const TCHAR *path) {
     fseek(f, -1, SEEK_CUR);
     std::wstring utf16 = fread_utf16_be(f, size - sizeof(UTF16_BOM_BE));
     return encoding::utf16_to_utf8(utf16);
+  } else {
+    fseek(f, -3, SEEK_CUR);
+    return fread(f, size);
   }
-  return "";
 }
 
 std::string read_text_utf8_bom(const TCHAR *path) {

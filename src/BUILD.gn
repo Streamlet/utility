@@ -8,7 +8,7 @@ source_set("string") {
   if (is_win) {
     sources += [ "encoding_win.cc" ]
   } else {
-    sources += [ "encoding_posic.cc" ]
+    sources += [ "encoding_posix.cc" ]
   }
 
   cflags = []
@@ -30,13 +30,6 @@ source_set("crypto") {
     cflags += [ "-Wno-unused-result" ]
   }
 
-  libs = []
-  if (is_linux) {
-    libs = [
-      "crypto",  # for crypto.cc
-    ]
-  }
-
   deps = [
     "../thirdparty:loki",
     "../thirdparty:openssl_crypto",
@@ -45,6 +38,7 @@ source_set("crypto") {
 
 source_set("file") {
   sources = [
+    "byte_order.h",
     "file.cc",
     "file.h",
   ]

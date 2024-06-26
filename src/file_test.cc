@@ -1,11 +1,7 @@
 #include "file.h"
 #include <gtest/gtest.h>
-#include <loki/ScopeGuard.h>
 
 TEST(file_test, fs_operation) {
-  LOKI_ON_BLOCK_EXIT(xl::file::remove, _T("f"));
-  LOKI_ON_BLOCK_EXIT(xl::file::remove, _T("f1"));
-
   ASSERT_EQ(xl::file::exists(_T("f")), false);
   ASSERT_EQ(xl::file::size(_T("f")), -1);
   ASSERT_EQ(xl::file::touch(_T("f")), true);
@@ -21,8 +17,6 @@ TEST(file_test, fs_operation) {
 }
 
 TEST(file_test, bin_and_utf8) {
-  LOKI_ON_BLOCK_EXIT(xl::file::remove, _T("f"));
-
   ASSERT_EQ(xl::file::write(_T("f"), "\xef\xbb\xbf"
                                      "abc123"),
             true);
@@ -32,10 +26,10 @@ TEST(file_test, bin_and_utf8) {
   ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_auto(_T("f")), "abc123");
+  ASSERT_EQ(xl::file::remove(_T("f")), true);
 }
 
 TEST(file_test, utf16_le) {
-  LOKI_ON_BLOCK_EXIT(xl::file::remove, _T("f"));
 
   ASSERT_EQ(xl::file::write_text_utf16_le(_T("f"), L"你好"), true); // U+4F60 U+597D
   ASSERT_EQ(xl::file::read(_T("f")), "\xff\xfe\x60\x4f\x7d\x59");
@@ -43,15 +37,15 @@ TEST(file_test, utf16_le) {
   ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"你好");
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
+  ASSERT_EQ(xl::file::remove(_T("f")), true);
 }
 
 TEST(file_test, utf16_be) {
-  LOKI_ON_BLOCK_EXIT(xl::file::remove, _T("f"));
-
   ASSERT_EQ(xl::file::write_text_utf16_be(_T("f"), L"你好"), true); // U+4F60 U+597D
   ASSERT_EQ(xl::file::read(_T("f")), "\xfe\xff\x4f\x60\x59\x7d");
   ASSERT_EQ(xl::file::read_text_utf8_bom(_T("f")), "");
   ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"你好");
   ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
+  ASSERT_EQ(xl::file::remove(_T("f")), true);
 }

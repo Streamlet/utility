@@ -70,7 +70,7 @@ std::wstring utf8_to_utf16(const char *utf8, size_t length) {
   return utf16;
 }
 
-std::wstring utf8_to_utf16(const char *utf8, size_t length) {
+std::wstring utf8_to_utf16(const char *utf8) {
   return utf8_to_utf16(utf8, -1);
 }
 
@@ -131,6 +131,7 @@ std::string utf16_to_utf8(const wchar_t *utf16, size_t length) {
 std::string utf16_to_utf8(const wchar_t *utf16) {
   return utf16_to_utf8(utf16, -1);
 }
+
 std::string utf16_to_utf8(const std::wstring &utf16) {
   return utf16_to_utf8(utf16.c_str(), utf16.length());
 }

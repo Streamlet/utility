@@ -12,10 +12,13 @@ group("loki") {
 }
 
 # openssl
-# for posix: install openssl-devel before compiling
+# for posix: install openssl develop package before compiling. package name:
+#   yum: openssl-devel
+#   apt: libssl-dev
 if (is_linux) {
   config("openssl_crypto_public_config") {
     cflags = [ "-Wno-deprecated-declarations" ]
+    libs = [ "crypto" ]
   }
   group("openssl_crypto") {
     public_configs = [ ":openssl_crypto_public_config" ]
@@ -25,9 +28,6 @@ if (is_linux) {
     include_dirs = [ "libressl/include" ]
     if (is_posix) {
       cflags = [ "-Wno-deprecated-declarations" ]
-    }
-    if (is_win) {
-      libs = [ "ws2_32.lib" ]
     }
   }
 
@@ -69,6 +69,9 @@ if (is_linux) {
       "libressl/crypto",
       "libressl/include/compat",
     ]
+    if (is_win) {
+      libs = [ "ws2_32.lib" ]
+    }
 
     public_configs = [ ":openssl_crypto_public_config" ]
   }

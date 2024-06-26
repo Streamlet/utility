@@ -314,7 +314,7 @@ inline std::basic_string<CharType> replace(const CharType *string,
 template <class CharType>
 inline std::basic_string<CharType> replace(
     const CharType *string, const CharType search, const CharType replace, size_t max = 0, size_t string_length = -1) {
-  return replace(string, &search, &replace, max, string_length, 1, 1)
+  return replace(string, &search, &replace, max, string_length, 1, 1);
 }
 
 template <class CharType>

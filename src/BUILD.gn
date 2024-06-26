@@ -1,3 +1,7 @@
+source_set("meta") {
+  sources = [ "scope_exit.h" ]
+}
+
 source_set("string") {
   sources = [
     "encoding.h",
@@ -92,6 +96,7 @@ group("src") {
     ":crypto",
     ":file",
     ":log",
+    ":meta",
     ":process",
     ":string",
   ]
@@ -107,6 +112,7 @@ executable("unittest") {
     "crypto_test.cc",
     "encoding_test.cc",
     "file_test.cc",
+    "scope_exit_test.cc",
     "string_test.cc",
     "unittest.cc",
   ]
@@ -114,6 +120,7 @@ executable("unittest") {
     ":cmdline_options_echo",
     ":crypto",
     ":file",
+    ":meta",
     ":process",
     ":process_test",
     ":string",

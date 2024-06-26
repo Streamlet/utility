@@ -1,8 +1,8 @@
 #include "file.h"
 #include "byte_order.h"
 #include "encoding.h"
+#include "scope_exit.h"
 #include <cstring>
-#include <loki/ScopeGuard.h>
 #if defined(_WIN32)
 #include <Windows.h>
 #endif
@@ -134,7 +134,7 @@ bool exists(const TCHAR *path) {
   if (f == nullptr) {
     return errno != ENOENT;
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   return true;
 }
 
@@ -143,7 +143,7 @@ bool exists(const TCHAR *path) {
   if (f == nullptr) {                                                                                                  \
     return errval;                                                                                                     \
   }                                                                                                                    \
-  LOKI_ON_BLOCK_EXIT(fclose, f)
+  XL_ON_BLOCK_EXIT(fclose, f)
 
 long long size(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, -1);
@@ -224,7 +224,7 @@ std::wstring read_text_utf16_be(const TCHAR *path) {
   if (f == nullptr) {                                                                                                  \
     return false;                                                                                                      \
   }                                                                                                                    \
-  LOKI_ON_BLOCK_EXIT(fclose, f)
+  XL_ON_BLOCK_EXIT(fclose, f)
 
 bool touch(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_WRITE(path);

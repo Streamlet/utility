@@ -1,9 +1,9 @@
 
 #include "cmdline_options.h"
 #include "native_string.h"
+#include "scope_exit.h"
 #include <cstring>
 #include <cwchar>
-#include <loki/ScopeGuard.h>
 #ifdef _WIN32
 #include "encoding.h"
 // clang-format off
@@ -69,7 +69,7 @@ ParsedOption parse(const wchar_t *cmdline) {
   if (argv == NULL) {
     return {};
   }
-  LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
+  XL_ON_BLOCK_EXIT(::LocalFree, argv);
   return parse_native(argc, (LPCWSTR *)argv);
 }
 
@@ -82,7 +82,7 @@ ParsedOption parse(const char *cmdline) {
   if (argv == NULL) {
     return {};
   }
-  LOKI_ON_BLOCK_EXIT(::LocalFree, argv);
+  XL_ON_BLOCK_EXIT(::LocalFree, argv);
   std::vector<std::string> argv_str;
   for (int i = 0; i < argc; ++i) {
     argv_str.push_back(encoding::UCS2ToANSI(argv[i]));

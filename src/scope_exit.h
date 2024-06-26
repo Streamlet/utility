@@ -5,7 +5,7 @@
 //    File Name:   scope_exit.h
 //    Author:      Streamlet
 //    Create Time: 2016-09-30
-//    Description:
+//    Description: implememted like ScopeGuard in Loki library.
 //
 //------------------------------------------------------------------------------
 

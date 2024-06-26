@@ -19,8 +19,6 @@ source_set("string") {
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
-
-  deps = [ "../thirdparty:loki" ]
 }
 
 source_set("crypto") {
@@ -34,10 +32,7 @@ source_set("crypto") {
     cflags += [ "-Wno-unused-result" ]
   }
 
-  deps = [
-    "../thirdparty:loki",
-    "../thirdparty:openssl_crypto",
-  ]
+  deps = [ "../thirdparty:openssl_crypto" ]
 }
 
 source_set("file") {
@@ -51,8 +46,6 @@ source_set("file") {
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
-
-  deps = [ "../thirdparty:loki" ]
 }
 
 source_set("log") {
@@ -66,8 +59,6 @@ source_set("log") {
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
-
-  deps = [ "../thirdparty:loki" ]
 }
 
 source_set("process") {
@@ -87,8 +78,6 @@ source_set("process") {
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
-
-  deps = [ "../thirdparty:loki" ]
 }
 
 group("src") {
@@ -125,7 +114,6 @@ executable("unittest") {
     ":process_test",
     ":string",
     "../thirdparty:googletest",
-    "../thirdparty:loki",
   ]
   if (is_win) {
     deps += [ ":cmdline_options_echo_win" ]

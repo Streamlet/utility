@@ -1,16 +1,3 @@
-# loki
-
-config("loki_public_config") {
-  include_dirs = [ "loki/include" ]
-  if (is_win) {
-    cflags = [ "/wd4828" ]
-  }
-}
-
-group("loki") {
-  public_configs = [ ":loki_public_config" ]
-}
-
 # openssl
 # for posix: install openssl develop package before compiling. package name:
 #   yum: openssl-devel

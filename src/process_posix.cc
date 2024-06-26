@@ -92,7 +92,7 @@ long start(const std::string &executable,
   }
 
   if (milliseconds > 0) {
-    WaitProcess(pid, milliseconds);
+    wait(pid, milliseconds);
   }
 
   return pid;

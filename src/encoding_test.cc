@@ -3,7 +3,7 @@
 
 TEST(encoding_test, utf8_to_utf16) {
   ASSERT_EQ(xl::encoding::utf8_to_utf16("你好"), L"你好");
-  ASSERT_EQ(xl::encoding::utf8_to_utf16("𐐷𪺫"), L"𐐷𪺫"); // U+10437, U+2AEAB
+  ASSERT_EQ(xl::encoding::utf8_to_utf16("𐐷𪺫"), L"\xD801\xDC37\xD86B\xDEAB"); // U+10437, U+2AEAB
 }
 
 TEST(encoding_test, utf16_to_utf8) {

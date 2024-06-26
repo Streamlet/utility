@@ -24,6 +24,7 @@ inline native_string to_native_string(T _Val) {
   return std::to_wstring(_Val);
 }
 #else
+template <typename T>
 inline native_string to_native_string(T _Val) {
   return std::to_string(_Val);
 }

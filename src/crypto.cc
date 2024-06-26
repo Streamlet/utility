@@ -9,7 +9,7 @@ namespace xl {
 
 namespace {
 
-std::string DigestToHexString(unsigned char *digest, size_t length) {
+std::string hex(unsigned char *digest, size_t length) {
   std::string hex;
   hex.resize(length * 2);
   for (size_t i = 0; i < length; ++i) {
@@ -24,27 +24,27 @@ namespace crypto {
 
 std::string md5(const void *data, size_t length) {
   unsigned char *digest = ::MD5(static_cast<const unsigned char *>(data), length, nullptr);
-  return DigestToHexString(digest, MD5_DIGEST_LENGTH);
+  return hex(digest, MD5_DIGEST_LENGTH);
 }
 std::string sha1(const void *data, size_t length) {
   unsigned char *digest = ::SHA1(static_cast<const unsigned char *>(data), length, nullptr);
-  return DigestToHexString(digest, SHA_DIGEST_LENGTH);
+  return hex(digest, SHA_DIGEST_LENGTH);
 }
 std::string sha224(const void *data, size_t length) {
   unsigned char *digest = ::SHA224(static_cast<const unsigned char *>(data), length, nullptr);
-  return DigestToHexString(digest, SHA224_DIGEST_LENGTH);
+  return hex(digest, SHA224_DIGEST_LENGTH);
 }
 std::string sha256(const void *data, size_t length) {
   unsigned char *digest = ::SHA256(static_cast<const unsigned char *>(data), length, nullptr);
-  return DigestToHexString(digest, SHA256_DIGEST_LENGTH);
+  return hex(digest, SHA256_DIGEST_LENGTH);
 }
 std::string sha384(const void *data, size_t length) {
   unsigned char *digest = ::SHA384(static_cast<const unsigned char *>(data), length, nullptr);
-  return DigestToHexString(digest, SHA384_DIGEST_LENGTH);
+  return hex(digest, SHA384_DIGEST_LENGTH);
 }
 std::string sha512(const void *data, size_t length) {
   unsigned char *digest = ::SHA512(static_cast<const unsigned char *>(data), length, nullptr);
-  return DigestToHexString(digest, SHA512_DIGEST_LENGTH);
+  return hex(digest, SHA512_DIGEST_LENGTH);
 }
 
 std::string md5(const std::string &s) {
@@ -66,7 +66,7 @@ std::string sha512(const std::string &s) {
   return sha512(s.data(), s.length());
 }
 
-std::string md5(const TCHAR *file_path) {
+std::string md5_file(const TCHAR *file_path) {
   FILE *f = _tfopen(file_path, _T("rb"));
   if (f == nullptr) {
     return "";
@@ -83,10 +83,10 @@ std::string md5(const TCHAR *file_path) {
     ::MD5_Update(&c, buffer, bytes_read);
   }
   ::MD5_Final(m, &c);
-  return DigestToHexString(m, MD5_DIGEST_LENGTH);
+  return hex(m, MD5_DIGEST_LENGTH);
 }
 
-std::string sha1(const TCHAR *file_path) {
+std::string sha1_file(const TCHAR *file_path) {
   FILE *f = _tfopen(file_path, _T("rb"));
   if (f == nullptr) {
     return "";
@@ -103,10 +103,10 @@ std::string sha1(const TCHAR *file_path) {
     ::SHA1_Update(&c, buffer, bytes_read);
   }
   ::SHA1_Final(m, &c);
-  return DigestToHexString(m, SHA_DIGEST_LENGTH);
+  return hex(m, SHA_DIGEST_LENGTH);
 }
 
-std::string sha224File(const TCHAR *file_path) {
+std::string sha224_file(const TCHAR *file_path) {
   FILE *f = _tfopen(file_path, _T("rb"));
   if (f == nullptr) {
     return "";
@@ -123,10 +123,10 @@ std::string sha224File(const TCHAR *file_path) {
     ::SHA256_Update(&c, buffer, bytes_read);
   }
   ::SHA256_Final(m, &c);
-  return DigestToHexString(m, SHA224_DIGEST_LENGTH);
+  return hex(m, SHA224_DIGEST_LENGTH);
 }
 
-std::string sha256File(const TCHAR *file_path) {
+std::string sha256_file(const TCHAR *file_path) {
   FILE *f = _tfopen(file_path, _T("rb"));
   if (f == nullptr) {
     return "";
@@ -143,10 +143,10 @@ std::string sha256File(const TCHAR *file_path) {
     ::SHA256_Update(&c, buffer, bytes_read);
   }
   ::SHA256_Final(m, &c);
-  return DigestToHexString(m, SHA256_DIGEST_LENGTH);
+  return hex(m, SHA256_DIGEST_LENGTH);
 }
 
-std::string sha384File(const TCHAR *file_path) {
+std::string sha384_file(const TCHAR *file_path) {
   FILE *f = _tfopen(file_path, _T("rb"));
   if (f == nullptr) {
     return "";
@@ -163,10 +163,10 @@ std::string sha384File(const TCHAR *file_path) {
     ::SHA512_Update(&c, buffer, bytes_read);
   }
   ::SHA512_Final(m, &c);
-  return DigestToHexString(m, SHA384_DIGEST_LENGTH);
+  return hex(m, SHA384_DIGEST_LENGTH);
 }
 
-std::string sha512File(const TCHAR *file_path) {
+std::string sha512_file(const TCHAR *file_path) {
   FILE *f = _tfopen(file_path, _T("rb"));
   if (f == nullptr) {
     return "";
@@ -183,7 +183,7 @@ std::string sha512File(const TCHAR *file_path) {
     ::SHA512_Update(&c, buffer, bytes_read);
   }
   ::SHA512_Final(m, &c);
-  return DigestToHexString(m, SHA512_DIGEST_LENGTH);
+  return hex(m, SHA512_DIGEST_LENGTH);
 }
 
 } // namespace crypto

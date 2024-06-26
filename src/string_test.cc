@@ -11,10 +11,7 @@ TEST(string_test, length) {
   ASSERT_EQ(xl::string::length(L"1234567890"), 10);
 }
 
-#define STRING_REF_LIST(...)                                                                                           \
-  std::vector<xl::string_ref> {                                                                                        \
-    __VA_ARGS__                                                                                                        \
-  }
+#define STRING_REF_LIST(...) (std::vector<xl::string_ref>{__VA_ARGS__})
 TEST(string_test, split_ref) {
   ASSERT_EQ(xl::string::split_ref("", ""), STRING_REF_LIST(""));
   ASSERT_EQ(xl::string::split_ref("a", ""), STRING_REF_LIST("a"));
@@ -31,10 +28,7 @@ TEST(string_test, split_ref) {
   ASSERT_EQ(xl::string::split_ref("abc|def|g", "|", 5), STRING_REF_LIST("abc", "def", "g"));
 }
 
-#define WSTRING_REF_LIST(...)                                                                                          \
-  std::vector<xl::wstring_ref> {                                                                                       \
-    __VA_ARGS__                                                                                                        \
-  }
+#define WSTRING_REF_LIST(...) (std::vector<xl::wstring_ref>{__VA_ARGS__})
 TEST(string_test, split_ref_w) {
   ASSERT_EQ(xl::string::split_ref(L"", L""), WSTRING_REF_LIST(L""));
   ASSERT_EQ(xl::string::split_ref(L"a", L""), WSTRING_REF_LIST(L"a"));
@@ -51,10 +45,7 @@ TEST(string_test, split_ref_w) {
   ASSERT_EQ(xl::string::split_ref(L"abc|def|g", L"|", 5), WSTRING_REF_LIST(L"abc", L"def", L"g"));
 }
 
-#define STRING_LIST(...)                                                                                               \
-  std::vector<std::string> {                                                                                           \
-    __VA_ARGS__                                                                                                        \
-  }
+#define STRING_LIST(...) (std::vector<std::string>{__VA_ARGS__})
 TEST(string_test, split) {
   ASSERT_EQ(xl::string::split("", ""), STRING_LIST(""));
   ASSERT_EQ(xl::string::split("a", ""), STRING_LIST("a"));
@@ -71,10 +62,7 @@ TEST(string_test, split) {
   ASSERT_EQ(xl::string::split("abc|def|g", "|", 5), STRING_LIST("abc", "def", "g"));
 }
 
-#define WSTRING_LIST(...)                                                                                              \
-  std::vector<std::wstring> {                                                                                          \
-    __VA_ARGS__                                                                                                        \
-  }
+#define WSTRING_LIST(...) (std::vector<std::wstring>{__VA_ARGS__})
 TEST(string_test, split_w) {
   ASSERT_EQ(xl::string::split(L"", L""), WSTRING_LIST(L""));
   ASSERT_EQ(xl::string::split(L"a", L""), WSTRING_LIST(L"a"));

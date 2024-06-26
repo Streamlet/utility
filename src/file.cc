@@ -1,63 +1,10 @@
-#pragma once
-
 #include "file.h"
+#include "byte_order.h"
 #include "encoding.h"
+#include <cstring>
 #include <loki/ScopeGuard.h>
-
 #if defined(_WIN32)
 #include <Windows.h>
-#endif
-
-#ifdef _MSC_VER
-
-#include <stdlib.h>
-#define bswap_16(x) _byteswap_ushort(x)
-#define bswap_32(x) _byteswap_ulong(x)
-#define bswap_64(x) _byteswap_uint64(x)
-
-#elif defined(__APPLE__)
-
-// Mac OS X / Darwin features
-#include <libkern/OSByteOrder.h>
-#define bswap_16(x) OSSwapInt16(x)
-#define bswap_32(x) OSSwapInt32(x)
-#define bswap_64(x) OSSwapInt64(x)
-
-#elif defined(__sun) || defined(sun)
-
-#include <sys/byteorder.h>
-#define bswap_16(x) BSWAP_16(x)
-#define bswap_32(x) BSWAP_32(x)
-#define bswap_64(x) BSWAP_64(x)
-
-#elif defined(__FreeBSD__)
-
-#include <sys/endian.h>
-#define bswap_16(x) bswap16(x)
-#define bswap_32(x) bswap32(x)
-#define bswap_64(x) bswap64(x)
-
-#elif defined(__OpenBSD__)
-
-#include <sys/types.h>
-#define bswap_16(x) swap16(x)
-#define bswap_32(x) swap32(x)
-#define bswap_64(x) swap64(x)
-
-#elif defined(__NetBSD__)
-
-#include <machine/bswap.h>
-#include <sys/types.h>
-#if defined(__BSWAP_RENAME) && !defined(__bswap_32)
-#define bswap_16(x) bswap16(x)
-#define bswap_32(x) bswap32(x)
-#define bswap_64(x) bswap64(x)
-#endif
-
-#else
-
-#include <byteswap.h>
-
 #endif
 
 namespace xl {
@@ -90,46 +37,78 @@ bool fwrite(FILE *f, const std::string &text) {
   return fwrite(text.c_str(), text.length(), 1, f) == 1;
 }
 
-bool is_little_endian() {
-  return ((char *)&UTF16_BOM)[0] == UTF16_BOM_LE[0];
+constexpr bool is_little_endian() {
+#ifdef __BYTE_ORDER__
+  return __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
+#else
+  return '\x04\x03\x02\x01' == 0x01020304;
+#endif
 }
 
 void bytes_swap(std::wstring &content) {
+#ifdef _MSC_VER
   for (auto &c : content) {
     c = bswap_16(c);
   }
+#else
+  for (auto &c : content) {
+    *((short *)&c) = bswap_16(*((short *)&c));
+    *((short *)&c + 1) = bswap_16(*((short *)&c + 1));
+  }
+#endif
 }
 
 std::wstring fread_utf16(FILE *f, size_t size) {
-  std::wstring content;
-  content.resize(size / sizeof(std::wstring::value_type));
-  if (fread(&content[0], size, 1, f) != 1) {
+  std::wstring text;
+  text.resize(size / 2);
+#ifdef _MSC_VER
+  if (fread(&text[0], text.length() * 2, 1, f) != 1) {
     return L"";
   }
-  return std::move(content);
+#else
+  std::basic_string<short> u16string;
+  u16string.resize(text.length());
+  if (fread(&u16string[0], u16string.length() * 2, 1, f) != 1) {
+    return L"";
+  }
+  for (size_t i = 0; i < text.length(); ++i) {
+    text[i] = u16string[i];
+  }
+#endif
+  return std::move(text);
 }
 
 std::wstring fread_utf16_le(FILE *f, size_t size) {
-  std::wstring content = fread_utf16(f, size);
-  if (!is_little_endian()) {
-    bytes_swap(content);
+  std::wstring text = fread_utf16(f, size);
+  if constexpr (!is_little_endian()) {
+    bytes_swap(text);
   }
-  return std::move(content);
+  return std::move(text);
 }
+
 std::wstring fread_utf16_be(FILE *f, size_t size) {
-  std::wstring content = fread_utf16(f, size);
-  if (is_little_endian()) {
-    bytes_swap(content);
+  std::wstring text = fread_utf16(f, size);
+  if constexpr (is_little_endian()) {
+    bytes_swap(text);
   }
-  return std::move(content);
+  return std::move(text);
 }
 
 bool fwrite_utf16(FILE *f, const std::wstring &text) {
-  return fwrite(text.c_str(), text.length() * sizeof(std::wstring::value_type), 1, f) == 1;
+#ifdef _MSC_VER
+  return fwrite(text.c_str(), text.length() * 2, 1, f) == 1;
+#else
+  std::basic_string<short> u16string;
+  u16string.resize(text.size());
+  for (size_t i = 0; i < text.size(); ++i) {
+    u16string[i] = (short)text[i];
+  }
+  return fwrite(u16string.c_str(), u16string.length() * 2, 1, f) == 1;
+#endif
 }
 
 bool fwrite_utf16_le(FILE *f, const std::wstring &text) {
-  if (is_little_endian()) {
+  if constexpr (is_little_endian()) {
     return fwrite_utf16(f, text);
   } else {
     std::wstring copied = text;
@@ -139,7 +118,7 @@ bool fwrite_utf16_le(FILE *f, const std::wstring &text) {
 }
 
 bool fwrite_utf16_be(FILE *f, const std::wstring &text) {
-  if (is_little_endian()) {
+  if constexpr (is_little_endian()) {
     std::wstring copied = text;
     bytes_swap(copied);
     return fwrite_utf16(f, copied);
@@ -280,19 +259,11 @@ bool write_text_utf16_be(const TCHAR *path, const std::wstring &text) {
 }
 
 bool remove(const TCHAR *path) {
-#if defined(_WIN32) && defined(_UNICODE)
-  return ::DeleteFileW(path);
-#else
-  return ::remove(path);
-#endif
+  return ::_tremove(path) == 0;
 }
 
 bool rename(const TCHAR *path, const TCHAR *new_path) {
-#if defined(_WIN32) && defined(_UNICODE)
-  return ::MoveFileW(path, new_path);
-#else
-  return ::rename(path);
-#endif
+  return ::_trename(path, new_path) == 0;
 }
 
 } // namespace file

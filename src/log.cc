@@ -2,13 +2,13 @@
 #include "log_init.h"
 #include "native_string.h"
 #include "process.h"
+#include "scope_exit.h"
 #include "string.h"
 #include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <iomanip>
-#include <loki/ScopeGuard.h>
 #include <map>
 #include <string_view>
 
@@ -268,7 +268,7 @@ std::string read_string(const TCHAR *log_setting_file) {
   if (f == NULL) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   if (fseek(f, 0, SEEK_END) != 0) {
     return "";
   }

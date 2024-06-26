@@ -1,5 +1,5 @@
 #include "crypto.h"
-#include <loki/ScopeGuard.h>
+#include "scope_exit.h"
 #include <memory>
 #include <openssl/crypto.h>
 #include <openssl/md5.h>
@@ -71,7 +71,7 @@ std::string md5_file(const TCHAR *file_path) {
   if (f == nullptr) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   MD5_CTX c;
   static unsigned char m[MD5_DIGEST_LENGTH];
   ::MD5_Init(&c);
@@ -91,7 +91,7 @@ std::string sha1_file(const TCHAR *file_path) {
   if (f == nullptr) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   SHA_CTX c;
   static unsigned char m[SHA_DIGEST_LENGTH];
   ::SHA1_Init(&c);
@@ -111,7 +111,7 @@ std::string sha224_file(const TCHAR *file_path) {
   if (f == nullptr) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   SHA256_CTX c;
   static unsigned char m[SHA224_DIGEST_LENGTH];
   ::SHA224_Init(&c);
@@ -131,7 +131,7 @@ std::string sha256_file(const TCHAR *file_path) {
   if (f == nullptr) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   SHA256_CTX c;
   static unsigned char m[SHA256_DIGEST_LENGTH];
   ::SHA256_Init(&c);
@@ -151,7 +151,7 @@ std::string sha384_file(const TCHAR *file_path) {
   if (f == nullptr) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   SHA512_CTX c;
   static unsigned char m[SHA384_DIGEST_LENGTH];
   ::SHA384_Init(&c);
@@ -171,7 +171,7 @@ std::string sha512_file(const TCHAR *file_path) {
   if (f == nullptr) {
     return "";
   }
-  LOKI_ON_BLOCK_EXIT(fclose, f);
+  XL_ON_BLOCK_EXIT(fclose, f);
   SHA512_CTX c;
   static unsigned char m[SHA512_DIGEST_LENGTH];
   ::SHA512_Init(&c);

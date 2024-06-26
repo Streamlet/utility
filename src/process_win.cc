@@ -1,6 +1,6 @@
 #include "native_string.h"
 #include "process.h"
-#include <Loki/ScopeGuard.h>
+#include "scope_exit.h"
 #include <sstream>
 #include <Windows.h>
 
@@ -77,7 +77,7 @@ bool wait(long pid, unsigned int milliseconds) {
   if (hProcess == NULL) {
     return true;
   }
-  LOKI_ON_BLOCK_EXIT(::CloseHandle, hProcess);
+  XL_ON_BLOCK_EXIT(::CloseHandle, hProcess);
   if (::WaitForSingleObject(hProcess, milliseconds) == WAIT_OBJECT_0) {
     return true;
   }
@@ -89,7 +89,7 @@ bool kill(long pid) {
   if (hProcess == NULL) {
     return false;
   }
-  LOKI_ON_BLOCK_EXIT(::CloseHandle, hProcess);
+  XL_ON_BLOCK_EXIT(::CloseHandle, hProcess);
   if (!::TerminateProcess(hProcess, -1)) {
     return false;
   }

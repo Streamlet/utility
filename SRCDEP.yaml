@@ -6,13 +6,6 @@ DEPS:
     GIT_REPO: https://github.com/Streamlet/gn_toolchain.git
     GIT_TAG: master
 
-  thirdparty/loki:
-    URL: https://sourceforge.net/projects/loki-lib/files/Loki/Loki%200.1.7/loki-0.1.7.tar.bz2/download
-    URL_FORMAT: tar.bz2
-    ROOT_DIR: loki-0.1.7
-    URL_HASH:
-      SHA1: 006c630217b1e1fd33015dc0597d2d743d8ee4e3
-
   thirdparty/libressl:
     URL: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.0.tar.gz
     ROOT_DIR: libressl-3.8.0

@@ -2,8 +2,8 @@
 #include <openssl/crypto.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
-#include <xl/crypto.h>
-#include <xl/scope_exit.h>
+#include <xl/crypto>
+#include <xl/scope_exit>
 
 namespace xl {
 

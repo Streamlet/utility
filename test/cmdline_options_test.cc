@@ -1,7 +1,7 @@
 
 #include <gtest/gtest.h>
-#include <xl/cmdline_options.h>
-#include <xl/native_string.h>
+#include <xl/cmdline_options>
+#include <xl/native_string>
 
 TEST(cmdline_options_test, key_value) {
   const TCHAR *argv[] = {_T("exe_path"), _T("--k=v")};

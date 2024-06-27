@@ -1,7 +1,7 @@
 
 #include <cstdio>
-#include <xl/cmdline_options.h>
-#include <xl/native_string.h>
+#include <xl/cmdline_options>
+#include <xl/native_string>
 
 int _tmain(int argc, const TCHAR *argv[]) {
   auto options = xl::cmdline_options::parse(argc, argv);

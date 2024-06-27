@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <xl/encoding.h>
+#include <xl/encoding>
 
 TEST(encoding_test, utf8_to_utf16) {
   ASSERT_EQ(xl::encoding::utf8_to_utf16("你好"), L"你好");

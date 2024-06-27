@@ -1,8 +1,8 @@
 #include <sstream>
 #include <Windows.h>
-#include <xl/native_string.h>
-#include <xl/process.h>
-#include <xl/scope_exit.h>
+#include <xl/native_string>
+#include <xl/process>
+#include <xl/scope_exit>
 
 namespace xl {
 

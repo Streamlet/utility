@@ -3,23 +3,26 @@ config("utility_public_config") {
 }
 
 source_set("meta") {
-  sources = [ "../include/xl/scope_exit.h" ]
+  sources = []
+
+  inputs = [ "../include/xl/scope_exit" ]
 
   public_configs = [ ":utility_public_config" ]
 }
 
 source_set("string") {
-  sources = [
-    "../include/xl/encoding.h",
-    "../include/xl/native_string.h",
-    "../include/xl/string.h",
-  ]
-
+  sources = []
   if (is_win) {
     sources += [ "encoding_win.cc" ]
   } else {
     sources += [ "encoding_posix.cc" ]
   }
+
+  inputs = [
+    "../include/xl/encoding",
+    "../include/xl/native_string",
+    "../include/xl/string",
+  ]
 
   cflags = []
   if (is_posix) {
@@ -30,10 +33,9 @@ source_set("string") {
 }
 
 source_set("crypto") {
-  sources = [
-    "../include/xl/crypto.h",
-    "crypto.cc",
-  ]
+  sources = [ "crypto.cc" ]
+
+  inputs = [ "../include/xl/crypto" ]
 
   cflags = []
   if (is_posix) {
@@ -46,10 +48,11 @@ source_set("crypto") {
 }
 
 source_set("file") {
-  sources = [
+  sources = [ "file.cc" ]
+
+  inputs = [
     "../include/xl/byte_order.h",
-    "../include/xl/file.h",
-    "file.cc",
+    "../include/xl/file",
   ]
 
   cflags = []
@@ -61,10 +64,11 @@ source_set("file") {
 }
 
 source_set("log") {
-  sources = [
-    "../include/xl/log.h",
-    "../include/xl/log_init.h",
-    "log.cc",
+  sources = [ "log.cc" ]
+
+  inputs = [
+    "../include/xl/log",
+    "../include/xl/log_init",
   ]
 
   cflags = []
@@ -76,10 +80,11 @@ source_set("log") {
 }
 
 source_set("process") {
-  sources = [
-    "../include/xl/cmdline_options.h",
-    "../include/xl/process.h",
-    "cmdline_options.cc",
+  sources = [ "cmdline_options.cc" ]
+
+  inputs = [
+    "../include/xl/cmdline_options",
+    "../include/xl/process",
   ]
 
   if (is_win) {

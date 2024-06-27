@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <xl/string.h>
+#include <xl/string>
 
 TEST(string_test, length) {
   ASSERT_EQ(xl::string::length(""), 0);

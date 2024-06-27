@@ -1,8 +1,8 @@
 #include <cstring>
 #include <xl/byte_order.h>
-#include <xl/encoding.h>
-#include <xl/file.h>
-#include <xl/scope_exit.h>
+#include <xl/encoding>
+#include <xl/file>
+#include <xl/scope_exit>
 
 namespace xl {
 

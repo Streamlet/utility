@@ -1,9 +1,3 @@
-#include "log.h"
-#include "log_init.h"
-#include "native_string.h"
-#include "process.h"
-#include "scope_exit.h"
-#include "string.h"
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -11,13 +5,16 @@
 #include <iomanip>
 #include <map>
 #include <string_view>
+#include <xl/encoding.h>
+#include <xl/log.h>
+#include <xl/log_init.h>
+#include <xl/native_string.h>
+#include <xl/process.h>
+#include <xl/scope_exit.h>
+#include <xl/string.h>
 
 #ifdef _WIN32
-#include "encoding.h"
 #include <Windows.h>
-#else
-#include <strings.h>
-#define strnicmp strncasecmp
 #endif
 
 namespace xl {

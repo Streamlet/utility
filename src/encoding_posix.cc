@@ -1,6 +1,6 @@
-#include "encoding.h"
 #include <cassert>
 #include <stack>
+#include <xl/encoding.h>
 
 namespace xl {
 

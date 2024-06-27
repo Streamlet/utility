@@ -9,5 +9,5 @@ group("all") {
 
 group("test") {
   testonly = true
-  deps = [ "src:unittest" ]
+  deps = [ "test" ]
 }

@@ -1,5 +1,5 @@
-#include "scope_exit.h"
 #include <gtest/gtest.h>
+#include <xl/scope_exit.h>
 
 void function_set(int *variable, int value) {
   *variable = value;

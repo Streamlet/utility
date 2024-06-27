@@ -1,11 +1,6 @@
 #pragma once
 #include "log.h"
-
-#if defined(_WIN32)
-#include <tchar.h>
-#else
-#define TCHAR char
-#endif
+#include "native_string.h"
 
 namespace xl {
 

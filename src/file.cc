@@ -1,11 +1,8 @@
-#include "file.h"
-#include "byte_order.h"
-#include "encoding.h"
-#include "scope_exit.h"
 #include <cstring>
-#if defined(_WIN32)
-#include <Windows.h>
-#endif
+#include <xl/byte_order.h>
+#include <xl/encoding.h>
+#include <xl/file.h>
+#include <xl/scope_exit.h>
 
 namespace xl {
 

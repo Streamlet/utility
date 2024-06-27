@@ -1,0 +1,62 @@
+executable("unittest") {
+  testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [
+    "cmdline_options_test.cc",
+    "crypto_test.cc",
+    "encoding_test.cc",
+    "file_test.cc",
+    "scope_exit_test.cc",
+    "string_test.cc",
+    "unittest.cc",
+  ]
+  deps = [
+    "../src:crypto",
+    "../src:file",
+    "../src:meta",
+    "../src:process",
+    "../src:string",
+    "../thirdparty:googletest",
+  ]
+}
+
+executable("process_test") {
+  testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "process_test.cc" ]
+  deps = [ "../src:process" ]
+}
+
+executable("cmdline_options_echo") {
+  testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "cmdline_options_echo.cc" ]
+  deps = [ "../src:process" ]
+  if (is_win) {
+    deps += [ ":cmdline_options_echo_win" ]
+  }
+}
+
+if (is_win) {
+  executable("cmdline_options_echo_win") {
+    testonly = true
+    configs += [ "../build/config/win:windows_subsystem" ]
+    sources = [ "cmdline_options_echo_win.cc" ]
+    deps = [ "../src:process" ]
+  }
+}
+
+group("test") {
+  testonly = true
+  deps = [
+    ":cmdline_options_echo",
+    ":process_test",
+    ":unittest",
+  ]
+}

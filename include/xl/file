@@ -1,6 +1,6 @@
 #pragma once
 
-#include "native_string.h"
+#include "native_string"
 #include <cstdio>
 #include <string>
 

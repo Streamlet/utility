@@ -2,8 +2,8 @@
 #include <cstdio>
 #include <sstream>
 #include <windows.h>
-#include <xl/cmdline_options.h>
-#include <xl/native_string.h>
+#include <xl/cmdline_options>
+#include <xl/native_string>
 
 int WINAPI _tWinMain(__in HINSTANCE hInstance,
                      __in_opt HINSTANCE hPrevInstance,

@@ -5,13 +5,13 @@
 #include <iomanip>
 #include <map>
 #include <string_view>
-#include <xl/encoding.h>
-#include <xl/log.h>
-#include <xl/log_init.h>
-#include <xl/native_string.h>
-#include <xl/process.h>
-#include <xl/scope_exit.h>
-#include <xl/string.h>
+#include <xl/encoding>
+#include <xl/log>
+#include <xl/log_init>
+#include <xl/native_string>
+#include <xl/process>
+#include <xl/scope_exit>
+#include <xl/string>
 
 #ifdef _WIN32
 #include <Windows.h>

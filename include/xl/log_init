@@ -1,6 +1,6 @@
 #pragma once
-#include "log.h"
-#include "native_string.h"
+#include "log"
+#include "native_string"
 
 namespace xl {
 

@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include <xl/encoding.h>
+#include <xl/encoding>
 
 namespace xl {
 

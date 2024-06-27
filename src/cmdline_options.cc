@@ -1,11 +1,11 @@
 
 #include <cstring>
 #include <cwchar>
-#include <xl/cmdline_options.h>
-#include <xl/native_string.h>
-#include <xl/scope_exit.h>
+#include <xl/cmdline_options>
+#include <xl/native_string>
+#include <xl/scope_exit>
 #ifdef _WIN32
-#include <xl/encoding.h>
+#include <xl/encoding>
 // clang-format off
 // Windows.h MUST be included before ShellAPI.h
 #include <Windows.h>

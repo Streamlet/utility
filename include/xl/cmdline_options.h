@@ -17,7 +17,7 @@ namespace xl {
 
 namespace cmdline_options {
 
-struct ParsedOption {
+struct parsed_options {
   std::map<std::basic_string<TCHAR>, std::basic_string<TCHAR>> parsed_map;
 
   bool has(const TCHAR *option_name) const {
@@ -39,10 +39,10 @@ struct ParsedOption {
   }
 };
 
-ParsedOption parse(int argc, const TCHAR *argv[]);
+parsed_options parse(int argc, const TCHAR *argv[]);
 
 #ifdef _WIN32
-ParsedOption parse(const TCHAR *cmdline);
+parsed_options parse(const TCHAR *cmdline);
 #endif
 
 } // namespace cmdline_options

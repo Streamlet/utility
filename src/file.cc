@@ -3,6 +3,9 @@
 #include <xl/encoding>
 #include <xl/file>
 #include <xl/scope_exit>
+#ifdef __APPLE__
+#include <sys/errno.h>
+#endif
 
 namespace xl {
 

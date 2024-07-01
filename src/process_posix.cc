@@ -7,6 +7,8 @@
 #include <xl/process>
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
+#include <pthread.h>
+#include <sys/errno.h>
 #include <sys/param.h>
 #include <sys/syscall.h>
 #endif
@@ -60,7 +62,13 @@ long pid() {
 
 long tid() {
 #ifdef __APPLE__
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_12
+  uint64_t tid64;
+  pthread_threadid_np(nullptr, &tid64);
+  return (pid_t)tid64;
+#else
   return ::syscall(SYS_thread_selfid);
+#endif
 #else
   return ::gettid();
 #endif

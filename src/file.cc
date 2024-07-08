@@ -152,14 +152,14 @@ long long size(const TCHAR *path) {
 
 std::string read(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, "");
-  long long size = fsize(f);
+  size_t size = (size_t)fsize(f);
   fseek(f, 0, SEEK_SET);
   return fread(f, size);
 }
 
 std::string read_text_auto(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, "");
-  long long size = fsize(f);
+  size_t size = (size_t)fsize(f);
   fseek(f, 0, SEEK_SET);
 #pragma pack(push, 1)
   union {
@@ -186,7 +186,7 @@ std::string read_text_auto(const TCHAR *path) {
 
 std::string read_text_utf8_bom(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, "");
-  long long size = fsize(f);
+  size_t size = (size_t)fsize(f);
   fseek(f, 0, SEEK_SET);
   char bom[sizeof(UTF8_BOM)] = {};
   if (size < sizeof(bom) || fread(bom, sizeof(bom), 1, f) != 1 || memcmp(bom, UTF8_BOM, sizeof(UTF8_BOM)) != 0) {
@@ -197,7 +197,7 @@ std::string read_text_utf8_bom(const TCHAR *path) {
 
 std::wstring read_text_utf16_le(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, L"");
-  long long size = fsize(f);
+  size_t size = (size_t)fsize(f);
   fseek(f, 0, SEEK_SET);
   char bom[sizeof(UTF16_BOM_LE)];
   if (size < sizeof(wchar_t) || fread(&bom, sizeof(bom), 1, f) != 1 ||
@@ -209,7 +209,7 @@ std::wstring read_text_utf16_le(const TCHAR *path) {
 
 std::wstring read_text_utf16_be(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, L"");
-  long long size = fsize(f);
+  size_t size = (size_t)fsize(f);
   fseek(f, 0, SEEK_SET);
   char bom[sizeof(UTF16_BOM_BE)];
   if (size < sizeof(wchar_t) || fread(&bom, sizeof(bom), 1, f) != 1 ||

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <sstream>
 #include <xl/file>
 #include <xl/ini>

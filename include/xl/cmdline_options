@@ -35,7 +35,7 @@ struct parsed_options {
     ss << get(option_name);
     T t = {};
     ss >> t;
-    return std::move(t);
+    return t;
   }
 };
 

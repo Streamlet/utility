@@ -24,7 +24,7 @@ native_string executable_path() {
     return _T("");
   }
   long_path.resize(length);
-  return std::move(long_path);
+  return long_path;
 }
 
 long pid() {

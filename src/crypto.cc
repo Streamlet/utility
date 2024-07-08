@@ -15,7 +15,7 @@ std::string hex(unsigned char *digest, size_t length) {
   for (size_t i = 0; i < length; ++i) {
     snprintf(&hex[0] + i * 2, 3, "%02x", digest[i]);
   }
-  return std::move(hex);
+  return hex;
 }
 
 } // namespace

@@ -63,6 +63,21 @@ source_set("file") {
   public_configs = [ ":utility_public_config" ]
 }
 
+source_set("config") {
+  sources = [ "ini.cc" ]
+
+  inputs = [ "../include/xl/ini" ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ ":file" ]
+
+  public_configs = [ ":utility_public_config" ]
+}
+
 source_set("log") {
   sources = [ "log.cc" ]
 

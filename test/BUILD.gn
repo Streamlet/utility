@@ -8,11 +8,13 @@ executable("unittest") {
     "crypto_test.cc",
     "encoding_test.cc",
     "file_test.cc",
+    "ini_test.cc",
     "scope_exit_test.cc",
     "string_test.cc",
     "unittest.cc",
   ]
   deps = [
+    "../src:config",
     "../src:crypto",
     "../src:file",
     "../src:meta",

@@ -1,0 +1,56 @@
+#pragma once
+
+#include <list>
+#include <map>
+#include <string>
+#include <vector>
+#include <xl/native_string>
+
+namespace xl {
+
+class ini {
+public:
+  struct ini_line {
+    std::string key;
+    std::string value;
+    std::string comment;
+  };
+  struct ini_section {
+    std::string name;
+    std::string comment;
+    std::list<ini_line> lines;
+    std::multimap<std::string, ini_line *> line_map;
+  };
+  struct ini_data {
+    std::list<ini_section> sections;
+    std::multimap<std::string, ini_section *> section_map;
+  };
+
+public:
+  bool load(const TCHAR *path);
+  bool save(const TCHAR *path) const;
+
+  bool parse(const std::string &content);
+  std::string dump() const;
+
+  const ini_data &data() const;
+
+  std::vector<std::string> enum_sections() const;
+  bool has_section(const std::string &section) const;
+  std::vector<std::string> enum_keys(const std::string &section) const;
+  bool has_key(const std::string &section, const std::string &key) const;
+  std::string get_value(const std::string &section, const std::string &key) const;
+  void set_value(const std::string &section,
+                 const std::string &key,
+                 const std::string &value,
+                 const std::string &comment = "",
+                 bool save = true);
+  bool remove_value(const std::string &section, const std::string &key, bool save = true);
+  bool remove_section(const std::string &section, const std::string &key, bool save = true);
+
+private:
+  native_string path_;
+  ini_data data_;
+};
+
+} // namespace xl

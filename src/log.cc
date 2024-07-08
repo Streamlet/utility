@@ -165,7 +165,7 @@ format(int level, const CharType *file, const CharType *function, int line, std:
     ss << GROUP_BEGIN << (CharType)'T' << xl::process::tid() << GROUP_END;
   }
   ss << message.c_str() << std::endl;
-  return std::move(ss.str());
+  return ss.str();
 }
 
 template <typename CharType>
@@ -276,7 +276,7 @@ std::string read_string(const TCHAR *log_setting_file) {
   std::string s;
   s.resize(length);
   fread(&s[0], 1, length, f);
-  return std::move(s);
+  return s;
 }
 std::string_view trim_spaces(const std::string_view &s) {
   size_t begin = s.find_first_not_of(" \t\r\n");
@@ -304,7 +304,7 @@ std::map<std::string_view, std::string_view> split_kv(const std::string &s) {
     std::string_view value = trim_spaces(line.substr(equal_pos + 1));
     m.insert(std::make_pair(key, value));
   }
-  return std::move(m);
+  return m;
 }
 
 const char *KEY_APP_NAME = "AppName";

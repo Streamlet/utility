@@ -30,7 +30,7 @@ std::string fread(FILE *f, size_t size) {
   if (fread(&content[0], size, 1, f) != 1) {
     return "";
   }
-  return std::move(content);
+  return content;
 }
 
 bool fwrite(FILE *f, const std::string &text) {
@@ -75,7 +75,7 @@ std::wstring fread_utf16(FILE *f, size_t size) {
     text[i] = u16string[i];
   }
 #endif
-  return std::move(text);
+  return text;
 }
 
 std::wstring fread_utf16_le(FILE *f, size_t size) {
@@ -83,7 +83,7 @@ std::wstring fread_utf16_le(FILE *f, size_t size) {
   if constexpr (!is_little_endian()) {
     bytes_swap(text);
   }
-  return std::move(text);
+  return text;
 }
 
 std::wstring fread_utf16_be(FILE *f, size_t size) {
@@ -91,7 +91,7 @@ std::wstring fread_utf16_be(FILE *f, size_t size) {
   if constexpr (is_little_endian()) {
     bytes_swap(text);
   }
-  return std::move(text);
+  return text;
 }
 
 bool fwrite_utf16(FILE *f, const std::wstring &text) {

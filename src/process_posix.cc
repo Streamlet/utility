@@ -31,7 +31,7 @@ std::string executable_path() {
     return "";
   }
 
-  return std::move(long_path);
+  return long_path;
 }
 
 #else
@@ -49,7 +49,7 @@ std::string executable_path() {
   len = ::readlink(PROC_SELF_EXE, &long_path[0], LONG_PATH_LENGTH);
   if (len < LONG_PATH_LENGTH) {
     long_path.resize(len);
-    return std::move(long_path);
+    return long_path;
   }
   return "";
 }

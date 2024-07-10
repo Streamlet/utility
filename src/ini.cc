@@ -189,6 +189,15 @@ bool match_section_header(const std::string &content, size_t &pos, std::string &
   return true;
 }
 
+void section_add_line(ini::ini_section &section, ini::ini_line line) {
+  auto it = section.line_map.find(line.key);
+  if (it != section.line_map.end()) {
+    section.lines.erase(it->second);
+  }
+  section.lines.push_back(std::move(line));
+  section.line_map[section.lines.back().key] = std::prev(section.lines.end());
+}
+
 bool match_section(const std::string &content, size_t &pos, ini::ini_section &section) {
   if (!match_section_header(content, pos, section.name, section.comment)) {
     return false;
@@ -199,8 +208,7 @@ bool match_section(const std::string &content, size_t &pos, ini::ini_section &se
       break;
     }
     if (!line.key.empty() || !line.value.empty() || !line.comment.empty()) {
-      section.lines.push_back(std::move(line));
-      section.line_map.insert(std::make_pair(section.lines.back().key, &section.lines.back()));
+      section_add_line(section, std::move(line));
     }
   }
   return true;
@@ -212,8 +220,18 @@ bool match_file(const std::string &content, size_t &pos, ini::ini_data &data) {
     if (!match_section(content, pos, section)) {
       return false;
     }
-    data.sections.push_back(std::move(section));
-    data.section_map.insert(std::make_pair(data.sections.back().name, &data.sections.back()));
+    auto it = data.section_map.find(section.name);
+    if (it != data.section_map.end()) {
+      if (!section.comment.empty()) {
+        it->second->comment = section.comment;
+        for (auto &line : section.lines) {
+          section_add_line(*it->second, std::move(line));
+        }
+      }
+    } else {
+      data.sections.push_back(std::move(section));
+      data.section_map[data.sections.back().name] = std::prev(data.sections.end());
+    }
   }
   return true;
 }
@@ -324,64 +342,115 @@ bool ini::has_section(const std::string &section) const {
   return data_.section_map.find(section) != data_.section_map.end();
 }
 
-std::vector<std::string> ini::enum_keys(const std::string &section) const {
-  auto begin = data_.section_map.lower_bound(section);
-  auto end = data_.section_map.upper_bound(section);
-  std::vector<std::string> keys;
-  for (auto it = begin; it != end; ++it) {
-    for (const auto &line : it->second->lines) {
-      keys.push_back(line.key);
+bool ini::add_section(const std::string &section, const std::string &comment, bool save) {
+  auto it = data_.section_map.find(section);
+  if (it == data_.section_map.end()) {
+    data_.sections.push_back({section, comment, {}, {}});
+    data_.section_map[section] = std::prev(data_.sections.end());
+  } else {
+    if (it->second->comment == comment) {
+      return false;
     }
+    it->second->comment = comment;
+  }
+  if (save && !path_.empty()) {
+    this->save(path_.c_str());
+  }
+  return true;
+}
+
+bool ini::remove_section(const std::string &section, bool save) {
+  auto it = data_.section_map.find(section);
+  if (it == data_.section_map.end()) {
+    return false;
+  }
+  data_.sections.erase(it->second);
+  data_.section_map.erase(it);
+  if (save && !path_.empty()) {
+    this->save(path_.c_str());
+  }
+  return true;
+}
+
+std::vector<std::string> ini::enum_keys(const std::string &section) const {
+  auto it = data_.section_map.find(section);
+  if (it == data_.section_map.end()) {
+    return {};
+  }
+  std::vector<std::string> keys;
+  for (const auto &line : it->second->lines) {
+    keys.push_back(line.key);
   }
   return keys;
 }
 
 bool ini::has_key(const std::string &section, const std::string &key) const {
-  auto begin = data_.section_map.lower_bound(section);
-  auto end = data_.section_map.upper_bound(section);
-  std::vector<std::string> keys;
-  for (auto it = begin; it != end; ++it) {
-    if (it->second->line_map.find(key) != it->second->line_map.end()) {
-      return true;
-    }
+  auto it_section = data_.section_map.find(section);
+  if (it_section == data_.section_map.end()) {
+    return false;
   }
-  return false;
+  const auto &line_map = it_section->second->line_map;
+  auto it_key = line_map.find(key);
+  if (it_key == line_map.end()) {
+    return false;
+  }
+  return true;
 }
 
 std::string ini::get_value(const std::string &section, const std::string &key) const {
-  auto section_begin = data_.section_map.lower_bound(section);
-  auto section_end = data_.section_map.upper_bound(section);
-  if (section_begin == section_end) {
-    return "";
+  auto it_section = data_.section_map.find(section);
+  if (it_section == data_.section_map.end()) {
+    return false;
   }
-  const auto &int_section = *std::prev(section_end)->second;
-  auto key_begin = int_section.line_map.lower_bound(key);
-  auto key_end = int_section.line_map.upper_bound(key);
-  if (key_begin == key_end) {
-    return "";
+  const auto &line_map = it_section->second->line_map;
+  auto it_key = line_map.find(key);
+  if (it_key == line_map.end()) {
+    return false;
   }
-  const auto &ini_line = *std::prev(key_end)->second;
-  return ini_line.value;
+  return it_key->second->value;
 }
 
-void ini::set_value(const std::string &section,
+bool ini::set_value(const std::string &section,
                     const std::string &key,
                     const std::string &value,
                     const std::string &comment,
                     bool save) {
+  auto it_section = data_.section_map.find(section);
+  if (it_section == data_.section_map.end()) {
+    data_.sections.push_back({section, comment, {}, {}});
+    data_.section_map[section] = std::prev(data_.sections.end());
+    it_section = data_.section_map.find(section);
+  }
+  auto &ini_section = *it_section->second;
+  auto it_key = ini_section.line_map.find(key);
+  if (it_key == ini_section.line_map.end()) {
+    ini_section.lines.push_back({key, value, comment});
+    ini_section.line_map[key] = std::prev(ini_section.lines.end());
+  } else {
+    if (it_key->second->value == value && it_key->second->comment == comment) {
+      return false;
+    }
+    it_key->second->value = value;
+    it_key->second->comment = comment;
+  }
   if (save && !path_.empty()) {
     this->save(path_.c_str());
   }
+  return true;
 }
 
 bool ini::remove_value(const std::string &section, const std::string &key, bool save) {
-  if (save && !path_.empty()) {
-    this->save(path_.c_str());
+  auto it_section = data_.section_map.find(section);
+  if (it_section == data_.section_map.end()) {
+    return false;
   }
-  return false;
-}
-
-bool ini::remove_section(const std::string &section, const std::string &key, bool save) {
+  auto &ini_section = *it_section->second;
+  auto it_key = ini_section.line_map.find(key);
+  if (it_key == ini_section.line_map.end()) {
+    return false;
+  }
+  ini_section.lines.erase(it_key->second);
+  ini_section.line_map.erase(it_key);
   if (save && !path_.empty()) {
     this->save(path_.c_str());
   }

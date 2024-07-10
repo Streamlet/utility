@@ -19,11 +19,11 @@ public:
     std::string name;
     std::string comment;
     std::list<ini_line> lines;
-    std::multimap<std::string, ini_line *> line_map;
+    std::map<std::string, std::list<ini_line>::iterator> line_map;
   };
   struct ini_data {
     std::list<ini_section> sections;
-    std::multimap<std::string, ini_section *> section_map;
+    std::map<std::string, std::list<ini_section>::iterator> section_map;
   };
 
 public:
@@ -37,16 +37,18 @@ public:
 
   std::vector<std::string> enum_sections() const;
   bool has_section(const std::string &section) const;
+  bool add_section(const std::string &section, const std::string &comment = "", bool save = true);
+  bool remove_section(const std::string &section, bool save = true);
+
   std::vector<std::string> enum_keys(const std::string &section) const;
   bool has_key(const std::string &section, const std::string &key) const;
   std::string get_value(const std::string &section, const std::string &key) const;
-  void set_value(const std::string &section,
+  bool set_value(const std::string &section,
                  const std::string &key,
                  const std::string &value,
                  const std::string &comment = "",
                  bool save = true);
   bool remove_value(const std::string &section, const std::string &key, bool save = true);
-  bool remove_section(const std::string &section, const std::string &key, bool save = true);
 
 private:
   native_string path_;

@@ -102,29 +102,23 @@ TEST(ini_test, duplicated_sections_and_keys) {
                         "key1 = value12 ;comment12\r\n"
                         "\r\n"
                         "[section2]     ;section2 comment1\r\n"
-                        "key2 = value21 ;comment21\r\n"
+                        "key2 = value2 ;comment2\r\n"
                         "\r\n"
                         "[section2]     ;section2 comment2\r\n"
-                        "key2 = value22 ;comment22\r\n"
+                        "key3 = value3 ;comment3\r\n"
                         "\r\n";
 
   xl::ini ini;
   ASSERT_EQ(ini.parse(content), true);
   xl::ini::ini_data data = ini.data();
-  ASSERT_EQ(data.sections.size(), 3);
+  ASSERT_EQ(data.sections.size(), 2);
   {
     const auto &section = data.sections.front();
     ASSERT_EQ(section.name, "section1");
     ASSERT_EQ(section.comment, "section1 comment");
-    ASSERT_EQ(section.lines.size(), 2);
+    ASSERT_EQ(section.lines.size(), 1);
     {
       const auto &line = section.lines.front();
-      ASSERT_EQ(line.key, "key1");
-      ASSERT_EQ(line.value, "value11");
-      ASSERT_EQ(line.comment, "comment11");
-    }
-    {
-      const auto &line = section.lines.back();
       ASSERT_EQ(line.key, "key1");
       ASSERT_EQ(line.value, "value12");
       ASSERT_EQ(line.comment, "comment12");
@@ -133,28 +127,28 @@ TEST(ini_test, duplicated_sections_and_keys) {
   {
     const auto &section = *(++data.sections.begin());
     ASSERT_EQ(section.name, "section2");
-    ASSERT_EQ(section.comment, "section2 comment1");
-    ASSERT_EQ(section.lines.size(), 1);
+    ASSERT_EQ(section.comment, "section2 comment2");
+    ASSERT_EQ(section.lines.size(), 2);
     {
       const auto &line = section.lines.front();
       ASSERT_EQ(line.key, "key2");
-      ASSERT_EQ(line.value, "value21");
-      ASSERT_EQ(line.comment, "comment21");
+      ASSERT_EQ(line.value, "value2");
+      ASSERT_EQ(line.comment, "comment2");
     }
-  }
-  {
-    const auto &section = data.sections.back();
-    ASSERT_EQ(section.name, "section2");
-    ASSERT_EQ(section.comment, "section2 comment2");
-    ASSERT_EQ(section.lines.size(), 1);
     {
       const auto &line = section.lines.back();
-      ASSERT_EQ(line.key, "key2");
-      ASSERT_EQ(line.value, "value22");
-      ASSERT_EQ(line.comment, "comment22");
+      ASSERT_EQ(line.key, "key3");
+      ASSERT_EQ(line.value, "value3");
+      ASSERT_EQ(line.comment, "comment3");
     }
   }
-  ASSERT_EQ(ini.dump(), content);
+  ASSERT_EQ(ini.dump(), "[section1]     ;section1 comment\r\n"
+                        "key1 = value12 ;comment12\r\n"
+                        "\r\n"
+                        "[section2]    ;section2 comment2\r\n"
+                        "key2 = value2 ;comment2\r\n"
+                        "key3 = value3 ;comment3\r\n"
+                        "\r\n");
 }
 
 TEST(ini_test, dump_pretty) {

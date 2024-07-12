@@ -400,12 +400,12 @@ bool ini::has_key(const std::string &section, const std::string &key) const {
 std::string ini::get_value(const std::string &section, const std::string &key) const {
   auto it_section = data_.section_map.find(section);
   if (it_section == data_.section_map.end()) {
-    return false;
+    return "";
   }
   const auto &line_map = it_section->second->line_map;
   auto it_key = line_map.find(key);
   if (it_key == line_map.end()) {
-    return false;
+    return "";
   }
   return it_key->second->value;
 }

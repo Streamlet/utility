@@ -282,7 +282,7 @@ std::string dump_line(const ini::ini_line &line, size_t alignment = 0) {
     ss << line.key << " = " << line.value
        << dump_comment(line.comment, line.key.length() + 3 + line.value.length(), alignment);
   } else if (!line.comment.empty()) {
-    ss << dump_comment(line.comment, 0, alignment);
+    ss << dump_comment(line.comment, 0, 0);
   }
   ss << "\r\n";
   return ss.str();
@@ -300,8 +300,8 @@ std::string dump_section(const ini::ini_section &section) {
   std::stringstream ss;
   auto it_alignment = section.lines.begin();
   size_t alignment = calc_aligment(section.lines, it_alignment);
-  alignment = std::max(alignment, section.name.length());
-  ss << std::move(dump_section_header(section.name, section.comment, alignment));
+  alignment = std::max(alignment, section.name.length() + 2);
+  ss << dump_section_header(section.name, section.comment, alignment);
   for (auto it = section.lines.begin(); it != section.lines.end(); ++it) {
     if (it == it_alignment) {
       alignment = calc_aligment(section.lines, it_alignment);

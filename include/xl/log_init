@@ -45,17 +45,17 @@ bool setup_from_file(const TCHAR *log_setting_file);
 /**
  * Log Setting File Format
  *
- * It is an INI-like file, without sections, UTF-8 encoded without BOM.
+ * It is an INI file, without sections, UTF-8 encoded without BOM.
  * Sample:
  *
- * ; texts after semicolon will be recognized as comments
+ * [Log]
  * AppName    = MyApp   ; AppName defines app_name arguments of setuo_log
- * LogLevel   = Default ; valid values are: Off, Fatal, Error, Warn, Info, Debug or Default. Case insensitive.
+ * LogLevel   = Default ; valid values are: Off, Fatal, Error, Warn, Info, Debug or Default. Case sensitive.
  * LogContent = Default ; valid values are: Time, Level, AppName, FileName, FullFileName,
  *                      ;                   FuncName, FullFuncName, Line, PID, TID, All or Default.
- *                      ; Case insensitive, order insensitive. Can be combined by commas.
+ *                      ; Case sensitive, order insensitive. Can be combined by commas.
  * LogTarget  = Default ; valid values are: StdOut, File, Debugger(Windows only), All or Default.
- *                      ; Case insensitive, order insensitive. Can be combined by commas.
+ *                      ; Case sensitive, order insensitive. Can be combined by commas.
  * LogFile    = <Path>  ; If LogTarget contains File, LogFile specifies which file to save the log.
  */
 

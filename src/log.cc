@@ -6,6 +6,7 @@
 #include <map>
 #include <string_view>
 #include <xl/encoding>
+#include <xl/ini>
 #include <xl/log>
 #include <xl/log_init>
 #include <xl/native_string>
@@ -260,52 +261,41 @@ bool setup(const TCHAR *app_name, int level, int content, int target, const TCHA
 
 namespace {
 
-std::string read_string(const TCHAR *log_setting_file) {
-  FILE *f = _tfopen(log_setting_file, _T("r"));
-  if (f == NULL) {
-    return "";
+string_ref trim_spaces(const string_ref &s) {
+  const char *begin = s.c_str();
+  const char *end = s.c_str() + s.length();
+  bool stop = false;
+  while (begin != end && !stop) {
+    switch (*begin) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+      ++begin;
+      break;
+    default:
+      stop = true;
+      break;
+    }
   }
-  XL_ON_BLOCK_EXIT(fclose, f);
-  if (fseek(f, 0, SEEK_END) != 0) {
-    return "";
+  stop = false;
+  while (begin != end && !stop) {
+    switch (*(end - 1)) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+      --end;
+      break;
+    default:
+      stop = true;
+      break;
+    }
   }
-  long length = ftell(f);
-  if (fseek(f, 0, SEEK_SET) != 0) {
-    return "";
-  }
-  std::string s;
-  s.resize(length);
-  fread(&s[0], 1, length, f);
-  return s;
-}
-std::string_view trim_spaces(const std::string_view &s) {
-  size_t begin = s.find_first_not_of(" \t\r\n");
-  size_t end = s.find_last_not_of(" \t\r\n");
-  if (begin == s.npos || end == s.npos || begin > end) {
-    return std::string_view();
-  }
-  return std::string_view(s.data() + begin, end - begin + 1);
+  return string_ref(begin == end ? nullptr : begin, end - begin);
 };
 
-std::map<std::string_view, std::string_view> split_kv(const std::string &s) {
-  std::vector<string_ref> lines = string::split_ref(s, "\n");
-  std::map<std::string_view, std::string_view> m;
-  for (const auto &ref : lines) {
-    std::string_view line = (std::string_view)ref;
-    size_t semicolon_pos = line.find_first_of(";");
-    if (semicolon_pos != line.npos) {
-      line = line.substr(0, semicolon_pos);
-    }
-    size_t equal_pos = line.find_first_of("=");
-    if (equal_pos == line.npos) {
-      continue;
-    }
-    std::string_view key = trim_spaces(line.substr(0, equal_pos));
-    std::string_view value = trim_spaces(line.substr(equal_pos + 1));
-    m.insert(std::make_pair(key, value));
-  }
-  return m;
-}
+const char *SECTION_LOG = "Log";
 
 const char *KEY_APP_NAME = "AppName";
 const char *KEY_LOG_LEVEL = "LogLevel";
@@ -342,120 +332,105 @@ const char *VALUE_LOG_TARGET_DEBUGGER = "Debugger";
 const char *VALUE_LOG_TARGET_ALL = "All";
 const char *VALUE_LOG_TARGET_DEFAULT = "Default";
 
-void parse_settings(const std::map<std::string_view, std::string_view> &kv,
-                    native_string &app_name,
-                    int &level,
-                    int &content,
-                    int &target,
-                    native_string &log_file) {
-  for (const auto &item : kv) {
-    const auto &k = item.first;
-    const auto &v = item.second;
-    if (strnicmp(KEY_APP_NAME, k.data(), k.length()) == 0) {
+void parse_settings(
+    const ini &ini_file, native_string &app_name, int &level, int &content, int &target, native_string &log_file) {
+  std::string ini_app_name = ini_file.get_value(SECTION_LOG, KEY_APP_NAME);
 #if defined(_WIN32) && defined(_UNICODE)
-      app_name = encoding::utf8_to_utf16(v.data(), v.length());
+  app_name = encoding::utf8_to_utf16(ini_app_name);
 #else
-      app_name.assign(v.data(), v.length());
+  app_name = std::move(ini_app_name);
 #endif
-    } else if (strnicmp(KEY_LOG_LEVEL, k.data(), k.length()) == 0) {
-      auto l = trim_spaces(v);
-      if (strnicmp(VALUE_LOG_LEVEL_OFF, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_OFF;
-      } else if (strnicmp(VALUE_LOG_LEVEL_FATAL, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_FATAL;
-      } else if (strnicmp(VALUE_LOG_LEVEL_ERROR, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_ERROR;
-      } else if (strnicmp(VALUE_LOG_LEVEL_WARN, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_WARN;
-      } else if (strnicmp(VALUE_LOG_LEVEL_INFO, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_INFO;
-      } else if (strnicmp(VALUE_LOG_LEVEL_DEBUG, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_DEBUG;
-      } else if (strnicmp(VALUE_LOG_LEVEL_DEFAULT, l.data(), l.length()) == 0) {
-        level = LOG_LEVEL_DEFAULT;
-      } else {
-        // ignore illegal values
-      }
-    } else if (strnicmp(KEY_LOG_CONTENT, k.data(), k.length()) == 0) {
-      content = 0;
-      auto contents = string::split_ref(v.data(), ",", 0, v.length());
-      for (const auto &ref : contents) {
-        std::string_view c = (std::string_view)ref;
-        c = trim_spaces(c);
-        if (strnicmp(VALUE_LOG_CONTENT_TIME, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_TIME;
-        } else if (strnicmp(VALUE_LOG_CONTENT_LEVEL, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_LEVEL;
-        } else if (strnicmp(VALUE_LOG_CONTENT_APP_NAME, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_APP_NAME;
-        } else if (strnicmp(VALUE_LOG_CONTENT_FULL_FILE_NAME, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_FULL_FILE_NAME;
-        } else if (strnicmp(VALUE_LOG_CONTENT_FILE_NAME, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_FILE_NAME;
-        } else if (strnicmp(VALUE_LOG_CONTENT_FULL_FUNC_NAME, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_FULL_FUNC_NAME;
-        } else if (strnicmp(VALUE_LOG_CONTENT_FUNC_NAME, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_FUNC_NAME;
-        } else if (strnicmp(VALUE_LOG_CONTENT_LINE, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_LINE;
-        } else if (strnicmp(VALUE_LOG_CONTENT_PID, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_PID;
-        } else if (strnicmp(VALUE_LOG_CONTENT_TID, c.data(), c.length()) == 0) {
-          content |= LOG_CONTENT_TID;
-        } else if (strnicmp(VALUE_LOG_CONTENT_DEFAULT, c.data(), c.length()) == 0) {
-          content = LOG_CONTENT_DEFAULT;
-        } else if (strnicmp(VALUE_LOG_CONTENT_ALL, c.data(), c.length()) == 0) {
-          content = LOG_CONTENT_ALL;
-        } else {
-          // ignore illegal values
-        }
-      }
-    } else if (strnicmp(KEY_LOG_TARGET, k.data(), k.length()) == 0) {
-      target = 0;
-      auto targets = string::split_ref(v.data(), ",", 0, v.length());
-      for (const auto &ref : targets) {
-        std::string_view t = (std::string_view)ref;
-        t = trim_spaces(t);
-        if (strnicmp(VALUE_LOG_TARGET_STDOUT, t.data(), t.length()) == 0) {
-          target |= LOG_TARGET_STDOUT;
-        } else if (strnicmp(VALUE_LOG_TARGET_FILE, t.data(), t.length()) == 0) {
-          target |= LOG_TARGET_FILE;
-#ifdef _WIN32
-        } else if (strnicmp(VALUE_LOG_TARGET_DEBUGGER, t.data(), t.length()) == 0) {
-          target |= LOG_TARGET_DEBUGGER;
-#endif
-        } else if (strnicmp(VALUE_LOG_TARGET_DEFAULT, t.data(), t.length()) == 0) {
-          target = LOG_TARGET_DEFAULT;
-        } else if (strnicmp(VALUE_LOG_TARGET_ALL, t.data(), t.length()) == 0) {
-          target = LOG_TARGET_ALL;
-        } else {
-          // ignore illegal values
-        }
-      }
-    } else if (strnicmp(KEY_LOG_FILE, k.data(), k.length()) == 0) {
-#if defined(_WIN32) && defined(_UNICODE)
-      log_file = encoding::utf8_to_utf16(v.data(), v.length());
-#else
-      log_file.assign(v.data(), v.length());
-#endif
+
+  std::string ini_log_level = ini_file.get_value(SECTION_LOG, KEY_LOG_LEVEL);
+  if (ini_log_level == VALUE_LOG_LEVEL_OFF) {
+    level = LOG_LEVEL_OFF;
+  } else if (ini_log_level == VALUE_LOG_LEVEL_FATAL) {
+    level = LOG_LEVEL_FATAL;
+  } else if (ini_log_level == VALUE_LOG_LEVEL_ERROR) {
+    level = LOG_LEVEL_ERROR;
+  } else if (ini_log_level == VALUE_LOG_LEVEL_WARN) {
+    level = LOG_LEVEL_WARN;
+  } else if (ini_log_level == VALUE_LOG_LEVEL_INFO) {
+    level = LOG_LEVEL_INFO;
+  } else if (ini_log_level == VALUE_LOG_LEVEL_DEBUG) {
+    level = LOG_LEVEL_DEBUG;
+  } else if (ini_log_level == VALUE_LOG_LEVEL_DEFAULT) {
+    level = LOG_LEVEL_DEFAULT;
+  } else {
+    // ignore illegal values
+  }
+
+  std::string ini_log_content = ini_file.get_value(SECTION_LOG, KEY_LOG_CONTENT);
+  content = 0;
+  auto contents = string::split_ref(ini_log_content, ",");
+  for (auto &ref : contents) {
+    ref = trim_spaces(ref);
+    if (ref == VALUE_LOG_CONTENT_TIME) {
+      content |= LOG_CONTENT_TIME;
+    } else if (ref == VALUE_LOG_CONTENT_LEVEL) {
+      content |= LOG_CONTENT_LEVEL;
+    } else if (ref == VALUE_LOG_CONTENT_APP_NAME) {
+      content |= LOG_CONTENT_APP_NAME;
+    } else if (ref == VALUE_LOG_CONTENT_FULL_FILE_NAME) {
+      content |= LOG_CONTENT_FULL_FILE_NAME;
+    } else if (ref == VALUE_LOG_CONTENT_FILE_NAME) {
+      content |= LOG_CONTENT_FILE_NAME;
+    } else if (ref == VALUE_LOG_CONTENT_FULL_FUNC_NAME) {
+      content |= LOG_CONTENT_FULL_FUNC_NAME;
+    } else if (ref == VALUE_LOG_CONTENT_FUNC_NAME) {
+      content |= LOG_CONTENT_FUNC_NAME;
+    } else if (ref == VALUE_LOG_CONTENT_LINE) {
+      content |= LOG_CONTENT_LINE;
+    } else if (ref == VALUE_LOG_CONTENT_PID) {
+      content |= LOG_CONTENT_PID;
+    } else if (ref == VALUE_LOG_CONTENT_TID) {
+      content |= LOG_CONTENT_TID;
+    } else if (ref == VALUE_LOG_CONTENT_DEFAULT) {
+      content = LOG_CONTENT_DEFAULT;
+    } else if (ref == VALUE_LOG_CONTENT_ALL) {
+      content = LOG_CONTENT_ALL;
     } else {
-      // ignore illegal keys
+      // ignore illegal values
     }
   }
-  if ((target & LOG_TARGET_FILE) == 0 && !log_file.empty()) {
-    log_file.clear();
+
+  std::string ini_log_target = ini_file.get_value(SECTION_LOG, KEY_LOG_TARGET);
+  target = 0;
+  auto targets = string::split_ref(ini_log_target, ",");
+  for (auto &ref : targets) {
+    ref = trim_spaces(ref);
+    if (ref == VALUE_LOG_TARGET_STDOUT) {
+      target |= LOG_TARGET_STDOUT;
+    } else if (ref == VALUE_LOG_TARGET_FILE) {
+      target |= LOG_TARGET_FILE;
+#ifdef _WIN32
+    } else if (ref == VALUE_LOG_TARGET_DEBUGGER) {
+      target |= LOG_TARGET_DEBUGGER;
+#endif
+    } else if (ref == VALUE_LOG_TARGET_DEFAULT) {
+      target = LOG_TARGET_DEFAULT;
+    } else if (ref == VALUE_LOG_TARGET_ALL) {
+      target = LOG_TARGET_ALL;
+    } else {
+      // ignore illegal values
+    }
+  }
+
+  if ((target & LOG_TARGET_FILE) != 0) {
+    std::string ini_log_file = ini_file.get_value(SECTION_LOG, KEY_LOG_FILE);
+#if defined(_WIN32) && defined(_UNICODE)
+    log_file = encoding::utf8_to_utf16(ini_log_file);
+#else
+    log_file = std::move(ini_log_file);
+#endif
   }
 }
 
 } // namespace
 
 bool setup_from_file(const TCHAR *log_setting_file) {
-  std::string s = read_string(log_setting_file);
-  if (s.empty()) {
-    return false;
-  }
-  std::map<std::string_view, std::string_view> kv = split_kv(s);
-  if (kv.empty()) {
+  ini ini_file;
+  if (!ini_file.load(log_setting_file)) {
     return false;
   }
 
@@ -464,7 +439,7 @@ bool setup_from_file(const TCHAR *log_setting_file) {
   int content = LOG_CONTENT_DEFAULT;
   int target = LOG_TARGET_ALL;
   native_string log_file;
-  parse_settings(kv, app_name, level, content, target, log_file);
+  parse_settings(ini_file, app_name, level, content, target, log_file);
 
   return setup(app_name.c_str(), level, content, target, log_file.c_str());
 }

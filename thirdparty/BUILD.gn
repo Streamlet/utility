@@ -1,67 +1,59 @@
-# openssl
-# for posix: install openssl develop package before compiling. package name:
-#   yum: openssl-devel
-#   apt: libssl-dev
-if (is_linux) {
-  config("openssl_crypto_public_config") {
+# crypto from libressl
+config("libressl_crypto_public_config") {
+  include_dirs = [ "libressl/include" ]
+  if (is_posix) {
     cflags = [ "-Wno-deprecated-declarations" ]
-    libs = [ "crypto" ]
   }
-  group("openssl_crypto") {
-    public_configs = [ ":openssl_crypto_public_config" ]
-  }
-} else if (is_win || is_mac) {
-  config("openssl_crypto_public_config") {
-    include_dirs = [ "libressl/include" ]
-    if (is_posix) {
-      cflags = [ "-Wno-deprecated-declarations" ]
-    }
-  }
+}
 
-  static_library("openssl_crypto") {
-    defines = [
-      "__BEGIN_HIDDEN_DECLS=",
-      "__END_HIDDEN_DECLS=",
+static_library("libressl_crypto") {
+  defines = [
+    "__BEGIN_HIDDEN_DECLS=",
+    "__END_HIDDEN_DECLS=",
+  ]
+
+  if (is_win) {
+    cflags = [ "/wd5105" ]
+  }
+  if (is_linux) {
+    defines += [ "HAVE_ENDIAN_H" ]
+  }
+  if (is_mac) {
+    defines += [
+      "HAVE_STRLCPY",
+      "HAVE_STRLCAT",
+      "HAVE_MACHINE_ENDIAN_H",
     ]
-
-    if (is_win) {
-      cflags = [ "/wd5105" ]
-    }
-    if (is_mac) {
-      defines += [
-        "HAVE_STRLCPY",
-        "HAVE_STRLCAT",
-      ]
-    }
-    if (is_posix) {
-      configs -= [ "//build/config:c_std" ]
-      cflags_c = [ "-std=gnu17" ]
-    }
-
-    sources = [
-      "libressl/crypto/md5/md5_dgst.c",
-      "libressl/crypto/md5/md5_one.c",
-      "libressl/crypto/sha/sha1.c",
-      "libressl/crypto/sha/sha256.c",
-      "libressl/crypto/sha/sha3.c",
-      "libressl/crypto/sha/sha512.c",
-    ]
-    if (is_win) {
-      sources += [ "libressl/crypto/compat/explicit_bzero_win.c" ]
-    } else {
-      sources += [ "libressl/crypto/compat/explicit_bzero.c" ]
-    }
-
-    include_dirs = [
-      "libressl/crypto",
-      "libressl/include/compat",
-    ]
-    if (is_win) {
-      libs = [ "ws2_32.lib" ]
-    }
-
-    public_configs = [ ":openssl_crypto_public_config" ]
   }
+  if (is_posix) {
+    configs -= [ "//build/config:c_std" ]
+    cflags_c = [ "-std=gnu17" ]
+  }
+
+  sources = [
+    "libressl/crypto/md5/md5_dgst.c",
+    "libressl/crypto/md5/md5_one.c",
+    "libressl/crypto/sha/sha1.c",
+    "libressl/crypto/sha/sha256.c",
+    "libressl/crypto/sha/sha3.c",
+    "libressl/crypto/sha/sha512.c",
+  ]
+  if (is_win) {
+    sources += [ "libressl/crypto/compat/explicit_bzero_win.c" ]
+  } else {
+    sources += [ "libressl/crypto/compat/explicit_bzero.c" ]
+  }
+
+  include_dirs = [
+    "libressl/crypto",
+    "libressl/include/compat",
+  ]
+
+  if (is_win) {
+    libs = [ "ws2_32.lib" ]
+  }
+
+  public_configs = [ ":libressl_crypto_public_config" ]
 }
 
 # googletest

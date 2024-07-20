@@ -80,7 +80,11 @@ std::wstring fread_utf16(FILE *f, size_t size) {
 
 std::wstring fread_utf16_le(FILE *f, size_t size) {
   std::wstring text = fread_utf16(f, size);
-  if constexpr (!is_little_endian()) {
+  if
+#if __c_plus_plus__ > 201703L
+      constexpr
+#endif
+      (!is_little_endian()) {
     bytes_swap(text);
   }
   return text;
@@ -88,7 +92,11 @@ std::wstring fread_utf16_le(FILE *f, size_t size) {
 
 std::wstring fread_utf16_be(FILE *f, size_t size) {
   std::wstring text = fread_utf16(f, size);
-  if constexpr (is_little_endian()) {
+  if
+#if __c_plus_plus__ > 201703L
+      constexpr
+#endif
+      (is_little_endian()) {
     bytes_swap(text);
   }
   return text;
@@ -108,7 +116,11 @@ bool fwrite_utf16(FILE *f, const std::wstring &text) {
 }
 
 bool fwrite_utf16_le(FILE *f, const std::wstring &text) {
-  if constexpr (is_little_endian()) {
+  if
+#if __c_plus_plus__ > 201703L
+      constexpr
+#endif
+      (is_little_endian()) {
     return fwrite_utf16(f, text);
   } else {
     std::wstring copied = text;
@@ -118,7 +130,11 @@ bool fwrite_utf16_le(FILE *f, const std::wstring &text) {
 }
 
 bool fwrite_utf16_be(FILE *f, const std::wstring &text) {
-  if constexpr (is_little_endian()) {
+  if
+#if __c_plus_plus__ > 201703L
+      constexpr
+#endif
+      (is_little_endian()) {
     std::wstring copied = text;
     bytes_swap(copied);
     return fwrite_utf16(f, copied);

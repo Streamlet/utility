@@ -4,7 +4,6 @@
 #include <ctime>
 #include <iomanip>
 #include <map>
-#include <string_view>
 #include <xl/encoding>
 #include <xl/ini>
 #include <xl/log>
@@ -26,9 +25,6 @@ namespace {
 
 struct GlobalLogContext {
   std::string app_name = "";
-#if defined(_WIN32) && defined(_UNICODE)
-  std::wstring app_name_w = L"";
-#endif
   int level = LOG_LEVEL_OFF;
   unsigned int content = LOG_CONTENT_DEFAULT;
   unsigned int target = LOG_TARGET_ALL;
@@ -45,7 +41,6 @@ struct GlobalLogContext {
 GlobalLogContext log_context_;
 
 static const char *LOG_LEVEL_STRING[] = {"OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
-static const wchar_t *LOG_LEVEL_WSTRING[] = {L"OFF", L"FATAL", L"ERROR", L"WARN", L"INFO", L"DEBUG"};
 
 void thread_setup(native_string app_name, int level, int content, int target, FILE *log_file) {
   if (log_context_.log_file != NULL) {
@@ -54,7 +49,6 @@ void thread_setup(native_string app_name, int level, int content, int target, FI
   }
 #if defined(_WIN32) && defined(_UNICODE)
   log_context_.app_name = std::move(encoding::utf16_to_utf8(app_name));
-  log_context_.app_name_w = std::move(app_name);
 #else
   log_context_.app_name = std::move(app_name);
 #endif
@@ -64,25 +58,37 @@ void thread_setup(native_string app_name, int level, int content, int target, FI
   log_context_.log_file = log_file;
 }
 
-template <typename CharType>
-std::basic_string<CharType>
-format(int level, const CharType *file, const CharType *function, int line, std::basic_string<CharType> message) {
-  std::basic_stringstream<CharType> ss;
-  const CharType GROUP_BEGIN = (CharType)'[';
-  const CharType GROUP_END = (CharType)']';
+template <typename FromCharType, typename ToCharType>
+std::basic_string<ToCharType> transform_string(const std::basic_string<FromCharType> &s);
+
+template <>
+std::string transform_string(const std::string &s) {
+  return s;
+}
+template <>
+std::string transform_string(const std::wstring &s) {
+  return encoding::utf16_to_utf8(s);
+}
+
+template <>
+std::wstring transform_string(const std::string &s) {
+  return encoding::utf8_to_utf16(s);
+}
+
+template <>
+std::wstring transform_string(const std::wstring &s) {
+  return s;
+}
+
+std::string format(int level, const char *file, const char *function, int line, std::basic_string<char> message) {
+  std::basic_stringstream<char> ss;
+  const char GROUP_BEGIN = '[';
+  const char GROUP_END = ']';
   if ((log_context_.content & LOG_CONTENT_TIME) != 0) {
     ss << GROUP_BEGIN;
     const auto now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
     time_t now_t = std::chrono::system_clock::to_time_t(now);
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      ss << std::put_time(std::localtime(&now_t), L"%F %T.") << (now.time_since_epoch().count() % 1000);
-    } else {
-      ss << std::put_time(std::localtime(&now_t), "%F %T.") << (now.time_since_epoch().count() % 1000);
-    }
-#else
     ss << std::put_time(std::localtime(&now_t), "%F %T.") << (now.time_since_epoch().count() % 1000);
-#endif
     ss << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_LEVEL) != 0) {
@@ -93,29 +99,12 @@ format(int level, const CharType *file, const CharType *function, int line, std:
     if (level > LOG_LEVEL_DEBUG) {
       level = LOG_LEVEL_DEBUG;
     }
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      ss << LOG_LEVEL_WSTRING[level];
-    } else {
-      ss << LOG_LEVEL_STRING[level];
-    }
-#else
     ss << LOG_LEVEL_STRING[level];
-
-#endif
     ss << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_APP_NAME) != 0) {
     ss << GROUP_BEGIN;
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      ss << log_context_.app_name_w.c_str();
-    } else {
-      ss << log_context_.app_name.c_str();
-    }
-#else
-    ss << log_context_.app_name.c_str();
-#endif
+    ss << log_context_.app_name;
     ss << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_FULL_FILE_NAME) != 0) {
@@ -123,18 +112,8 @@ format(int level, const CharType *file, const CharType *function, int line, std:
   }
   if ((log_context_.content & LOG_CONTENT_FILE_NAME) != 0) {
     ss << GROUP_BEGIN;
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      const wchar_t *file_name = wcsrchr(file, L'/');
-      ss << (file_name == nullptr ? file : file_name + 1);
-    } else {
-      const char *file_name = strrchr(file, '/');
-      ss << (file_name == nullptr ? file : file_name + 1);
-    }
-#else
     const char *file_name = strrchr(file, '/');
     ss << (file_name == nullptr ? file : file_name + 1);
-#endif
     ss << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_FULL_FUNC_NAME) != 0) {
@@ -142,89 +121,45 @@ format(int level, const CharType *file, const CharType *function, int line, std:
   }
   if ((log_context_.content & LOG_CONTENT_FUNC_NAME) != 0) {
     ss << GROUP_BEGIN;
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      const wchar_t *func_name = wcsrchr(function, L':');
-      ss << (func_name == nullptr ? function : func_name + 1);
-    } else {
-      const char *func_name = strrchr(function, ':');
-      ss << (func_name == nullptr ? function : func_name + 1);
-    }
-#else
     const char *func_name = strrchr(function, ':');
     ss << (func_name == nullptr ? function : func_name + 1);
-#endif
     ss << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_LINE) != 0) {
-    ss << GROUP_BEGIN << (CharType)'L' << line << GROUP_END;
+    ss << GROUP_BEGIN << 'L' << line << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_PID) != 0) {
-    ss << GROUP_BEGIN << (CharType)'P' << xl::process::pid() << GROUP_END;
+    ss << GROUP_BEGIN << 'P' << xl::process::pid() << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_TID) != 0) {
-    ss << GROUP_BEGIN << (CharType)'T' << xl::process::tid() << GROUP_END;
+    ss << GROUP_BEGIN << 'T' << xl::process::tid() << GROUP_END;
   }
   ss << message.c_str() << std::endl;
   return ss.str();
 }
 
-template <typename CharType>
-void print(std::basic_string<CharType> log) {
+void print(std::string log) {
 #ifdef _WIN32
   if ((log_context_.target & LOG_TARGET_DEBUGGER) != 0) {
-#if defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      ::OutputDebugStringW(log.c_str());
-    } else {
-      ::OutputDebugStringA(log.c_str());
-    }
-#else
-    ::OutputDebugStringA(log.c_str());
-#endif
+    std::wstring s = encoding::utf8_to_utf16(log);
+    ::OutputDebugStringW(s.c_str());
   }
 #endif
 
   if ((log_context_.target & LOG_TARGET_STDOUT) != 0) {
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      wprintf(L"%s", log.c_str());
-    } else {
-      printf("%s", log.c_str());
-    }
-#else
     printf("%s", log.c_str());
-#endif
   }
 
   if ((log_context_.target & LOG_TARGET_FILE) != 0 && log_context_.log_file != NULL) {
-#if defined(_WIN32) && defined(_UNICODE)
-    if constexpr (std::is_same<CharType, wchar_t>()) {
-      std::string log_utf8 = encoding::utf16_to_utf8(log);
-      fprintf(log_context_.log_file, "%s", log_utf8.c_str());
-    } else {
-      fprintf(log_context_.log_file, "%s", log.c_str());
-    }
-#else
     fprintf(log_context_.log_file, "%s", log.c_str());
-#endif
     fflush(log_context_.log_file);
   }
 }
 
 void thread_log(int level, const char *file, const char *function, int line, std::string message) {
-  std::string log = format<char>(level, file, function, line, std::move(message));
+  std::string log = format(level, file, function, line, std::move(message));
   print(std::move(log));
 }
-
-#if defined(_WIN32) && defined(_UNICODE)
-
-void thread_log(int level, const wchar_t *file, const wchar_t *function, int line, std::wstring message) {
-  std::wstring log = format<wchar_t>(level, file, function, line, std::move(message));
-  print(std::move(log));
-}
-
-#endif
 
 } // namespace
 
@@ -234,15 +169,6 @@ void log(int level, const char *file, const char *function, int line, std::strin
   }
   thread_log(level, file, function, line, std::move(message));
 }
-
-#if defined(_WIN32) && defined(_UNICODE)
-void log(int level, const wchar_t *file, const wchar_t *function, int line, std::wstring message) {
-  if (log_context_.level < level || log_context_.target == 0) {
-    return;
-  }
-  thread_log(level, file, function, line, std::move(message));
-}
-#endif
 
 bool setup(const TCHAR *app_name, int level, int content, int target, const TCHAR *log_file) {
   if (level <= LOG_LEVEL_OFF) {

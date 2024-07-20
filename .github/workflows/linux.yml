@@ -8,12 +8,14 @@ on:
 jobs:
   build:
     if: ${{ !contains(github.event.head_commit.message, '[no-build]') }}
-    name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.config }}
+    name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.cc_std }} ${{ matrix.config }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
         arch: [x64]
+        cc_std: ["c++14", "c++17", "c++20", "c++latest"]
+        config: [debug, release]
 
     steps:
       - name: Setup python environment
@@ -33,7 +35,7 @@ jobs:
 
       - name: Compile
         run: |
-          build/bin/gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }}"
+          build/bin/gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" cc_std=\"${{ matrix.cc_std }}\" is_debug=${{ matrix.config == 'debug' }}"
           build/bin/ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
 
       - name: Unittest

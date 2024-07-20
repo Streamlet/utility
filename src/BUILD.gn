@@ -42,7 +42,7 @@ source_set("crypto") {
     cflags += [ "-Wno-unused-result" ]
   }
 
-  deps = [ "../thirdparty:openssl_crypto" ]
+  deps = [ "../thirdparty:libressl_crypto" ]
 
   public_configs = [ ":utility_public_config" ]
 }

@@ -1,10 +1,10 @@
 #pragma once
 
+#include "native_string"
 #include <list>
 #include <map>
 #include <string>
 #include <vector>
-#include <xl/native_string>
 
 namespace xl {
 

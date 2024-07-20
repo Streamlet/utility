@@ -1,9 +1,9 @@
 #pragma once
 
+#include "encoding"
 #include <memory>
 #include <sstream>
 #include <string>
-#include <xl/encoding>
 
 #define LOG_LEVEL_OFF 0
 #define LOG_LEVEL_FATAL 1

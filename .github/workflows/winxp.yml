@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     if: ${{ !contains(github.event.head_commit.message, '[no-build]') }}
-    name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.config }}
+    name: ${{ matrix.os }} ${{ matrix.arch }} ${{ matrix.cc_std }} ${{ matrix.config }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -17,6 +17,7 @@ jobs:
       matrix:
         os: [windows-2019]
         arch: [x64, x86]
+        cc_std: ["c++14", "c++17", "c++20", "c++latest"]
         config: [debug, release]
 
     steps:
@@ -37,7 +38,7 @@ jobs:
 
       - name: Compile
         run: |
-          build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" is_debug=${{ matrix.config == 'debug' }} is_winxp=true"
+          build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" cc_std=\"${{ matrix.cc_std }}\" is_debug=${{ matrix.config == 'debug' }} is_winxp=true"
           build\\bin\\ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
 
       - name: Unittest

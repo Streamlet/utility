@@ -20,3 +20,6 @@ ShortNamespaceLines: 0
 SortIncludes: CaseInsensitive
 AlignArrayOfStructures: Left
 InsertBraces: True
+
+MacroBlockBegin: "(^|.*_)BEGIN(_.*|$)"
+MacroBlockEnd: "(^|.*_)END(_.*|$)"

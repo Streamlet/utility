@@ -11,7 +11,7 @@ XL_REFLECT_END()
 } // namespace
 
 TEST(reflect_test, normal) {
-  ASSERT_EQ(Foo::FIELD_COUNT, 2);
+  ASSERT_EQ(Foo::fields(), 2);
 
   ASSERT_EQ(strcmp(Foo::Field<0>::name(), "a"), 0);
   ASSERT_EQ(strcmp(Foo::Field<1>::name(), "b"), 0);

@@ -10,7 +10,7 @@
 // so here we add an extra template parameter 'typename T' at FieldT
 // and make Field = FieldT<Type, Index> for using
 
-#define XL_BEGIN_REFLECT(struct_type)                                                                                  \
+#define XL_REFLECT_BEGIN(struct_type)                                                                                  \
   struct struct_type {                                                                                                 \
     template <typename T, size_t Index>                                                                                \
     struct FieldT;                                                                                                     \
@@ -36,7 +36,7 @@
 
 #else
 
-#define XL_BEGIN_REFLECT(struct_type)                                                                                  \
+#define XL_REFLECT_BEGIN(struct_type)                                                                                  \
   struct struct_type {                                                                                                 \
     template <size_t Index>                                                                                            \
     struct Field;                                                                                                      \
@@ -60,7 +60,7 @@
 
 #endif
 
-#define XL_END_REFLECT()                                                                                               \
+#define XL_REFLECT_END()                                                                                               \
   static size_t const FIELD_COUNT = __COUNTER__ - IDENTIFIER - 1;                                                      \
   }                                                                                                                    \
   ;

@@ -23,11 +23,17 @@
   filed_type field_name;                                                                                               \
   template <typename T>                                                                                                \
   struct FieldT<T, __COUNTER__ - IDENTIFIER - 1> {                                                                     \
+    static const char *type() {                                                                                        \
+      return #filed_type;                                                                                              \
+    }                                                                                                                  \
     static const char *name() {                                                                                        \
       return #field_name;                                                                                              \
     }                                                                                                                  \
-    static const filed_type &value(const Type &ref) {                                                                  \
-      return ref.field_name;                                                                                           \
+    static size_t offset() {                                                                                           \
+      return (size_t) & ((Type *)nullptr)->field_name;                                                                 \
+    }                                                                                                                  \
+    static size_t size() {                                                                                             \
+      return sizeof(filed_type);                                                                                       \
     }                                                                                                                  \
     static filed_type &value(Type &ref) {                                                                              \
       return ref.field_name;                                                                                           \
@@ -47,11 +53,17 @@
   filed_type field_name;                                                                                               \
   template <>                                                                                                          \
   struct Field<__COUNTER__ - IDENTIFIER - 1> {                                                                         \
+    static const char *type() {                                                                                        \
+      return #filed_type;                                                                                              \
+    }                                                                                                                  \
     static const char *name() {                                                                                        \
       return #field_name;                                                                                              \
     }                                                                                                                  \
-    static const filed_type &value(const Type &ref) {                                                                  \
-      return ref.field_name;                                                                                           \
+    static size_t offset() {                                                                                           \
+      return (size_t) & ((Type *)nullptr)->field_name;                                                                 \
+    }                                                                                                                  \
+    static size_t size() {                                                                                             \
+      return sizeof(filed_type);                                                                                       \
     }                                                                                                                  \
     static filed_type &value(Type &ref) {                                                                              \
       return ref.field_name;                                                                                           \
@@ -61,8 +73,84 @@
 #endif
 
 #define XL_REFLECT_END()                                                                                               \
+  static const size_t FIELDS = __COUNTER__ - IDENTIFIER - 1;                                                           \
   static size_t fields() {                                                                                             \
-    return __COUNTER__ - IDENTIFIER - 1;                                                                               \
+    return FIELDS;                                                                                                     \
+  }                                                                                                                    \
+  template <size_t Begin, size_t End>                                                                                  \
+  struct FieldsWalker {                                                                                                \
+    static const char *field_type(size_t index) {                                                                      \
+      if (index == Begin) {                                                                                            \
+        return Field<Begin>::type();                                                                                   \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::field_type(index);                                                        \
+      }                                                                                                                \
+    }                                                                                                                  \
+    static const char *field_name(size_t index) {                                                                      \
+      if (index == Begin) {                                                                                            \
+        return Field<Begin>::name();                                                                                   \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::field_name(index);                                                        \
+      }                                                                                                                \
+    }                                                                                                                  \
+    static size_t field_offset(size_t index) {                                                                         \
+      if (index == Begin) {                                                                                            \
+        return Field<Begin>::offset();                                                                                 \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::field_offset(index);                                                      \
+      }                                                                                                                \
+    }                                                                                                                  \
+    static size_t field_size(size_t index) {                                                                           \
+      if (index == Begin) {                                                                                            \
+        return Field<Begin>::size();                                                                                   \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::field_size(index);                                                        \
+      }                                                                                                                \
+    }                                                                                                                  \
+    template <typename T>                                                                                              \
+    static T &field_value(Type &ref, size_t index) {                                                                   \
+      if (index == Begin) {                                                                                            \
+        return (T &)Field<Begin>::value(ref);                                                                          \
+      } else {                                                                                                         \
+        return (T &)FieldsWalker<Begin + 1, End>::template field_value<T>(ref, index);                                 \
+      }                                                                                                                \
+    }                                                                                                                  \
+  };                                                                                                                   \
+  template <size_t Index>                                                                                              \
+  struct FieldsWalker<Index, Index> {                                                                                  \
+    static const char *field_type(size_t index) {                                                                      \
+      return nullptr;                                                                                                  \
+    }                                                                                                                  \
+    static const char *field_name(size_t index) {                                                                      \
+      return nullptr;                                                                                                  \
+    }                                                                                                                  \
+    static size_t field_offset(size_t index) {                                                                         \
+      return 0;                                                                                                        \
+    }                                                                                                                  \
+    static size_t field_size(size_t index) {                                                                           \
+      return 0;                                                                                                        \
+    }                                                                                                                  \
+    template <typename T>                                                                                              \
+    static T &field_value(Type &ref, size_t index) {                                                                   \
+      static T t;                                                                                                      \
+      return t;                                                                                                        \
+    }                                                                                                                  \
+  };                                                                                                                   \
+  static const char *field_type(size_t index) {                                                                        \
+    return FieldsWalker<0, FIELDS>::field_type(index);                                                                 \
+  }                                                                                                                    \
+  static const char *field_name(size_t index) {                                                                        \
+    return FieldsWalker<0, FIELDS>::field_name(index);                                                                 \
+  }                                                                                                                    \
+  static size_t field_offset(size_t index) {                                                                           \
+    return FieldsWalker<0, FIELDS>::field_offset(index);                                                               \
+  }                                                                                                                    \
+  static size_t field_size(size_t index) {                                                                             \
+    return FieldsWalker<0, FIELDS>::field_size(index);                                                                 \
+  }                                                                                                                    \
+  template <typename T>                                                                                                \
+  static T &field_value(Type &ref, size_t index) {                                                                     \
+    return FieldsWalker<0, FIELDS>::field_value<T>(ref, index);                                                        \
   }                                                                                                                    \
   }                                                                                                                    \
   ;

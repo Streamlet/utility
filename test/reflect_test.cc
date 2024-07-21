@@ -40,15 +40,15 @@ TEST(reflect_test, normal) {
   foo.b = "abc";
 
   ASSERT_EQ(Foo::Field<0>::value(foo), 123);
-  ASSERT_EQ(Foo::Field<1>::value(foo), "abc");
+  ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "abc"), 0);
   ASSERT_EQ(Foo::field_value<int>(foo, 0), 123);
-  ASSERT_EQ(Foo::field_value<const char *>(foo, 1), "abc");
+  ASSERT_EQ(strcmp(Foo::field_value<const char *>(foo, 1), "abc"), 0);
 
   Foo::Field<0>::value(foo) = 456;
   Foo::Field<1>::value(foo) = "def";
 
   ASSERT_EQ(Foo::Field<0>::value(foo), 456);
-  ASSERT_EQ(Foo::Field<1>::value(foo), "def");
+  ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "def"), 0);
   ASSERT_EQ(Foo::field_value<int>(foo, 0), 456);
-  ASSERT_EQ(Foo::field_value<const char *>(foo, 1), "def");
+  ASSERT_EQ(strcmp(Foo::field_value<const char *>(foo, 1), "def"), 0);
 }

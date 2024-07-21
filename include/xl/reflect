@@ -3,6 +3,39 @@
 #include <map>
 #include <string>
 
+#if defined(__GNUC__) || defined(__GNUG__)
+
+// gcc does not support explicit specialization in class scope,
+// and does not support default template parameter in partitial specialization
+// so here we add an extra template parameter 'typename T' at FieldT
+// and make Field = FieldT<Type, Index> for using
+
+#define XL_BEGIN_REFLECT(struct_type)                                                                                  \
+  struct struct_type {                                                                                                 \
+    template <typename T, size_t Index>                                                                                \
+    struct FieldT;                                                                                                     \
+    typedef struct_type Type;                                                                                          \
+    static const size_t IDENTIFIER = __COUNTER__;                                                                      \
+    template <size_t Index>                                                                                            \
+    using Field = FieldT<Type, Index>;
+
+#define XL_REFLECT_MEMBER(filed_type, field_name)                                                                      \
+  filed_type field_name;                                                                                               \
+  template <typename T>                                                                                                \
+  struct FieldT<T, __COUNTER__ - IDENTIFIER - 1> {                                                                     \
+    static const char *name() {                                                                                        \
+      return #field_name;                                                                                              \
+    }                                                                                                                  \
+    static const filed_type &value(const Type &ref) {                                                                  \
+      return ref.field_name;                                                                                           \
+    }                                                                                                                  \
+    static filed_type &value(Type &ref) {                                                                              \
+      return ref.field_name;                                                                                           \
+    }                                                                                                                  \
+  };
+
+#else
+
 #define XL_BEGIN_REFLECT(struct_type)                                                                                  \
   struct struct_type {                                                                                                 \
     template <size_t Index>                                                                                            \
@@ -24,6 +57,8 @@
       return ref.field_name;                                                                                           \
     }                                                                                                                  \
   };
+
+#endif
 
 #define XL_END_REFLECT()                                                                                               \
   static size_t const FIELD_COUNT = __COUNTER__ - IDENTIFIER - 1;                                                      \

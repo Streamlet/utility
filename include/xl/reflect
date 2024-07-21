@@ -61,6 +61,8 @@
 #endif
 
 #define XL_REFLECT_END()                                                                                               \
-  static size_t const FIELD_COUNT = __COUNTER__ - IDENTIFIER - 1;                                                      \
+  static size_t fields() {                                                                                             \
+    return __COUNTER__ - IDENTIFIER - 1;                                                                               \
+  }                                                                                                                    \
   }                                                                                                                    \
   ;

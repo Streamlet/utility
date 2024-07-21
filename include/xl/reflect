@@ -1,0 +1,31 @@
+#pragma once
+
+#include <map>
+#include <string>
+
+#define XL_BEGIN_REFLECT(struct_type)                                                                                  \
+  struct struct_type {                                                                                                 \
+    template <size_t Index>                                                                                            \
+    struct Field;                                                                                                      \
+    typedef struct_type Type;                                                                                          \
+    static const size_t IDENTIFIER = __COUNTER__;
+
+#define XL_REFLECT_MEMBER(filed_type, field_name)                                                                      \
+  filed_type field_name;                                                                                               \
+  template <>                                                                                                          \
+  struct Field<__COUNTER__ - IDENTIFIER - 1> {                                                                         \
+    static const char *name() {                                                                                        \
+      return #field_name;                                                                                              \
+    }                                                                                                                  \
+    static const filed_type &value(const Type &ref) {                                                                  \
+      return ref.field_name;                                                                                           \
+    }                                                                                                                  \
+    static filed_type &value(Type &ref) {                                                                              \
+      return ref.field_name;                                                                                           \
+    }                                                                                                                  \
+  };
+
+#define XL_END_REFLECT()                                                                                               \
+  static size_t const FIELD_COUNT = __COUNTER__ - IDENTIFIER - 1;                                                      \
+  }                                                                                                                    \
+  ;

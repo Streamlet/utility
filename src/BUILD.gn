@@ -5,7 +5,10 @@ config("utility_public_config") {
 source_set("meta") {
   sources = []
 
-  inputs = [ "../include/xl/scope_exit" ]
+  inputs = [
+    "../include/xl/scope_exit",
+    "../include/xl/reflect",
+  ]
 
   public_configs = [ ":utility_public_config" ]
 }

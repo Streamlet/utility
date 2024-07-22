@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <typeinfo>
 
 #if defined(__GNUC__) || defined(__GNUG__)
 
@@ -23,8 +24,8 @@
   filed_type field_name;                                                                                               \
   template <typename T>                                                                                                \
   struct FieldT<T, __COUNTER__ - IDENTIFIER - 1> {                                                                     \
-    static const char *type() {                                                                                        \
-      return #filed_type;                                                                                              \
+    static const std::type_info &type() {                                                                              \
+      return typeid(filed_type);                                                                                       \
     }                                                                                                                  \
     static const char *name() {                                                                                        \
       return #field_name;                                                                                              \
@@ -53,8 +54,8 @@
   filed_type field_name;                                                                                               \
   template <>                                                                                                          \
   struct Field<__COUNTER__ - IDENTIFIER - 1> {                                                                         \
-    static const char *type() {                                                                                        \
-      return #filed_type;                                                                                              \
+    static const std::type_info &type() {                                                                              \
+      return typeid(filed_type);                                                                                       \
     }                                                                                                                  \
     static const char *name() {                                                                                        \
       return #field_name;                                                                                              \
@@ -79,7 +80,7 @@
   }                                                                                                                    \
   template <size_t Begin, size_t End>                                                                                  \
   struct FieldsWalker {                                                                                                \
-    static const char *field_type(size_t index) {                                                                      \
+    static const std::type_info &field_type(size_t index) {                                                            \
       if (index == Begin) {                                                                                            \
         return Field<Begin>::type();                                                                                   \
       } else {                                                                                                         \
@@ -118,8 +119,8 @@
   };                                                                                                                   \
   template <size_t Index>                                                                                              \
   struct FieldsWalker<Index, Index> {                                                                                  \
-    static const char *field_type(size_t index) {                                                                      \
-      return nullptr;                                                                                                  \
+    static const std::type_info &field_type(size_t index) {                                                            \
+      return typeid(nullptr);                                                                                          \
     }                                                                                                                  \
     static const char *field_name(size_t index) {                                                                      \
       return nullptr;                                                                                                  \
@@ -136,7 +137,7 @@
       return t;                                                                                                        \
     }                                                                                                                  \
   };                                                                                                                   \
-  static const char *field_type(size_t index) {                                                                        \
+  static const std::type_info &field_type(size_t index) {                                                              \
     return FieldsWalker<0, FIELDS>::field_type(index);                                                                 \
   }                                                                                                                    \
   static const char *field_name(size_t index) {                                                                        \

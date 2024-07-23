@@ -16,14 +16,15 @@
     template <typename T, size_t Index>                                                                                \
     struct FieldT;                                                                                                     \
     typedef struct_type Type;                                                                                          \
-    static const size_t IDENTIFIER = __COUNTER__;                                                                      \
+    static const size_t SEQUENCE = __COUNTER__;                                                                        \
     template <size_t Index>                                                                                            \
     using Field = FieldT<Type, Index>;
 
 #define XL_REFLECT_MEMBER(filed_type, field_name)                                                                      \
   filed_type field_name;                                                                                               \
+  static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
   template <typename T>                                                                                                \
-  struct FieldT<T, __COUNTER__ - IDENTIFIER - 1> {                                                                     \
+  struct FieldT<T, SEQUENCE_##field_name - SEQUENCE - 1> {                                                             \
     static const std::type_info &type() {                                                                              \
       return typeid(filed_type);                                                                                       \
     }                                                                                                                  \
@@ -48,12 +49,13 @@
     template <size_t Index>                                                                                            \
     struct Field;                                                                                                      \
     typedef struct_type Type;                                                                                          \
-    static const size_t IDENTIFIER = __COUNTER__;
+    static const size_t SEQUENCE = __COUNTER__;
 
 #define XL_REFLECT_MEMBER(filed_type, field_name)                                                                      \
   filed_type field_name;                                                                                               \
+  static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
   template <>                                                                                                          \
-  struct Field<__COUNTER__ - IDENTIFIER - 1> {                                                                         \
+  struct Field<SEQUENCE_##field_name - SEQUENCE - 1> {                                                                 \
     static const std::type_info &type() {                                                                              \
       return typeid(filed_type);                                                                                       \
     }                                                                                                                  \
@@ -74,7 +76,7 @@
 #endif
 
 #define XL_REFLECT_END()                                                                                               \
-  static const size_t FIELDS = __COUNTER__ - IDENTIFIER - 1;                                                           \
+  static const size_t FIELDS = __COUNTER__ - SEQUENCE - 1;                                                             \
   static size_t fields() {                                                                                             \
     return FIELDS;                                                                                                     \
   }                                                                                                                    \

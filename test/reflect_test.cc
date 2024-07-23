@@ -30,6 +30,8 @@ TEST(reflect_test, normal) {
   ASSERT_EQ(Foo::field_type(1), typeid(const char *));
   ASSERT_EQ(strcmp(Foo::field_name(0), "a"), 0);
   ASSERT_EQ(strcmp(Foo::field_name(1), "b"), 0);
+  ASSERT_EQ(Foo::field_index("a"), 0);
+  ASSERT_EQ(Foo::field_index("b"), 1);
   ASSERT_EQ(Foo::field_offset(0), 0);
   ASSERT_EQ(Foo::field_offset(1), sizeof(int));
   ASSERT_EQ(Foo::field_size(0), sizeof(int));

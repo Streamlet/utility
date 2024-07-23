@@ -94,6 +94,13 @@
         return FieldsWalker<Begin + 1, End>::field_name(index);                                                        \
       }                                                                                                                \
     }                                                                                                                  \
+    static size_t field_index(const char *field_name) {                                                                \
+      if (strcmp(Field<Begin>::name(), field_name) == 0) {                                                             \
+        return Begin;                                                                                                  \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::field_index(field_name);                                                  \
+      }                                                                                                                \
+    }                                                                                                                  \
     static size_t field_offset(size_t index) {                                                                         \
       if (index == Begin) {                                                                                            \
         return Field<Begin>::offset();                                                                                 \
@@ -125,11 +132,14 @@
     static const char *field_name(size_t index) {                                                                      \
       return nullptr;                                                                                                  \
     }                                                                                                                  \
+    static size_t field_index(const char *field_name) {                                                                \
+      return -1;                                                                                                       \
+    }                                                                                                                  \
     static size_t field_offset(size_t index) {                                                                         \
-      return 0;                                                                                                        \
+      return -1;                                                                                                       \
     }                                                                                                                  \
     static size_t field_size(size_t index) {                                                                           \
-      return 0;                                                                                                        \
+      return -1;                                                                                                       \
     }                                                                                                                  \
     template <typename T>                                                                                              \
     static T &field_value(Type &ref, size_t index) {                                                                   \
@@ -142,6 +152,9 @@
   }                                                                                                                    \
   static const char *field_name(size_t index) {                                                                        \
     return FieldsWalker<0, FIELDS>::field_name(index);                                                                 \
+  }                                                                                                                    \
+  static size_t field_index(const char *field_name) {                                                                  \
+    return FieldsWalker<0, FIELDS>::field_index(field_name);                                                           \
   }                                                                                                                    \
   static size_t field_offset(size_t index) {                                                                           \
     return FieldsWalker<0, FIELDS>::field_offset(index);                                                               \

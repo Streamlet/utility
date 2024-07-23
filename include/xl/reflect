@@ -101,6 +101,13 @@
         return FieldsWalker<Begin + 1, End>::field_index(field_name);                                                  \
       }                                                                                                                \
     }                                                                                                                  \
+    static size_t field_index(const char *field_name, size_t length) {                                                 \
+      if (strncmp(Field<Begin>::name(), field_name, length) == 0) {                                                    \
+        return Begin;                                                                                                  \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::field_index(field_name, length);                                          \
+      }                                                                                                                \
+    }                                                                                                                  \
     static size_t field_offset(size_t index) {                                                                         \
       if (index == Begin) {                                                                                            \
         return Field<Begin>::offset();                                                                                 \
@@ -115,12 +122,11 @@
         return FieldsWalker<Begin + 1, End>::field_size(index);                                                        \
       }                                                                                                                \
     }                                                                                                                  \
-    template <typename T>                                                                                              \
-    static T &field_value(Type &ref, size_t index) {                                                                   \
+    static void *field_data(Type &ref, size_t index) {                                                                 \
       if (index == Begin) {                                                                                            \
-        return (T &)Field<Begin>::value(ref);                                                                          \
+        return &Field<Begin>::value(ref);                                                                              \
       } else {                                                                                                         \
-        return (T &)FieldsWalker<Begin + 1, End>::template field_value<T>(ref, index);                                 \
+        return FieldsWalker<Begin + 1, End>::field_data(ref, index);                                                   \
       }                                                                                                                \
     }                                                                                                                  \
   };                                                                                                                   \
@@ -135,16 +141,17 @@
     static size_t field_index(const char *field_name) {                                                                \
       return -1;                                                                                                       \
     }                                                                                                                  \
+    static size_t field_index(const char *field_name, size_t length) {                                                 \
+      return -1;                                                                                                       \
+    }                                                                                                                  \
     static size_t field_offset(size_t index) {                                                                         \
       return -1;                                                                                                       \
     }                                                                                                                  \
     static size_t field_size(size_t index) {                                                                           \
       return -1;                                                                                                       \
     }                                                                                                                  \
-    template <typename T>                                                                                              \
-    static T &field_value(Type &ref, size_t index) {                                                                   \
-      static T t;                                                                                                      \
-      return t;                                                                                                        \
+    static void *field_data(Type &ref, size_t index) {                                                                 \
+      return nullptr;                                                                                                  \
     }                                                                                                                  \
   };                                                                                                                   \
   static const std::type_info &field_type(size_t index) {                                                              \
@@ -156,15 +163,17 @@
   static size_t field_index(const char *field_name) {                                                                  \
     return FieldsWalker<0, FIELDS>::field_index(field_name);                                                           \
   }                                                                                                                    \
+  static size_t field_index(const char *field_name, size_t length) {                                                   \
+    return FieldsWalker<0, FIELDS>::field_index(field_name, length);                                                   \
+  }                                                                                                                    \
   static size_t field_offset(size_t index) {                                                                           \
     return FieldsWalker<0, FIELDS>::field_offset(index);                                                               \
   }                                                                                                                    \
   static size_t field_size(size_t index) {                                                                             \
     return FieldsWalker<0, FIELDS>::field_size(index);                                                                 \
   }                                                                                                                    \
-  template <typename T>                                                                                                \
-  static T &field_value(Type &ref, size_t index) {                                                                     \
-    return FieldsWalker<0, FIELDS>::field_value<T>(ref, index);                                                        \
+  static void *field_data(Type &ref, size_t index) {                                                                   \
+    return FieldsWalker<0, FIELDS>::field_data(ref, index);                                                            \
   }                                                                                                                    \
   }                                                                                                                    \
   ;

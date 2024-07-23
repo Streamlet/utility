@@ -32,6 +32,10 @@ TEST(reflect_test, normal) {
   ASSERT_EQ(strcmp(Foo::field_name(1), "b"), 0);
   ASSERT_EQ(Foo::field_index("a"), 0);
   ASSERT_EQ(Foo::field_index("b"), 1);
+  ASSERT_EQ(Foo::field_index("aa", 1), 0);
+  ASSERT_EQ(Foo::field_index("bb", 1), 1);
+  ASSERT_EQ(Foo::field_index("aa", 2), -1);
+  ASSERT_EQ(Foo::field_index("bb", 2), -1);
   ASSERT_EQ(Foo::field_offset(0), 0);
   ASSERT_EQ(Foo::field_offset(1), sizeof(int));
   ASSERT_EQ(Foo::field_size(0), sizeof(int));
@@ -43,14 +47,14 @@ TEST(reflect_test, normal) {
 
   ASSERT_EQ(Foo::Field<0>::value(foo), 123);
   ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "abc"), 0);
-  ASSERT_EQ(Foo::field_value<int>(foo, 0), 123);
-  ASSERT_EQ(strcmp(Foo::field_value<const char *>(foo, 1), "abc"), 0);
+  ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 123);
+  ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "abc"), 0);
 
   Foo::Field<0>::value(foo) = 456;
   Foo::Field<1>::value(foo) = "def";
 
   ASSERT_EQ(Foo::Field<0>::value(foo), 456);
   ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "def"), 0);
-  ASSERT_EQ(Foo::field_value<int>(foo, 0), 456);
-  ASSERT_EQ(strcmp(Foo::field_value<const char *>(foo, 1), "def"), 0);
+  ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 456);
+  ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "def"), 0);
 }

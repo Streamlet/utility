@@ -4,8 +4,6 @@
 #include <string>
 #include <typeinfo>
 
-#if defined(__GNUC__) || defined(__GNUG__)
-
 // gcc does not support explicit specialization in class scope,
 // and does not support default template parameter in partitial specialization
 // so here we add an extra template parameter 'typename T' at FieldT
@@ -41,39 +39,6 @@
       return ref.field_name;                                                                                           \
     }                                                                                                                  \
   };
-
-#else
-
-#define XL_REFLECT_BEGIN(struct_type)                                                                                  \
-  struct struct_type {                                                                                                 \
-    template <size_t Index>                                                                                            \
-    struct Field;                                                                                                      \
-    typedef struct_type Type;                                                                                          \
-    static const size_t SEQUENCE = __COUNTER__;
-
-#define XL_REFLECT_MEMBER(field_type, field_name)                                                                      \
-  field_type field_name;                                                                                               \
-  static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
-  template <>                                                                                                          \
-  struct Field<SEQUENCE_##field_name - SEQUENCE - 1> {                                                                 \
-    static const std::type_info &type() {                                                                              \
-      return typeid(field_type);                                                                                       \
-    }                                                                                                                  \
-    static const char *name() {                                                                                        \
-      return #field_name;                                                                                              \
-    }                                                                                                                  \
-    static size_t offset() {                                                                                           \
-      return (size_t) & ((Type *)nullptr)->field_name;                                                                 \
-    }                                                                                                                  \
-    static size_t size() {                                                                                             \
-      return sizeof(field_type);                                                                                       \
-    }                                                                                                                  \
-    static field_type &value(Type &ref) {                                                                              \
-      return ref.field_name;                                                                                           \
-    }                                                                                                                  \
-  };
-
-#endif
 
 #define XL_REFLECT_END()                                                                                               \
   static const size_t FIELDS = __COUNTER__ - SEQUENCE - 1;                                                             \

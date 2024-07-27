@@ -57,4 +57,9 @@ TEST(reflect_test, normal) {
   ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "def"), 0);
   ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 456);
   ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "def"), 0);
+
+  Foo::field_value<int>(foo, 0) = 789;
+  Foo::field_value<const char *>(foo, 1) = "ghi";
+  ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 789);
+  ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "ghi"), 0);
 }

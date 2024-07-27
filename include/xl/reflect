@@ -153,11 +153,11 @@
     return FieldsWalker<0, FIELDS>::field_size(index);                                                                 \
   }                                                                                                                    \
   template <typename T>                                                                                                \
-  static T &field_value(Type &ref, size_t index) {                                                                     \
-    return FieldsWalker<0, FIELDS>::template field_value<T>(ref, index);                                               \
+  T &field_value(size_t index) {                                                                                       \
+    return FieldsWalker<0, FIELDS>::template field_value<T>(*this, index);                                             \
   }                                                                                                                    \
-  static void *field_data(Type &ref, size_t index) {                                                                   \
-    return FieldsWalker<0, FIELDS>::field_data(ref, index);                                                            \
+  void *field_data(size_t index) {                                                                                     \
+    return FieldsWalker<0, FIELDS>::field_data(*this, index);                                                          \
   }                                                                                                                    \
   }                                                                                                                    \
   ;

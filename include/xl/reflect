@@ -20,13 +20,13 @@
     template <size_t Index>                                                                                            \
     using Field = FieldT<Type, Index>;
 
-#define XL_REFLECT_MEMBER(filed_type, field_name)                                                                      \
-  filed_type field_name;                                                                                               \
+#define XL_REFLECT_MEMBER(field_type, field_name)                                                                      \
+  field_type field_name;                                                                                               \
   static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
   template <typename T>                                                                                                \
   struct FieldT<T, SEQUENCE_##field_name - SEQUENCE - 1> {                                                             \
     static const std::type_info &type() {                                                                              \
-      return typeid(filed_type);                                                                                       \
+      return typeid(field_type);                                                                                       \
     }                                                                                                                  \
     static const char *name() {                                                                                        \
       return #field_name;                                                                                              \
@@ -35,9 +35,9 @@
       return (size_t) & ((Type *)nullptr)->field_name;                                                                 \
     }                                                                                                                  \
     static size_t size() {                                                                                             \
-      return sizeof(filed_type);                                                                                       \
+      return sizeof(field_type);                                                                                       \
     }                                                                                                                  \
-    static filed_type &value(Type &ref) {                                                                              \
+    static field_type &value(Type &ref) {                                                                              \
       return ref.field_name;                                                                                           \
     }                                                                                                                  \
   };
@@ -51,13 +51,13 @@
     typedef struct_type Type;                                                                                          \
     static const size_t SEQUENCE = __COUNTER__;
 
-#define XL_REFLECT_MEMBER(filed_type, field_name)                                                                      \
-  filed_type field_name;                                                                                               \
+#define XL_REFLECT_MEMBER(field_type, field_name)                                                                      \
+  field_type field_name;                                                                                               \
   static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
   template <>                                                                                                          \
   struct Field<SEQUENCE_##field_name - SEQUENCE - 1> {                                                                 \
     static const std::type_info &type() {                                                                              \
-      return typeid(filed_type);                                                                                       \
+      return typeid(field_type);                                                                                       \
     }                                                                                                                  \
     static const char *name() {                                                                                        \
       return #field_name;                                                                                              \
@@ -66,9 +66,9 @@
       return (size_t) & ((Type *)nullptr)->field_name;                                                                 \
     }                                                                                                                  \
     static size_t size() {                                                                                             \
-      return sizeof(filed_type);                                                                                       \
+      return sizeof(field_type);                                                                                       \
     }                                                                                                                  \
-    static filed_type &value(Type &ref) {                                                                              \
+    static field_type &value(Type &ref) {                                                                              \
       return ref.field_name;                                                                                           \
     }                                                                                                                  \
   };
@@ -124,6 +124,14 @@
         return FieldsWalker<Begin + 1, End>::field_size(index);                                                        \
       }                                                                                                                \
     }                                                                                                                  \
+    template <typename T>                                                                                              \
+    static T &field_value(Type &ref, size_t index) {                                                                   \
+      if (index == Begin) {                                                                                            \
+        return (T &)Field<Begin>::value(ref);                                                                          \
+      } else {                                                                                                         \
+        return FieldsWalker<Begin + 1, End>::template field_value<T>(ref, index);                                      \
+      }                                                                                                                \
+    }                                                                                                                  \
     static void *field_data(Type &ref, size_t index) {                                                                 \
       if (index == Begin) {                                                                                            \
         return &Field<Begin>::value(ref);                                                                              \
@@ -152,6 +160,11 @@
     static size_t field_size(size_t index) {                                                                           \
       return -1;                                                                                                       \
     }                                                                                                                  \
+    template <typename T>                                                                                              \
+    static T &field_value(Type &ref, size_t index) {                                                                   \
+      static T t;                                                                                                      \
+      return t;                                                                                                        \
+    }                                                                                                                  \
     static void *field_data(Type &ref, size_t index) {                                                                 \
       return nullptr;                                                                                                  \
     }                                                                                                                  \
@@ -173,6 +186,10 @@
   }                                                                                                                    \
   static size_t field_size(size_t index) {                                                                             \
     return FieldsWalker<0, FIELDS>::field_size(index);                                                                 \
+  }                                                                                                                    \
+  template <typename T>                                                                                                \
+  static T &field_value(Type &ref, size_t index) {                                                                     \
+    return FieldsWalker<0, FIELDS>::template field_value<T>(ref, index);                                               \
   }                                                                                                                    \
   static void *field_data(Type &ref, size_t index) {                                                                   \
     return FieldsWalker<0, FIELDS>::field_data(ref, index);                                                            \

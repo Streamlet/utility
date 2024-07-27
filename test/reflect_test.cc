@@ -47,19 +47,19 @@ TEST(reflect_test, normal) {
 
   ASSERT_EQ(Foo::Field<0>::value(foo), 123);
   ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "abc"), 0);
-  ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 123);
-  ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "abc"), 0);
+  ASSERT_EQ(*(int *)foo.field_data(0), 123);
+  ASSERT_EQ(strcmp(*(const char **)foo.field_data(1), "abc"), 0);
 
   Foo::Field<0>::value(foo) = 456;
   Foo::Field<1>::value(foo) = "def";
 
   ASSERT_EQ(Foo::Field<0>::value(foo), 456);
   ASSERT_EQ(strcmp(Foo::Field<1>::value(foo), "def"), 0);
-  ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 456);
-  ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "def"), 0);
+  ASSERT_EQ(*(int *)foo.field_data(0), 456);
+  ASSERT_EQ(strcmp(*(const char **)foo.field_data(1), "def"), 0);
 
-  Foo::field_value<int>(foo, 0) = 789;
-  Foo::field_value<const char *>(foo, 1) = "ghi";
-  ASSERT_EQ(*(int *)Foo::field_data(foo, 0), 789);
-  ASSERT_EQ(strcmp(*(const char **)Foo::field_data(foo, 1), "ghi"), 0);
+  foo.field_value<int>(0) = 789;
+  foo.field_value<const char *>(1) = "ghi";
+  ASSERT_EQ(*(int *)foo.field_data(0), 789);
+  ASSERT_EQ(strcmp(*(const char **)foo.field_data(1), "ghi"), 0);
 }

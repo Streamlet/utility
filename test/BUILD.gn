@@ -9,6 +9,7 @@ executable("unittest") {
     "encoding_test.cc",
     "file_test.cc",
     "ini_test.cc",
+    "json_test.cc",
     "reflect_test.cc",
     "scope_exit_test.cc",
     "string_test.cc",

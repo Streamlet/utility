@@ -15,3 +15,7 @@ DEPS:
   thirdparty/googletest:
     GIT_REPO: https://github.com/google/googletest.git
     GIT_TAG: release-1.8.1
+
+  thirdparty/rapidjson:
+    GIT_REPO: https://github.com/Tencent/rapidjson.git
+    GIT_TAG: v1.1.0

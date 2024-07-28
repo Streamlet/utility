@@ -15,9 +15,8 @@ namespace json {
 
 enum WriteFlags {
   WRITE_FLAG_NONE = 0,
-  WRITE_FLAG_WRITE_EMPTY_OBJECT = 1 << 0,
-  WRITE_FLAG_WRITE_EMPTY_ARRAY = 1 << 1,
-  WRITE_FLAG_WRITE_NULL_VALUES = 1 << 2,
+  WRITE_FLAG_PRETTY = 1 << 0,
+  WRITE_FLAG_WRITE_NULL_VALUES = 1 << 1,
 };
 
 } // namespace json
@@ -189,18 +188,12 @@ public:
     return true;
   }
   bool HasContent(unsigned int flags) const {
-    return (flags & ::xl::json::WRITE_FLAG_WRITE_EMPTY_OBJECT) != 0 || ref_->json_has_content(flags);
+    return true;
   }
   void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (!HasContent(flags)) {
-      return;
-    }
     ref_->json_write(writer, flags);
   }
   void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (!HasContent(flags)) {
-      return;
-    }
     ref_->json_write_pretty(writer, flags);
   }
 
@@ -350,93 +343,118 @@ public:
   void Reset(T *ref) {
     ref_ = ref;
     json_accessor_.Reset(*ref_ == nullptr ? nullptr : *ref_);
+    nest_level_ = 0;
   }
   bool Default() {
     return false;
   }
   bool Null() {
-    *ref_ = nullptr;
-    return true;
+    if (nest_level_ == 0) {
+      *ref_ = nullptr;
+      return true;
+    }
+    return json_accessor_.Null();
   }
   bool Bool(bool value) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.Bool(value);
   }
   bool Int(int value) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.Int(value);
   }
   bool Uint(unsigned value) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.Uint(value);
   }
   bool Int64(int64_t value) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.Int64(value);
   }
   bool Uint64(uint64_t value) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.Uint64(value);
   }
   bool Double(double value) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.Double(value);
   }
   bool String(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
     return json_accessor_.String(str, len, copy);
   }
   bool StartObject() {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
-    return json_accessor_.StartObject();
+    if (!json_accessor_.StartObject()) {
+      return false;
+    }
+    ++nest_level_;
+    return true;
   }
   bool Key(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
     return json_accessor_.Key(str, len, copy);
   }
   bool EndObject(::rapidjson::SizeType count) {
-    return json_accessor_.EndObject(count);
+    if (nest_level_ == 0) {
+      assert(false);
+      return false;
+    }
+    if (!json_accessor_.EndObject(count)) {
+      return false;
+    }
+    --nest_level_;
+    return true;
   }
   bool StartArray() {
-    if (*ref_ == nullptr) {
+    if (nest_level_ == 0) {
       *ref_ = std::unique_ptr<T>(new T);
       json_accessor_.Reset(ref_->get());
     }
-    return json_accessor_.StartArray();
+    if (!json_accessor_.StartArray()) {
+      return false;
+    }
+    ++nest_level_;
+    return true;
   }
   bool EndArray(::rapidjson::SizeType count) {
-    return json_accessor_.EndObject(count);
+    if (nest_level_ == 0) {
+      assert(false);
+      return false;
+    }
+    if (!json_accessor_.EndArray(count)) {
+      return false;
+    }
+    --nest_level_;
+    return true;
   }
   bool HasContent(unsigned int flags) const {
     return (flags & json::WRITE_FLAG_WRITE_NULL_VALUES) != 0 || (*ref_ != nullptr && json_accessor_.HasContent(flags));
   }
   void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (!HasContent(flags)) {
-      return;
-    }
     if (*ref_ == nullptr) {
       writer.Null();
     } else {
@@ -444,9 +462,6 @@ public:
     }
   }
   void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (!HasContent(flags)) {
-      return;
-    }
     if (*ref_ == nullptr) {
       writer.Null();
     } else {
@@ -457,6 +472,7 @@ public:
 private:
   std::unique_ptr<T> *ref_;
   JsonAccessor<T> json_accessor_{*ref_ == nullptr ? nullptr : ref_->get()};
+  int nest_level_ = 0;
 };
 
 template <typename T>
@@ -469,7 +485,7 @@ public:
   void Reset(std::list<T> *ref) {
     ref_ = ref;
     json_accessors_.clear();
-    if (!ref_->empty()) {
+    if (ref_ != nullptr && !ref_->empty()) {
       for (T &item : *ref_) {
         json_accessors_.push_back(JsonAccessor<T>(&item));
       }
@@ -635,12 +651,9 @@ public:
     return true;
   }
   bool HasContent(unsigned int flags) const {
-    return (flags & json::WRITE_FLAG_WRITE_EMPTY_ARRAY) != 0 || !ref_->empty();
+    return true;
   }
   void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (!HasContent(flags)) {
-      return;
-    }
     writer.StartArray();
     for (JsonAccessor<T> &accessor : json_accessors_) {
       accessor.Write(writer, flags);
@@ -648,9 +661,6 @@ public:
     writer.EndArray(rapidjson::SizeType(ref_->size()));
   }
   void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (!HasContent(flags)) {
-      return;
-    }
     writer.StartArray();
     for (JsonAccessor<T> &accessor : json_accessors_) {
       accessor.WritePretty(writer, flags);
@@ -995,9 +1005,10 @@ public:                                                                         
                      ::rapidjson::kParseTrailingCommasFlag>(ss, handler);                                              \
     return pr;                                                                                                         \
   }                                                                                                                    \
-  std::string json_dump(bool pretty = false, unsigned int flags = ::xl::json::WRITE_FLAG_NONE) {                       \
+  std::string json_dump(unsigned int flags = ::xl::json::WRITE_FLAG_NONE) {                                            \
     ::rapidjson::StringBuffer sb;                                                                                      \
-    if (pretty) {                                                                                                      \
+    if ((flags & ::xl::json::WRITE_FLAG_PRETTY) != 0) {                                                                \
+      flags &= ~::xl::json::WRITE_FLAG_PRETTY;                                                                         \
       ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> writer(sb);                                                 \
       json_write_pretty(writer, flags);                                                                                \
     } else {                                                                                                           \

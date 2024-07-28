@@ -63,3 +63,17 @@ static_library("googletest") {
   include_dirs = [ "googletest/googletest" ]
   public_configs = [ ":googletest_public_config" ]
 }
+
+# rapidjson
+
+config("rapidjson_public_config") {
+  include_dirs = [ "rapidjson/include" ]
+  defines = [
+    "RAPIDJSON_HAS_STDSTRING=1",
+    "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS",
+  ]
+}
+
+group("rapidjson") {
+  public_configs = [ ":rapidjson_public_config" ]
+}

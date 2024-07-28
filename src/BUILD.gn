@@ -47,7 +47,10 @@ source_set("crypto") {
 
   deps = [ "../thirdparty:libressl_crypto" ]
 
-  public_configs = [ ":utility_public_config" ]
+  public_configs = [
+    ":utility_public_config",
+    "../thirdparty:rapidjson_public_config",
+  ]
 }
 
 source_set("file") {
@@ -69,14 +72,20 @@ source_set("file") {
 source_set("config") {
   sources = [ "ini.cc" ]
 
-  inputs = [ "../include/xl/ini" ]
+  inputs = [
+    "../include/xl/ini",
+    "../include/xl/json",
+  ]
 
   cflags = []
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
 
-  deps = [ ":file" ]
+  deps = [
+    ":file",
+    "../thirdparty:rapidjson",
+  ]
 
   public_configs = [ ":utility_public_config" ]
 }

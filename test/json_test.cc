@@ -9,10 +9,10 @@ XL_JSON_END()
 
 TEST(json_test, normal) {
   Foo foo;
-  ASSERT_EQ(foo.parse(R"({"a":1,"b":"x","c":null})"), true);
+  ASSERT_EQ(foo.json_parse(R"({"a":1,"b":"x","c":null})"), true);
   ASSERT_EQ(foo.a, 1);
   ASSERT_EQ(foo.b, "x");
   ASSERT_EQ(foo.c, nullptr);
-  std::string json = foo.dump();
+  std::string json = foo.json_dump();
   ASSERT_EQ(json, R"({"a":1,"b":"x","c":null})");
 }

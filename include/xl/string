@@ -15,11 +15,16 @@ namespace xl {
 
 namespace string {
 
-size_t length(const char *s) {
+template <typename T>
+inline size_t length(const T *s);
+
+template <>
+inline size_t length(const char *s) {
   return strlen(s);
 }
 
-size_t length(const wchar_t *s) {
+template <>
+inline size_t length(const wchar_t *s) {
   return wcslen(s);
 }
 
@@ -271,7 +276,7 @@ inline std::basic_string<CharType> join(const std::vector<ElementType> &string_l
 template <class CharType>
 inline std::basic_string<CharType> replace(const CharType *string,
                                            const CharType *search,
-                                           const CharType *replace,
+                                           const CharType *replace_with,
                                            size_t max = 0,
                                            size_t string_length = -1,
                                            size_t search_length = -1,
@@ -283,9 +288,9 @@ inline std::basic_string<CharType> replace(const CharType *string,
     search_length = length(search);
   }
   if (replace_length == -1) {
-    replace_length = length(replace);
+    replace_length = length(replace_with);
   }
-  if (string_length == 0 || search_length == 0 || replace_length == 0) {
+  if (string_length == 0 || search_length == 0) {
     return std::basic_string<CharType>(string, string_length);
   }
   std::vector<basic_string_ref<CharType>> string_list;
@@ -304,7 +309,7 @@ inline std::basic_string<CharType> replace(const CharType *string,
   for (typename std::vector<basic_string_ref<CharType>>::const_iterator it = string_list.begin();
        it != string_list.end(); ++it) {
     if (it != string_list.begin()) {
-      replaced.append(replace, replace_length);
+      replaced.append(replace_with, replace_length);
     }
     replaced.append(it->c_str(), it->c_str() + it->length());
   }
@@ -312,42 +317,46 @@ inline std::basic_string<CharType> replace(const CharType *string,
 }
 
 template <class CharType>
-inline std::basic_string<CharType> replace(
-    const CharType *string, const CharType search, const CharType replace, size_t max = 0, size_t string_length = -1) {
-  return replace(string, &search, &replace, max, string_length, 1, 1);
+inline std::basic_string<CharType> replace(const CharType *string,
+                                           const CharType search,
+                                           const CharType replace_with,
+                                           size_t max = 0,
+                                           size_t string_length = -1) {
+  return replace(string, &search, &replace_with, max, string_length, 1, 1);
 }
 
 template <class CharType>
 inline std::basic_string<CharType> replace(const CharType *string,
                                            const std::basic_string<CharType> &search,
-                                           const std::basic_string<CharType> &replace,
+                                           const std::basic_string<CharType> &replace_with,
                                            size_t max = 0,
                                            size_t string_length = -1) {
-  return replace(string, search.c_str(), replace.c_str(), max, string_length, search.length(), replace.length());
+  return replace(string, search.c_str(), replace_with.c_str(), max, string_length, search.length(),
+                 replace_with.length());
 }
 
 template <class CharType>
 inline std::basic_string<CharType> replace(const std::basic_string<CharType> &string,
                                            const CharType *search,
-                                           const CharType *replace,
+                                           const CharType *replace_with,
                                            size_t max = 0,
                                            size_t search_length = -1,
                                            size_t replace_length = -1) {
-  return replace(string, search, replace, max, string.length(), search_length, replace_length);
+  return replace(string.c_str(), search, replace_with, max, string.length(), search_length, replace_length);
 }
 
 template <class CharType>
 inline std::basic_string<CharType>
-replace(const std::basic_string<CharType> &string, CharType search, CharType replace, size_t max = 0) {
-  return replace(string, &search, &replace, max, string.length(), 1, 1);
+replace(const std::basic_string<CharType> &string, CharType search, CharType replace_with, size_t max = 0) {
+  return replace(string.c_str(), &search, &replace_with, max, string.length(), 1, 1);
 }
 
 template <class CharType>
 inline std::basic_string<CharType> replace(const std::basic_string<CharType> &string,
                                            const std::basic_string<CharType> &search,
-                                           const std::basic_string<CharType> &replace,
+                                           const std::basic_string<CharType> &replace_with,
                                            size_t max = 0) {
-  return replace(string, search, replace, max, string.length(), search.length(), replace.length());
+  return replace(string.c_str(), search, replace_with, max, string.length(), search.length(), replace_with.length());
 }
 
 } // namespace string

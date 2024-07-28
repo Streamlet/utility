@@ -1,19 +1,37 @@
 #pragma once
 
 #include "reflect"
+#include <list>
 #include <map>
 #include <memory>
+#include <rapidjson/prettywriter.h>
 #include <rapidjson/reader.h>
 #include <rapidjson/writer.h>
 #include <string>
-#include <vector>
 
 namespace xl {
+
+namespace json {
+
+enum WriteFlags {
+  WRITE_FLAG_NONE = 0,
+  WRITE_FLAG_WRITE_EMPTY_OBJECT = 1 << 0,
+  WRITE_FLAG_WRITE_EMPTY_ARRAY = 1 << 1,
+  WRITE_FLAG_WRITE_NULL_VALUES = 1 << 2,
+};
+
+} // namespace json
 
 template <typename T>
 class JsonAccessor : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<T>> {
 public:
-  JsonAccessor(T &ref) : ref_(ref) {
+  JsonAccessor(T *ref) : ref_(ref) {
+  }
+  void Reset(T *ref) {
+    ref_ = ref;
+    current_ = -1;
+    object_activated_ = false;
+    nest_level_ = 0;
   }
   bool Default() {
     return false;
@@ -26,7 +44,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set_null(current_);
+    return ref_->json_field_set_null(current_);
   }
   bool Bool(bool value) {
     if (!object_activated_) {
@@ -36,7 +54,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set(current_, value);
+    return ref_->json_field_set(current_, value);
   }
   bool Int(int value) {
     if (!object_activated_) {
@@ -46,7 +64,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set(current_, value);
+    return ref_->json_field_set(current_, value);
   }
   bool Uint(unsigned value) {
     if (!object_activated_) {
@@ -56,7 +74,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set(current_, value);
+    return ref_->json_field_set(current_, value);
   }
   bool Int64(int64_t value) {
     if (!object_activated_) {
@@ -66,7 +84,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set(current_, value);
+    return ref_->json_field_set(current_, value);
   }
   bool Uint64(uint64_t value) {
     if (!object_activated_) {
@@ -76,7 +94,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set(current_, value);
+    return ref_->json_field_set(current_, value);
   }
   bool Double(double value) {
     if (!object_activated_) {
@@ -86,7 +104,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set(current_, value);
+    return ref_->json_field_set(current_, value);
   }
   bool String(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
     if (!object_activated_) {
@@ -96,7 +114,7 @@ public:
     if (current_ == -1) {
       return false;
     }
-    return ref_.json_field_set_string(current_, str, len, copy);
+    return ref_->json_field_set_string(current_, str, len, copy);
   }
   bool StartObject() {
     if (!object_activated_) {
@@ -106,91 +124,100 @@ public:
     if (current_ == -1) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      in_object_ = true;
-      return true;
+    if (!ref_->json_field_object_begin(current_)) {
+      return false;
     }
-    return ref_.json_field_object_begin(current_);
+    ++nest_level_;
+    return true;
   }
   bool Key(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
     if (!object_activated_) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
+    if (nest_level_ == 0) {
       current_ = T::field_index(str, len);
       return current_ != -1;
     }
-    return ref_.json_field_object_locate_key(current_, str, len, copy);
+    return ref_->json_field_object_locate_key(current_, str, len, copy);
   }
   bool EndObject(::rapidjson::SizeType count) {
     if (!object_activated_) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
+    if (nest_level_ == 0) {
       object_activated_ = false;
       return true;
     }
     if (current_ == -1) {
       return false;
     }
-    if (ref_.json_field_object_end(current_, count)) {
-      return true;
-    }
-
-    if (!in_object_) {
-      assert(false && "not in object");
+    if (!ref_->json_field_object_end(current_, count)) {
       return false;
     }
-    in_object_ = false;
+    --nest_level_;
     return true;
   }
   bool StartArray() {
     if (!object_activated_) {
-      assert(false && "cannot assign array value to object, please use type std::vector<...>");
+      assert(false && "cannot assign array value to object, please use type std::list<...>");
       return false;
     }
     if (current_ == -1) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      in_array_ = true;
-      return true;
+    if (!ref_->json_field_array_begin(current_)) {
+      return false;
     }
-    return ref_.json_field_array_begin(current_);
+    ++nest_level_;
+    return true;
   }
   bool EndArray(::rapidjson::SizeType count) {
     if (!object_activated_) {
       return false;
     }
+    if (nest_level_ == 0) {
+      assert(false);
+      return false;
+    }
     if (current_ == -1) {
       return false;
     }
-    if (ref_.json_field_array_end(current_, count)) {
-      return true;
-    }
-    if (!in_array_) {
-      assert(false && "not in array");
+    if (!ref_->json_field_array_end(current_, count)) {
       return false;
     }
-    in_array_ = false;
+    --nest_level_;
     return true;
   }
-  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {
-    ref_.json_write(writer);
+  bool HasContent(unsigned int flags) const {
+    return (flags & ::xl::json::WRITE_FLAG_WRITE_EMPTY_OBJECT) != 0 || ref_->json_has_content(flags);
+  }
+  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!HasContent(flags)) {
+      return;
+    }
+    ref_->json_write(writer, flags);
+  }
+  void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!HasContent(flags)) {
+      return;
+    }
+    ref_->json_write_pretty(writer, flags);
   }
 
 private:
-  T &ref_;
+  T *ref_ = nullptr;
   size_t current_ = -1;
   bool object_activated_ = false;
-  bool in_object_ = false;
-  bool in_array_ = false;
+  int nest_level_ = 0;
 };
 
 template <>
 class JsonAccessor<bool> : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<bool>> {
 public:
-  JsonAccessor(bool &ref) : ref_(ref) {
+  JsonAccessor(bool *ref) : ref_(ref) {
+  }
+  void Reset(bool *ref) {
+    ref_ = ref;
   }
   bool Default() {
     return false;
@@ -200,23 +227,31 @@ public:
     return false;
   }
   bool Bool(bool value) {
-    ref_ = value;
+    *ref_ = value;
     return true;
   }
-  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {
-    writer.Bool(ref_);
+  bool HasContent(unsigned int flags) const {
+    return true;
+  }
+  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    writer.Bool(*ref_);
+  }
+  void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    writer.Bool(*ref_);
   }
 
 private:
-  bool &ref_;
+  bool *ref_;
 };
 
 #define JSON_ACCESSOR_NUMBER(type, write_fn)                                                                           \
   template <>                                                                                                          \
   class JsonAccessor<type> : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<type>> {          \
   public:                                                                                                              \
-  public:                                                                                                              \
-    JsonAccessor(type &ref) : ref_(ref) {                                                                              \
+    JsonAccessor(type *ref) : ref_(ref) {                                                                              \
+    }                                                                                                                  \
+    void Reset(type *ref) {                                                                                            \
+      ref_ = ref;                                                                                                      \
     }                                                                                                                  \
     bool Default() {                                                                                                   \
       return false;                                                                                                    \
@@ -226,31 +261,37 @@ private:
       return false;                                                                                                    \
     }                                                                                                                  \
     bool Int(int value) {                                                                                              \
-      ref_ = (type)value;                                                                                              \
+      *ref_ = (type)value;                                                                                             \
       return true;                                                                                                     \
     }                                                                                                                  \
     bool Uint(unsigned value) {                                                                                        \
-      ref_ = (type)value;                                                                                              \
+      *ref_ = (type)value;                                                                                             \
       return true;                                                                                                     \
     }                                                                                                                  \
     bool Int64(int64_t value) {                                                                                        \
-      ref_ = (type)value;                                                                                              \
+      *ref_ = (type)value;                                                                                             \
       return true;                                                                                                     \
     }                                                                                                                  \
     bool Uint64(uint64_t value) {                                                                                      \
-      ref_ = (type)value;                                                                                              \
+      *ref_ = (type)value;                                                                                             \
       return true;                                                                                                     \
     }                                                                                                                  \
     bool Double(double value) {                                                                                        \
-      ref_ = (type)value;                                                                                              \
+      *ref_ = (type)value;                                                                                             \
       return true;                                                                                                     \
     }                                                                                                                  \
-    void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {                                               \
-      writer.write_fn(ref_);                                                                                           \
+    bool HasContent(unsigned int flags) const {                                                                        \
+      return true;                                                                                                     \
+    }                                                                                                                  \
+    void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {                           \
+      writer.write_fn(*ref_);                                                                                          \
+    }                                                                                                                  \
+    void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {               \
+      writer.write_fn(*ref_);                                                                                          \
     }                                                                                                                  \
                                                                                                                        \
   private:                                                                                                             \
-    type &ref_;                                                                                                        \
+    type *ref_;                                                                                                        \
   }
 
 JSON_ACCESSOR_NUMBER(char, Int);
@@ -263,13 +304,17 @@ JSON_ACCESSOR_NUMBER(long, Int);
 JSON_ACCESSOR_NUMBER(unsigned long, Uint);
 JSON_ACCESSOR_NUMBER(long long, Int64);
 JSON_ACCESSOR_NUMBER(unsigned long long, Uint64);
+JSON_ACCESSOR_NUMBER(float, Double);
+JSON_ACCESSOR_NUMBER(double, Double);
 
 template <>
 class JsonAccessor<std::string>
     : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::string>> {
 public:
-public:
-  JsonAccessor(std::string &ref) : ref_(ref) {
+  JsonAccessor(std::string *ref) : ref_(ref) {
+  }
+  void Reset(std::string *ref) {
+    ref_ = ref;
   }
   bool Default() {
     return false;
@@ -279,211 +324,285 @@ public:
     return false;
   }
   bool String(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
-    ref_.assign(str, len);
+    ref_->assign(str, len);
     return true;
   }
-  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {
-    writer.String(ref_.c_str(), (::rapidjson::SizeType)ref_.size(), false);
+  bool HasContent(unsigned int flags) const {
+    return true;
+  }
+  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    writer.String(ref_->c_str(), (::rapidjson::SizeType)ref_->size(), false);
+  }
+  void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    writer.String(ref_->c_str(), (::rapidjson::SizeType)ref_->size(), false);
   }
 
 private:
-  std::string &ref_;
+  std::string *ref_;
 };
 
 template <typename T>
 class JsonAccessor<std::unique_ptr<T>>
     : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::unique_ptr<T>>> {
 public:
-  JsonAccessor(std::unique_ptr<T> &ref) : ref_(ref) {
+  JsonAccessor(std::unique_ptr<T> *ref) : ref_(ref) {
+  }
+  void Reset(T *ref) {
+    ref_ = ref;
+    json_accessor_.Reset(*ref_ == nullptr ? nullptr : *ref_);
   }
   bool Default() {
     return false;
   }
   bool Null() {
-    ref_ = nullptr;
+    *ref_ = nullptr;
     return true;
   }
   bool Bool(bool value) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).Bool(value);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.Bool(value);
   }
   bool Int(int value) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).Int(value);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.Int(value);
   }
   bool Uint(unsigned value) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).Uint(value);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.Uint(value);
   }
   bool Int64(int64_t value) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).Int64(value);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.Int64(value);
   }
   bool Uint64(uint64_t value) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).Uint64(value);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.Uint64(value);
   }
   bool Double(double value) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).Double(value);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.Double(value);
   }
   bool String(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).String(str, len, copy);
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.String(str, len, copy);
   }
   bool StartObject() {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).StartObject();
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.StartObject();
   }
   bool Key(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
-    return JsonAccessor<T>(*ref_).Key(str, len, copy);
+    return json_accessor_.Key(str, len, copy);
   }
   bool EndObject(::rapidjson::SizeType count) {
-    return JsonAccessor<T>(*ref_).EndObject(count);
+    return json_accessor_.EndObject(count);
   }
   bool StartArray() {
-    ref_ = std::unique_ptr<T>(new T);
-    return JsonAccessor<T>(*ref_).StartArray();
+    if (*ref_ == nullptr) {
+      *ref_ = std::unique_ptr<T>(new T);
+      json_accessor_.Reset(ref_->get());
+    }
+    return json_accessor_.StartArray();
   }
   bool EndArray(::rapidjson::SizeType count) {
-    return JsonAccessor<T>(*ref_).EndObject(count);
+    return json_accessor_.EndObject(count);
   }
-  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {
-    if (ref_ == nullptr) {
+  bool HasContent(unsigned int flags) const {
+    return (flags & json::WRITE_FLAG_WRITE_NULL_VALUES) != 0 || (*ref_ != nullptr && json_accessor_.HasContent(flags));
+  }
+  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!HasContent(flags)) {
+      return;
+    }
+    if (*ref_ == nullptr) {
       writer.Null();
     } else {
-      return JsonAccessor<T>(*ref_).Write(writer);
+      return json_accessor_.Write(writer, flags);
+    }
+  }
+  void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!HasContent(flags)) {
+      return;
+    }
+    if (*ref_ == nullptr) {
+      writer.Null();
+    } else {
+      return json_accessor_.WritePretty(writer, flags);
     }
   }
 
 private:
-  std::unique_ptr<T> &ref_;
+  std::unique_ptr<T> *ref_;
+  JsonAccessor<T> json_accessor_{*ref_ == nullptr ? nullptr : ref_->get()};
 };
 
 template <typename T>
-class JsonAccessor<std::vector<T>>
-    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::vector<T>>> {
+class JsonAccessor<std::list<T>>
+    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::list<T>>> {
 public:
-  JsonAccessor(std::vector<T> &ref) : ref_(ref), array_activated_(false), in_object_(false), in_array_(false) {
+  JsonAccessor(std::list<T> *ref) : ref_(ref) {
+    Reset(ref);
+  }
+  void Reset(std::list<T> *ref) {
+    ref_ = ref;
+    json_accessors_.clear();
+    if (!ref_->empty()) {
+      for (T &item : *ref_) {
+        json_accessors_.push_back(JsonAccessor<T>(&item));
+      }
+    }
   }
   bool Default() {
     return false;
   }
   bool Null() {
     if (!array_activated_) {
-      assert(false && "cannot assign null to type std::vector<...>, please use type std::unique_ptr<std::vector<...>>");
+      assert(false && "cannot assign null to type std::list<...>, please use type std::unique_ptr<std::list<...>>");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Null();
+    return json_accessors_.back().Null();
   }
   bool Bool(bool value) {
     if (!array_activated_) {
-      assert(false && "cannot assign bool value to type std::vector<...>, please use type bool");
+      assert(false && "cannot assign bool value to type std::list<...>, please use type bool");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Bool(value);
+    return json_accessors_.back().Bool(value);
   }
   bool Int(int value) {
     if (!array_activated_) {
-      assert(false && "cannot assign int32 value to type std::vector<...>, please use type int");
+      assert(false && "cannot assign int32 value to type std::list<...>, please use type int");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Int(value);
+    return json_accessors_.back().Int(value);
   }
   bool Uint(unsigned value) {
     if (!array_activated_) {
-      assert(false && "cannot assign uint32 value to type std::vector<...>, please use type unsigned int");
+      assert(false && "cannot assign uint32 value to type std::list<...>, please use type unsigned int");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Uint(value);
+    return json_accessors_.back().Uint(value);
   }
   bool Int64(int64_t value) {
     if (!array_activated_) {
-      assert(false && "cannot assign int64 value to type std::vector<...>, please use type long long");
+      assert(false && "cannot assign int64 value to type std::list<...>, please use type long long");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Int64(value);
+    return json_accessors_.back().Int64(value);
   }
   bool Uint64(uint64_t value) {
     if (!array_activated_) {
-      assert(false && "cannot assign uint64 value to type std::vector<...>, please use type unsigned long long");
+      assert(false && "cannot assign uint64 value to type std::list<...>, please use type unsigned long long");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Uint64(value);
+    return json_accessors_.back().Uint64(value);
   }
   bool Double(double value) {
     if (!array_activated_) {
-      assert(false && "cannot assign double value to type std::vector<...>, please use type double");
+      assert(false && "cannot assign double value to type std::list<...>, please use type double");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).Double(value);
+    return json_accessors_.back().Double(value);
   }
   bool String(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
     if (!array_activated_) {
-      assert(false && "cannot assign string value to type std::vector<...>, please use type string");
+      assert(false && "cannot assign string value to type std::list<...>, please use type string");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).String(str, len, copy);
+    return json_accessors_.back().String(str, len, copy);
   }
   bool StartObject() {
     if (!array_activated_) {
-      assert(false && "cannot assign object value to type std::vector<...>, please use struct");
+      assert(false && "cannot assign object value to type std::list<...>, please use struct");
       return false;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
-      in_object_ = true;
-      return true;
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).StartObject();
+    if (json_accessors_.back().StartObject()) {
+      return false;
+    }
+    ++nest_level_;
+    return true;
   }
   bool Key(const typename JsonAccessor::Ch *str, ::rapidjson::SizeType len, bool copy) {
     if (!array_activated_) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
+    if (nest_level_ == 0) {
+      assert(false);
       return false;
     }
-    return JsonAccessor<T>(ref_.back()).Key(str, len, copy);
+    return json_accessors_.back().Key(str, len, copy);
   }
   bool EndObject(::rapidjson::SizeType count) {
     if (!array_activated_) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
+    if (nest_level_ == 0) {
+      assert(false);
       return false;
     }
-    if (JsonAccessor<T>(*ref_).EndObject(count)) {
-      return true;
-    }
-    if (!in_object_) {
+    if (!json_accessors_.back().EndObject(count)) {
       return false;
     }
-    in_object_ = false;
+    --nest_level_;
     return true;
   }
   bool StartArray() {
@@ -491,106 +610,148 @@ public:
       array_activated_ = true;
       return true;
     }
-    if (!in_object_ && !in_array_) {
-      ref_.push_back(T());
-      in_array_ = true;
-      return true;
+    if (nest_level_ == 0) {
+      ref_->push_back(T());
+      json_accessors_.push_back({&ref_->back()});
     }
-    return JsonAccessor<T>(ref_.back()).StartArray();
+    if (!json_accessors_.back().StartArray()) {
+      return false;
+    }
+    ++nest_level_;
+    return true;
   }
   bool EndArray(::rapidjson::SizeType count) {
     if (!array_activated_) {
       return false;
     }
-    if (!in_object_ && !in_array_) {
+    if (nest_level_ == 0) {
       array_activated_ = false;
       return true;
     }
-    if (JsonAccessor<T>(*ref_).EndArray(count)) {
-      return true;
-    }
-    if (!in_array_) {
+    if (!json_accessors_.back().EndArray(count)) {
       return false;
     }
-    in_array_ = false;
+    --nest_level_;
     return true;
   }
-  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {
-    writer.StartArray();
-    for (const auto &item : ref_) {
-      xl::JsonAccessor<T>(item).Write(writer);
+  bool HasContent(unsigned int flags) const {
+    return (flags & json::WRITE_FLAG_WRITE_EMPTY_ARRAY) != 0 || !ref_->empty();
+  }
+  void Write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!HasContent(flags)) {
+      return;
     }
-    writer.EndArray(ref_.size());
+    writer.StartArray();
+    for (JsonAccessor<T> &accessor : json_accessors_) {
+      accessor.Write(writer, flags);
+    }
+    writer.EndArray(rapidjson::SizeType(ref_->size()));
+  }
+  void WritePretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!HasContent(flags)) {
+      return;
+    }
+    writer.StartArray();
+    for (JsonAccessor<T> &accessor : json_accessors_) {
+      accessor.WritePretty(writer, flags);
+    }
+    writer.EndArray(rapidjson::SizeType(ref_->size()));
   }
 
 private:
-  std::vector<T> &ref_;
+  std::list<T> *ref_;
+  std::list<JsonAccessor<T>> json_accessors_;
   bool array_activated_ = false;
-  bool in_object_ = false;
-  bool in_array_ = false;
+  int nest_level_ = 0;
 };
 
 } // namespace xl
 
+#define XL_JSON_BEGIN_NO_REFLECT(struct_type)                                                                          \
+private:                                                                                                               \
+  template <typename T, size_t Index>                                                                                  \
+  struct FieldJsonAccessorT;                                                                                           \
+                                                                                                                       \
+public:                                                                                                                \
+  template <size_t Index>                                                                                              \
+  using FieldJsonAccessor = FieldJsonAccessorT<struct_type, Index>;
+
 #define XL_JSON_BEGIN(struct_type)                                                                                     \
   XL_REFLECT_BEGIN(struct_type)                                                                                        \
-    template <typename T, size_t Index>                                                                                \
-    struct FieldJsonAccessorT;                                                                                         \
-    template <size_t Index>                                                                                            \
-    using FieldJsonAccessor = FieldJsonAccessorT<Type, Index>;
+    XL_JSON_BEGIN_NO_REFLECT(struct_type)
 
-#define XL_JSON_MEMBER(field_type, field_name)                                                                         \
-  XL_REFLECT_MEMBER(field_type, field_name)                                                                            \
+#define XL_JSON_MEMBER_NO_REFLECT(field_type, field_name)                                                              \
+private:                                                                                                               \
+  ::xl::JsonAccessor<field_type> json_accessor_##field_name{&field_name};                                              \
   template <typename T>                                                                                                \
   struct FieldJsonAccessorT<T, SEQUENCE_##field_name - SEQUENCE - 1> {                                                 \
     static bool Null(Type &ref) {                                                                                      \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Null();                                                    \
+      return ref.json_accessor_##field_name.Null();                                                                    \
     }                                                                                                                  \
     static bool Bool(Type &ref, bool value) {                                                                          \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Bool(value);                                               \
+      return ref.json_accessor_##field_name.Bool(value);                                                               \
     }                                                                                                                  \
     static bool Int(Type &ref, int value) {                                                                            \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Int(value);                                                \
+      return ref.json_accessor_##field_name.Int(value);                                                                \
     }                                                                                                                  \
     static bool Uint(Type &ref, unsigned value) {                                                                      \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Uint(value);                                               \
+      return ref.json_accessor_##field_name.Uint(value);                                                               \
     }                                                                                                                  \
     static bool Int64(Type &ref, int64_t value) {                                                                      \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Int64(value);                                              \
+      return ref.json_accessor_##field_name.Int64(value);                                                              \
     }                                                                                                                  \
     static bool Uint64(Type &ref, uint64_t value) {                                                                    \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Uint64(value);                                             \
+      return ref.json_accessor_##field_name.Uint64(value);                                                             \
     }                                                                                                                  \
     static bool Double(Type &ref, double value) {                                                                      \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Double(value);                                             \
+      return ref.json_accessor_##field_name.Double(value);                                                             \
     }                                                                                                                  \
     static bool                                                                                                        \
     String(Type &ref, const typename ::xl::JsonAccessor<field_type>::Ch *str, ::rapidjson::SizeType len, bool copy) {  \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).String(str, len, copy);                                    \
+      return ref.json_accessor_##field_name.String(str, len, copy);                                                    \
     }                                                                                                                  \
     static bool StartObject(Type &ref) {                                                                               \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).StartObject();                                             \
+      return ref.json_accessor_##field_name.StartObject();                                                             \
     }                                                                                                                  \
     static bool                                                                                                        \
     Key(Type &ref, const typename ::xl::JsonAccessor<field_type>::Ch *str, ::rapidjson::SizeType len, bool copy) {     \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Key(str, len, copy);                                       \
+      return ref.json_accessor_##field_name.Key(str, len, copy);                                                       \
     }                                                                                                                  \
     static bool EndObject(Type &ref, ::rapidjson::SizeType count) {                                                    \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).EndObject(count);                                          \
+      return ref.json_accessor_##field_name.EndObject(count);                                                          \
     }                                                                                                                  \
     static bool StartArray(Type &ref) {                                                                                \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).StartArray();                                              \
+      return ref.json_accessor_##field_name.StartArray();                                                              \
     }                                                                                                                  \
     static bool EndArray(Type &ref, ::rapidjson::SizeType count) {                                                     \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).EndArray(count);                                           \
+      return ref.json_accessor_##field_name.EndArray(count);                                                           \
     }                                                                                                                  \
-    static void Write(Type &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {                             \
+    static bool HasContent(Type &ref, unsigned int flags) {                                                            \
+      return ref.json_accessor_##field_name.HasContent(flags);                                                         \
+    }                                                                                                                  \
+    static void Write(Type &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
+      if (!HasContent(ref, flags)) {                                                                                   \
+        return;                                                                                                        \
+      }                                                                                                                \
       writer.Key(#field_name, rapidjson::SizeType(strlen(#field_name)), false);                                        \
-      return ::xl::JsonAccessor<field_type>(ref.field_name).Write(writer);                                             \
+      ref.json_accessor_##field_name.Write(writer, flags);                                                             \
+    }                                                                                                                  \
+    static void                                                                                                        \
+    WritePretty(Type &ref, ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
+      if (!HasContent(ref, flags)) {                                                                                   \
+        return;                                                                                                        \
+      }                                                                                                                \
+      writer.Key(#field_name, rapidjson::SizeType(strlen(#field_name)), false);                                        \
+      ref.json_accessor_##field_name.WritePretty(writer, flags);                                                       \
     }                                                                                                                  \
   };
 
-#define XL_JSON_END()                                                                                                  \
+#define XL_JSON_MEMBER(field_type, field_name)                                                                         \
+  XL_REFLECT_MEMBER(field_type, field_name)                                                                            \
+  XL_JSON_MEMBER_NO_REFLECT(field_type, field_name)
+
+#define XL_JSON_END_NO_REFLECT()                                                                                       \
+private:                                                                                                               \
   template <size_t Begin, size_t End>                                                                                  \
   struct FieldsJsonAccessorWalker {                                                                                    \
     static bool Null(Type &ref, size_t index) {                                                                        \
@@ -692,9 +853,20 @@ private:
         return FieldsJsonAccessorWalker<Begin + 1, End>::EndArray(ref, index, count);                                  \
       }                                                                                                                \
     }                                                                                                                  \
-    static void Write(Type &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {                             \
-      FieldJsonAccessor<Begin>::Write(ref, writer);                                                                    \
-      FieldsJsonAccessorWalker<Begin + 1, End>::Write(ref, writer);                                                    \
+    static bool HasContent(Type &ref, unsigned int flags) {                                                            \
+      if (FieldJsonAccessor<Begin>::HasContent(ref, flags)) {                                                          \
+        return true;                                                                                                   \
+      }                                                                                                                \
+      return FieldsJsonAccessorWalker<Begin + 1, End>::HasContent(ref, flags);                                         \
+    }                                                                                                                  \
+    static void Write(Type &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
+      FieldJsonAccessor<Begin>::Write(ref, writer, flags);                                                             \
+      FieldsJsonAccessorWalker<Begin + 1, End>::Write(ref, writer, flags);                                             \
+    }                                                                                                                  \
+    static void                                                                                                        \
+    WritePretty(Type &ref, ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
+      FieldJsonAccessor<Begin>::WritePretty(ref, writer, flags);                                                       \
+      FieldsJsonAccessorWalker<Begin + 1, End>::WritePretty(ref, writer, flags);                                       \
     }                                                                                                                  \
   };                                                                                                                   \
   template <size_t Index>                                                                                              \
@@ -746,7 +918,13 @@ private:
     static bool EndArray(Type &ref, size_t index, ::rapidjson::SizeType count) {                                       \
       return false;                                                                                                    \
     }                                                                                                                  \
-    static void Write(Type &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {                             \
+    static bool HasContent(Type &ref, unsigned int flags) {                                                            \
+      return false;                                                                                                    \
+    }                                                                                                                  \
+    static void Write(Type &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
+    }                                                                                                                  \
+    static void                                                                                                        \
+    WritePretty(Type &ref, ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
     }                                                                                                                  \
   };                                                                                                                   \
                                                                                                                        \
@@ -793,9 +971,17 @@ private:                                                                        
   bool json_field_array_end(size_t index, ::rapidjson::SizeType count) {                                               \
     return FieldsJsonAccessorWalker<0, FIELDS>::EndArray(*this, index, count);                                         \
   }                                                                                                                    \
-  void json_write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer) {                                            \
+  bool json_has_content(unsigned int flags) {                                                                          \
+    return FieldsJsonAccessorWalker<0, FIELDS>::HasContent(*this, flags);                                              \
+  }                                                                                                                    \
+  void json_write(::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {                        \
     writer.StartObject();                                                                                              \
-    FieldsJsonAccessorWalker<0, FIELDS>::Write(*this, writer);                                                         \
+    FieldsJsonAccessorWalker<0, FIELDS>::Write(*this, writer, flags);                                                  \
+    writer.EndObject(FIELDS);                                                                                          \
+  }                                                                                                                    \
+  void json_write_pretty(::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer, unsigned int flags) {           \
+    writer.StartObject();                                                                                              \
+    FieldsJsonAccessorWalker<0, FIELDS>::WritePretty(*this, writer, flags);                                            \
     writer.EndObject(FIELDS);                                                                                          \
   }                                                                                                                    \
                                                                                                                        \
@@ -803,15 +989,26 @@ public:                                                                         
   bool json_parse(const char *json) {                                                                                  \
     ::rapidjson::StringStream ss(json);                                                                                \
     ::rapidjson::Reader reader;                                                                                        \
-    ::xl::JsonAccessor<Type> handler(*this);                                                                           \
-    ::rapidjson::ParseResult pr = reader.Parse(ss, handler);                                                           \
+    ::xl::JsonAccessor<Type> handler(this);                                                                            \
+    ::rapidjson::ParseResult pr =                                                                                      \
+        reader.Parse<::rapidjson::kParseFullPrecisionFlag | ::rapidjson::kParseCommentsFlag |                          \
+                     ::rapidjson::kParseTrailingCommasFlag>(ss, handler);                                              \
     return pr;                                                                                                         \
   }                                                                                                                    \
-  std::string json_dump() {                                                                                            \
+  std::string json_dump(bool pretty = false, unsigned int flags = ::xl::json::WRITE_FLAG_NONE) {                       \
     ::rapidjson::StringBuffer sb;                                                                                      \
-    ::rapidjson::Writer<::rapidjson::StringBuffer> writer(sb);                                                         \
-    json_write(writer);                                                                                                \
+    if (pretty) {                                                                                                      \
+      ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> writer(sb);                                                 \
+      json_write_pretty(writer, flags);                                                                                \
+    } else {                                                                                                           \
+      ::rapidjson::Writer<::rapidjson::StringBuffer> writer(sb);                                                       \
+      json_write(writer, flags);                                                                                       \
+    }                                                                                                                  \
     return sb.GetString();                                                                                             \
-  }                                                                                                                    \
+  }
+
+#define XL_JSON_END()                                                                                                  \
+  XL_JSON_END_NO_REFLECT                                                                                               \
+  ()                                                                                                                   \
   XL_REFLECT_END                                                                                                       \
   ()

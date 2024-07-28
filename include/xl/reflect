@@ -11,15 +11,21 @@
 
 #define XL_REFLECT_BEGIN(struct_type)                                                                                  \
   struct struct_type {                                                                                                 \
+  private:                                                                                                             \
     template <typename T, size_t Index>                                                                                \
     struct FieldT;                                                                                                     \
     typedef struct_type Type;                                                                                          \
     static const size_t SEQUENCE = __COUNTER__;                                                                        \
+                                                                                                                       \
+  public:                                                                                                              \
     template <size_t Index>                                                                                            \
     using Field = FieldT<Type, Index>;
 
 #define XL_REFLECT_MEMBER(field_type, field_name)                                                                      \
+public:                                                                                                                \
   field_type field_name;                                                                                               \
+                                                                                                                       \
+private:                                                                                                               \
   static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
   template <typename T>                                                                                                \
   struct FieldT<T, SEQUENCE_##field_name - SEQUENCE - 1> {                                                             \
@@ -41,10 +47,13 @@
   };
 
 #define XL_REFLECT_END()                                                                                               \
+public:                                                                                                                \
   static const size_t FIELDS = __COUNTER__ - SEQUENCE - 1;                                                             \
   static size_t fields() {                                                                                             \
     return FIELDS;                                                                                                     \
   }                                                                                                                    \
+                                                                                                                       \
+private:                                                                                                               \
   template <size_t Begin, size_t End>                                                                                  \
   struct FieldsWalker {                                                                                                \
     static const std::type_info &field_type(size_t index) {                                                            \
@@ -134,6 +143,8 @@
       return nullptr;                                                                                                  \
     }                                                                                                                  \
   };                                                                                                                   \
+                                                                                                                       \
+public:                                                                                                                \
   static const std::type_info &field_type(size_t index) {                                                              \
     return FieldsWalker<0, FIELDS>::field_type(index);                                                                 \
   }                                                                                                                    \

@@ -389,6 +389,14 @@ const char *NULL_ARRAY_VALUES_JSON = R"({
     "stringArray": null
 })";
 
+const char *HALF_NULL_ARRAY_VALUES_JSON = R"({
+    "intArray": null,
+    "stringArray": [
+        "a",
+        "b"
+    ]
+})";
+
 TEST(json_test, nullable_array_values) {
   {
     NullableArrayValues json;
@@ -429,12 +437,41 @@ TEST(json_test, nullable_array_values) {
               NULL_ARRAY_VALUES_JSON);
     ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(NULL_ARRAY_VALUES_JSON));
   }
+  {
+    NullableArrayValues json;
+    ASSERT_EQ(json.json_parse(HALF_NULL_ARRAY_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, nullptr);
+    ASSERT_EQ(*json.stringArray, (std::list<std::string>{"a", "b"}));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), R"({
+    "stringArray": [
+        "a",
+        "b"
+    ]
+})");
+    ASSERT_EQ(json.json_dump(), remove_blanks(R"({
+    "stringArray": [
+        "a",
+        "b"
+    ]
+})"));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | ::xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_ARRAY_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(HALF_NULL_ARRAY_VALUES_JSON));
+  }
 }
 
 XL_JSON_BEGIN(NullbleArrayNullableValues)
   XL_JSON_MEMBER(std::unique_ptr<std::list<std::unique_ptr<int>>>, intArray)
   XL_JSON_MEMBER(std::unique_ptr<std::list<std::unique_ptr<std::string>>>, stringArray)
 XL_JSON_END()
+
+const char *HALF_NULL_ARRAY_HALF_NULL_VALUES_JSON = R"({
+    "intArray": null,
+    "stringArray": [
+        null,
+        "b"
+    ]
+})";
 
 TEST(json_test, nullable_array_nullble_values) {
   {
@@ -512,4 +549,93 @@ TEST(json_test, nullable_array_nullble_values) {
               NULL_ARRAY_VALUES_JSON);
     ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(NULL_ARRAY_VALUES_JSON));
   }
+  {
+    NullbleArrayNullableValues json;
+    ASSERT_EQ(json.json_parse(HALF_NULL_ARRAY_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, nullptr);
+    {
+      auto it = json.stringArray->begin();
+      ASSERT_EQ(**it++, "a");
+      ASSERT_EQ(**it++, "b");
+    }
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), R"({
+    "stringArray": [
+        "a",
+        "b"
+    ]
+})");
+    ASSERT_EQ(json.json_dump(), remove_blanks(R"({
+    "stringArray": [
+        "a",
+        "b"
+    ]
+})"));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | ::xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_ARRAY_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(HALF_NULL_ARRAY_VALUES_JSON));
+  }
+  {
+    NullbleArrayNullableValues json;
+    ASSERT_EQ(json.json_parse(HALF_NULL_ARRAY_HALF_NULL_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, nullptr);
+    {
+      auto it = json.stringArray->begin();
+      ASSERT_EQ(*it++, nullptr);
+      ASSERT_EQ(**it++, "b");
+    }
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), R"({
+    "stringArray": [
+        null,
+        "b"
+    ]
+})");
+    ASSERT_EQ(json.json_dump(), remove_blanks(R"({
+    "stringArray": [
+        null,
+        "b"
+    ]
+})"));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | ::xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_ARRAY_HALF_NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              remove_blanks(HALF_NULL_ARRAY_HALF_NULL_VALUES_JSON));
+  }
+}
+
+XL_JSON_BEGIN(SimpleObject)
+  XL_JSON_MEMBER(int, intValue)
+XL_JSON_END()
+
+XL_JSON_BEGIN(NestObjectValues)
+  XL_JSON_MEMBER(SimpleObject, nestObject)
+  XL_JSON_MEMBER(std::unique_ptr<SimpleObject>, nestNullableObject)
+  XL_JSON_MEMBER(std::list<SimpleObject>, nestObjectArray)
+XL_JSON_END()
+
+const char *NEST_OBJECT_JSON = R"({
+    "nestObject": {
+        "intValue": 123
+    },
+    "nestNullableObject": {
+        "intValue": 456
+    },
+    "nestObjectArray": [
+        {
+            "intValue": 789
+        },
+        {
+            "intValue": 10
+        }
+    ]
+})";
+
+TEST(json_test, nest_object_values) {
+  NestObjectValues json;
+  ASSERT_EQ(json.json_parse(NEST_OBJECT_JSON), true);
+  ASSERT_EQ(json.nestObject.intValue, 123);
+  ASSERT_EQ(json.nestNullableObject->intValue, 456);
+  ASSERT_EQ(json.nestObjectArray.front().intValue, 789);
+  ASSERT_EQ(json.nestObjectArray.back().intValue, 10);
+  ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), NEST_OBJECT_JSON);
+  ASSERT_EQ(json.json_dump(), remove_blanks(NEST_OBJECT_JSON));
 }

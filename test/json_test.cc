@@ -29,6 +29,27 @@ XL_JSON_BEGIN(SingleValues)
   XL_JSON_MEMBER(std::string, stringValue)
 XL_JSON_END()
 
+#if __cplusplus >= 201703L
+
+XL_JSON_BEGIN(SingleValuesStringView)
+  XL_JSON_MEMBER(bool, boolValue)
+  XL_JSON_MEMBER(char, charValue)
+  XL_JSON_MEMBER(unsigned char, ucharValue)
+  XL_JSON_MEMBER(short, shortValue)
+  XL_JSON_MEMBER(unsigned short, ushortValue)
+  XL_JSON_MEMBER(int, intValue)
+  XL_JSON_MEMBER(unsigned int, uintValue)
+  XL_JSON_MEMBER(long, longValue)
+  XL_JSON_MEMBER(unsigned long, ulongValue)
+  XL_JSON_MEMBER(long long, llongValue)
+  XL_JSON_MEMBER(unsigned long long, ullongValue)
+  XL_JSON_MEMBER(float, floatValue)
+  XL_JSON_MEMBER(double, doubleValue)
+  XL_JSON_MEMBER(std::string_view, stringValue)
+XL_JSON_END()
+
+#endif
+
 const char *SILNGLE_VALUES_JSON = R"({
     "boolValue": true,
     "charValue": -1,
@@ -67,6 +88,31 @@ TEST(json_test, single_values) {
   ASSERT_EQ(json.json_dump(), remove_blanks(SILNGLE_VALUES_JSON));
 }
 
+#if __cplusplus >= 201703L
+
+TEST(json_test, single_values_string_view) {
+  SingleValues json;
+  ASSERT_EQ(json.json_parse(SILNGLE_VALUES_JSON), true);
+  ASSERT_EQ(json.boolValue, true);
+  ASSERT_EQ(json.charValue, -1);
+  ASSERT_EQ(json.ucharValue, 2);
+  ASSERT_EQ(json.shortValue, -3);
+  ASSERT_EQ(json.ushortValue, 4);
+  ASSERT_EQ(json.intValue, -5);
+  ASSERT_EQ(json.uintValue, 6);
+  ASSERT_EQ(json.longValue, -7);
+  ASSERT_EQ(json.ulongValue, 8);
+  ASSERT_EQ(json.llongValue, -9);
+  ASSERT_EQ(json.ullongValue, 10);
+  ASSERT_EQ(json.floatValue, 1.5);
+  ASSERT_EQ(json.doubleValue, 2.25);
+  ASSERT_EQ(json.stringValue, "s");
+  ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
+  ASSERT_EQ(json.json_dump(), remove_blanks(SILNGLE_VALUES_JSON));
+}
+
+#endif
+
 XL_JSON_BEGIN(NullableValues)
   XL_JSON_MEMBER(std::unique_ptr<bool>, boolValue)
   XL_JSON_MEMBER(std::unique_ptr<char>, charValue)
@@ -83,6 +129,44 @@ XL_JSON_BEGIN(NullableValues)
   XL_JSON_MEMBER(std::unique_ptr<double>, doubleValue)
   XL_JSON_MEMBER(std::unique_ptr<std::string>, stringValue)
 XL_JSON_END()
+
+XL_JSON_BEGIN(NullableValuesShared)
+  XL_JSON_MEMBER(std::shared_ptr<bool>, boolValue)
+  XL_JSON_MEMBER(std::shared_ptr<char>, charValue)
+  XL_JSON_MEMBER(std::shared_ptr<unsigned char>, ucharValue)
+  XL_JSON_MEMBER(std::shared_ptr<short>, shortValue)
+  XL_JSON_MEMBER(std::shared_ptr<unsigned short>, ushortValue)
+  XL_JSON_MEMBER(std::shared_ptr<int>, intValue)
+  XL_JSON_MEMBER(std::shared_ptr<unsigned int>, uintValue)
+  XL_JSON_MEMBER(std::shared_ptr<long>, longValue)
+  XL_JSON_MEMBER(std::shared_ptr<unsigned long>, ulongValue)
+  XL_JSON_MEMBER(std::shared_ptr<long long>, llongValue)
+  XL_JSON_MEMBER(std::shared_ptr<unsigned long long>, ullongValue)
+  XL_JSON_MEMBER(std::shared_ptr<float>, floatValue)
+  XL_JSON_MEMBER(std::shared_ptr<double>, doubleValue)
+  XL_JSON_MEMBER(std::shared_ptr<std::string>, stringValue)
+XL_JSON_END()
+
+#if __cplusplus >= 201703L
+
+XL_JSON_BEGIN(NullableValuesOptional)
+  XL_JSON_MEMBER(std::optional<bool>, boolValue)
+  XL_JSON_MEMBER(std::optional<char>, charValue)
+  XL_JSON_MEMBER(std::optional<unsigned char>, ucharValue)
+  XL_JSON_MEMBER(std::optional<short>, shortValue)
+  XL_JSON_MEMBER(std::optional<unsigned short>, ushortValue)
+  XL_JSON_MEMBER(std::optional<int>, intValue)
+  XL_JSON_MEMBER(std::optional<unsigned int>, uintValue)
+  XL_JSON_MEMBER(std::optional<long>, longValue)
+  XL_JSON_MEMBER(std::optional<unsigned long>, ulongValue)
+  XL_JSON_MEMBER(std::optional<long long>, llongValue)
+  XL_JSON_MEMBER(std::optional<unsigned long long>, ullongValue)
+  XL_JSON_MEMBER(std::optional<float>, floatValue)
+  XL_JSON_MEMBER(std::optional<double>, doubleValue)
+  XL_JSON_MEMBER(std::optional<std::string>, stringValue)
+XL_JSON_END()
+
+#endif
 
 const char *NULL_VALUES_JSON = R"({
     "boolValue": null,
@@ -243,6 +327,236 @@ TEST(json_test, nullable_values) {
     ASSERT_EQ(json.json_dump(), remove_blanks(SILNGLE_VALUES_JSON));
   }
 }
+
+TEST(json_test, nullable_values_shared) {
+  {
+    NullableValuesShared json;
+    ASSERT_EQ(json.json_parse(EMPTY_JSON), true);
+    ASSERT_EQ(json.boolValue, nullptr);
+    ASSERT_EQ(json.charValue, nullptr);
+    ASSERT_EQ(json.ucharValue, nullptr);
+    ASSERT_EQ(json.shortValue, nullptr);
+    ASSERT_EQ(json.ushortValue, nullptr);
+    ASSERT_EQ(json.intValue, nullptr);
+    ASSERT_EQ(json.uintValue, nullptr);
+    ASSERT_EQ(json.longValue, nullptr);
+    ASSERT_EQ(json.ulongValue, nullptr);
+    ASSERT_EQ(json.llongValue, nullptr);
+    ASSERT_EQ(json.ullongValue, nullptr);
+    ASSERT_EQ(json.floatValue, nullptr);
+    ASSERT_EQ(json.doubleValue, nullptr);
+    ASSERT_EQ(json.stringValue, nullptr);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES), NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesShared json;
+    ASSERT_EQ(json.json_parse(NULL_VALUES_JSON), true);
+    ASSERT_EQ(json.boolValue, nullptr);
+    ASSERT_EQ(json.charValue, nullptr);
+    ASSERT_EQ(json.ucharValue, nullptr);
+    ASSERT_EQ(json.shortValue, nullptr);
+    ASSERT_EQ(json.ushortValue, nullptr);
+    ASSERT_EQ(json.intValue, nullptr);
+    ASSERT_EQ(json.uintValue, nullptr);
+    ASSERT_EQ(json.longValue, nullptr);
+    ASSERT_EQ(json.ulongValue, nullptr);
+    ASSERT_EQ(json.llongValue, nullptr);
+    ASSERT_EQ(json.ullongValue, nullptr);
+    ASSERT_EQ(json.floatValue, nullptr);
+    ASSERT_EQ(json.doubleValue, nullptr);
+    ASSERT_EQ(json.stringValue, nullptr);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES), NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesShared json;
+    ASSERT_EQ(json.json_parse(HALF_MISSING_VALUES_JSON), true);
+    ASSERT_EQ(*json.boolValue, true);
+    ASSERT_EQ(json.charValue, nullptr);
+    ASSERT_EQ(json.ucharValue, nullptr);
+    ASSERT_EQ(json.shortValue, nullptr);
+    ASSERT_EQ(json.ushortValue, nullptr);
+    ASSERT_EQ(*json.intValue, -5);
+    ASSERT_EQ(*json.uintValue, 6);
+    ASSERT_EQ(*json.longValue, -7);
+    ASSERT_EQ(*json.ulongValue, 8);
+    ASSERT_EQ(*json.llongValue, -9);
+    ASSERT_EQ(*json.ullongValue, 10);
+    ASSERT_EQ(*json.floatValue, 1.5);
+    ASSERT_EQ(*json.doubleValue, 2.25);
+    ASSERT_EQ(*json.stringValue, "s");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), HALF_MISSING_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(HALF_MISSING_VALUES_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(HALF_NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesShared json;
+    ASSERT_EQ(json.json_parse(HALF_NULL_VALUES_JSON), true);
+    ASSERT_EQ(*json.boolValue, true);
+    ASSERT_EQ(json.charValue, nullptr);
+    ASSERT_EQ(json.ucharValue, nullptr);
+    ASSERT_EQ(json.shortValue, nullptr);
+    ASSERT_EQ(json.ushortValue, nullptr);
+    ASSERT_EQ(*json.intValue, -5);
+    ASSERT_EQ(*json.uintValue, 6);
+    ASSERT_EQ(*json.longValue, -7);
+    ASSERT_EQ(*json.ulongValue, 8);
+    ASSERT_EQ(*json.llongValue, -9);
+    ASSERT_EQ(*json.ullongValue, 10);
+    ASSERT_EQ(*json.floatValue, 1.5);
+    ASSERT_EQ(*json.doubleValue, 2.25);
+    ASSERT_EQ(*json.stringValue, "s");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), HALF_MISSING_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(HALF_MISSING_VALUES_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(HALF_NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesShared json;
+    ASSERT_EQ(json.json_parse(SILNGLE_VALUES_JSON), true);
+    ASSERT_EQ(*json.boolValue, true);
+    ASSERT_EQ(*json.charValue, -1);
+    ASSERT_EQ(*json.ucharValue, 2);
+    ASSERT_EQ(*json.shortValue, -3);
+    ASSERT_EQ(*json.ushortValue, 4);
+    ASSERT_EQ(*json.intValue, -5);
+    ASSERT_EQ(*json.uintValue, 6);
+    ASSERT_EQ(*json.longValue, -7);
+    ASSERT_EQ(*json.ulongValue, 8);
+    ASSERT_EQ(*json.llongValue, -9);
+    ASSERT_EQ(*json.ullongValue, 10);
+    ASSERT_EQ(*json.floatValue, 1.5);
+    ASSERT_EQ(*json.doubleValue, 2.25);
+    ASSERT_EQ(*json.stringValue, "s");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(SILNGLE_VALUES_JSON));
+  }
+}
+
+#if __cplusplus >= 201703L
+
+TEST(json_test, nullable_values_optional) {
+  {
+    NullableValuesOptional json;
+    ASSERT_EQ(json.json_parse(EMPTY_JSON), true);
+    ASSERT_EQ(json.boolValue.has_value(), false);
+    ASSERT_EQ(json.charValue.has_value(), false);
+    ASSERT_EQ(json.ucharValue.has_value(), false);
+    ASSERT_EQ(json.shortValue.has_value(), false);
+    ASSERT_EQ(json.ushortValue.has_value(), false);
+    ASSERT_EQ(json.intValue.has_value(), false);
+    ASSERT_EQ(json.uintValue.has_value(), false);
+    ASSERT_EQ(json.longValue.has_value(), false);
+    ASSERT_EQ(json.ulongValue.has_value(), false);
+    ASSERT_EQ(json.llongValue.has_value(), false);
+    ASSERT_EQ(json.ullongValue.has_value(), false);
+    ASSERT_EQ(json.floatValue.has_value(), false);
+    ASSERT_EQ(json.doubleValue.has_value(), false);
+    ASSERT_EQ(json.stringValue.has_value(), false);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES), NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesOptional json;
+    ASSERT_EQ(json.json_parse(NULL_VALUES_JSON), true);
+    ASSERT_EQ(json.boolValue.has_value(), false);
+    ASSERT_EQ(json.charValue.has_value(), false);
+    ASSERT_EQ(json.ucharValue.has_value(), false);
+    ASSERT_EQ(json.shortValue.has_value(), false);
+    ASSERT_EQ(json.ushortValue.has_value(), false);
+    ASSERT_EQ(json.intValue.has_value(), false);
+    ASSERT_EQ(json.uintValue.has_value(), false);
+    ASSERT_EQ(json.longValue.has_value(), false);
+    ASSERT_EQ(json.ulongValue.has_value(), false);
+    ASSERT_EQ(json.llongValue.has_value(), false);
+    ASSERT_EQ(json.ullongValue.has_value(), false);
+    ASSERT_EQ(json.floatValue.has_value(), false);
+    ASSERT_EQ(json.doubleValue.has_value(), false);
+    ASSERT_EQ(json.stringValue.has_value(), false);
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES), NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesOptional json;
+    ASSERT_EQ(json.json_parse(HALF_MISSING_VALUES_JSON), true);
+    ASSERT_EQ(*json.boolValue, true);
+    ASSERT_EQ(json.charValue.has_value(), false);
+    ASSERT_EQ(json.ucharValue.has_value(), false);
+    ASSERT_EQ(json.shortValue.has_value(), false);
+    ASSERT_EQ(json.ushortValue.has_value(), false);
+    ASSERT_EQ(*json.intValue, -5);
+    ASSERT_EQ(*json.uintValue, 6);
+    ASSERT_EQ(*json.longValue, -7);
+    ASSERT_EQ(*json.ulongValue, 8);
+    ASSERT_EQ(*json.llongValue, -9);
+    ASSERT_EQ(*json.ullongValue, 10);
+    ASSERT_EQ(*json.floatValue, 1.5);
+    ASSERT_EQ(*json.doubleValue, 2.25);
+    ASSERT_EQ(*json.stringValue, "s");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), HALF_MISSING_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(HALF_MISSING_VALUES_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(HALF_NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesOptional json;
+    ASSERT_EQ(json.json_parse(HALF_NULL_VALUES_JSON), true);
+    ASSERT_EQ(*json.boolValue, true);
+    ASSERT_EQ(json.charValue.has_value(), false);
+    ASSERT_EQ(json.ucharValue.has_value(), false);
+    ASSERT_EQ(json.shortValue.has_value(), false);
+    ASSERT_EQ(json.ushortValue.has_value(), false);
+    ASSERT_EQ(*json.intValue, -5);
+    ASSERT_EQ(*json.uintValue, 6);
+    ASSERT_EQ(*json.longValue, -7);
+    ASSERT_EQ(*json.ulongValue, 8);
+    ASSERT_EQ(*json.llongValue, -9);
+    ASSERT_EQ(*json.ullongValue, 10);
+    ASSERT_EQ(*json.floatValue, 1.5);
+    ASSERT_EQ(*json.doubleValue, 2.25);
+    ASSERT_EQ(*json.stringValue, "s");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), HALF_MISSING_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(HALF_MISSING_VALUES_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES),
+              HALF_NULL_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(HALF_NULL_VALUES_JSON));
+  }
+  {
+    NullableValuesOptional json;
+    ASSERT_EQ(json.json_parse(SILNGLE_VALUES_JSON), true);
+    ASSERT_EQ(*json.boolValue, true);
+    ASSERT_EQ(*json.charValue, -1);
+    ASSERT_EQ(*json.ucharValue, 2);
+    ASSERT_EQ(*json.shortValue, -3);
+    ASSERT_EQ(*json.ushortValue, 4);
+    ASSERT_EQ(*json.intValue, -5);
+    ASSERT_EQ(*json.uintValue, 6);
+    ASSERT_EQ(*json.longValue, -7);
+    ASSERT_EQ(*json.ulongValue, 8);
+    ASSERT_EQ(*json.llongValue, -9);
+    ASSERT_EQ(*json.ullongValue, 10);
+    ASSERT_EQ(*json.floatValue, 1.5);
+    ASSERT_EQ(*json.doubleValue, 2.25);
+    ASSERT_EQ(*json.stringValue, "s");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(SILNGLE_VALUES_JSON));
+  }
+}
+
+#endif
 
 XL_JSON_BEGIN(ArrayValues)
   XL_JSON_MEMBER(std::vector<int>, intArray)
@@ -648,4 +962,87 @@ TEST(json_test, copy_and_move) {
   ASSERT_EQ(json2.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
   SingleValues json3 = std::move(json2);
   ASSERT_EQ(json3.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
+}
+
+XL_JSON_BEGIN(ArrayValuesForListSet)
+  XL_JSON_MEMBER(std::list<int>, intArray)
+  XL_JSON_MEMBER(std::set<std::string>, stringArray)
+XL_JSON_END()
+
+XL_JSON_BEGIN(ArrayValuesForListHashSet)
+  XL_JSON_MEMBER(std::list<int>, intArray)
+  XL_JSON_MEMBER(std::unordered_set<std::string>, stringArray)
+XL_JSON_END()
+
+TEST(json_test, array_values_for_list_set) {
+  {
+    ArrayValuesForListSet json;
+    ASSERT_EQ(json.json_parse(ARRAY_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, (std::list<int>{1, 2, 3}));
+    ASSERT_EQ(json.stringArray, (std::set<std::string>{"a", "b", "c"}));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), ARRAY_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(ARRAY_VALUES_JSON));
+  }
+  {
+    ArrayValuesForListSet json;
+    ASSERT_EQ(json.json_parse(EMPTY_ARRAY_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, (std::list<int>{}));
+    ASSERT_EQ(json.stringArray, (std::set<std::string>{}));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_ARRAY_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_ARRAY_VALUES_JSON));
+  }
+  {
+    ArrayValuesForListHashSet json;
+    ASSERT_EQ(json.json_parse(ARRAY_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, (std::list<int>{1, 2, 3}));
+    ASSERT_EQ(json.stringArray, (std::unordered_set<std::string>{"a", "b", "c"}));
+  }
+  {
+    ArrayValuesForListHashSet json;
+    ASSERT_EQ(json.json_parse(EMPTY_ARRAY_VALUES_JSON), true);
+    ASSERT_EQ(json.intArray, (std::list<int>{}));
+    ASSERT_EQ(json.stringArray, (std::unordered_set<std::string>{}));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_ARRAY_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_ARRAY_VALUES_JSON));
+  }
+}
+
+typedef std::map<std::string, int> StringIntMap;
+XL_JSON_BEGIN(MapValues)
+  XL_JSON_MEMBER(StringIntMap, mapValues)
+XL_JSON_END()
+typedef std::unordered_map<std::string, int> StringIntHashMap;
+XL_JSON_BEGIN(HashMapValues)
+  XL_JSON_MEMBER(StringIntHashMap, mapValues)
+XL_JSON_END()
+
+const char *MAP_VALUE_JSON = R"({
+    "mapValues": {
+        "key1": 1,
+        "key2": 2,
+        "key3": 3
+    }
+})";
+
+TEST(json_test, map_values) {
+  {
+    MapValues json;
+    ASSERT_EQ(json.json_parse(MAP_VALUE_JSON), true);
+    ASSERT_EQ(json.mapValues, (std::map<std::string, int>{
+                                  {"key1", 1},
+                                  {"key2", 2},
+                                  {"key3", 3}
+    }));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), MAP_VALUE_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(MAP_VALUE_JSON));
+  }
+  {
+    HashMapValues json;
+    ASSERT_EQ(json.json_parse(MAP_VALUE_JSON), true);
+    ASSERT_EQ(json.mapValues, (std::unordered_map<std::string, int>{
+                                  {"key1", 1},
+                                  {"key2", 2},
+                                  {"key3", 3}
+    }));
+  }
 }

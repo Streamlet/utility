@@ -7,8 +7,15 @@
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/writer.h>
+#include <set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#if __cplusplus >= 201703L
+#include <optional>
+#include <string_view>
 
+#endif
 namespace xl {
 
 namespace json {
@@ -135,78 +142,208 @@ public:
   }
 };
 
-template <typename T>
-class JsonAccessor<std::unique_ptr<T>>
-    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::unique_ptr<T>>> {
+#if __cplusplus >= 201703L
+template <>
+class JsonAccessor<std::string_view>
+    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::string_view>> {
 public:
-  static bool Read(std::unique_ptr<T> &ref, const ::rapidjson::Value &json_value) {
+  static bool Read(std::string_view &ref, const ::rapidjson::Value &json_value) {
+    if (!json_value.IsString()) {
+      return false;
+    }
+    ref = {json_value.GetString(), json_value.GetStringLength()};
+    return true;
+  }
+  static bool WillWrite(const std::string_view &ref, unsigned int flags) {
+    return true;
+  }
+  static void
+  Write(const std::string_view &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    writer.String(ref.data(), (::rapidjson::SizeType)ref.length(), false);
+  }
+  static void WritePretty(const std::string_view &ref,
+                          ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer,
+                          unsigned int flags) {
+    writer.String(ref.data(), (::rapidjson::SizeType)ref.length(), false);
+  }
+};
+#endif
+
+#define JSON_ACCESSOR_POINTER(pointer)                                                                                 \
+  template <typename T>                                                                                                \
+  class JsonAccessor<pointer<T>>                                                                                       \
+      : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<pointer<T>>> {                         \
+  public:                                                                                                              \
+    static bool Read(pointer<T> &ref, const ::rapidjson::Value &json_value) {                                          \
+      if (json_value.IsNull()) {                                                                                       \
+        ref.reset();                                                                                                   \
+        return true;                                                                                                   \
+      }                                                                                                                \
+      ref = pointer<T>(new T());                                                                                       \
+      return JsonAccessor<T>::Read(*ref, json_value);                                                                  \
+    }                                                                                                                  \
+    static bool WillWrite(const pointer<T> &ref, unsigned int flags) {                                                 \
+      return (flags & json::WRITE_FLAG_WRITE_NULL_VALUES) != 0 ||                                                      \
+             (ref != nullptr && JsonAccessor<T>::WillWrite(*ref, flags));                                              \
+    }                                                                                                                  \
+    static void                                                                                                        \
+    Write(const pointer<T> &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {         \
+      if (ref == nullptr) {                                                                                            \
+        writer.Null();                                                                                                 \
+      } else {                                                                                                         \
+        return JsonAccessor<T>::Write(*ref, writer, flags);                                                            \
+      }                                                                                                                \
+    }                                                                                                                  \
+    static void WritePretty(const pointer<T> &ref,                                                                     \
+                            ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer,                              \
+                            unsigned int flags) {                                                                      \
+      if (ref == nullptr) {                                                                                            \
+        writer.Null();                                                                                                 \
+      } else {                                                                                                         \
+        return JsonAccessor<T>::WritePretty(*ref, writer, flags);                                                      \
+      }                                                                                                                \
+    }                                                                                                                  \
+  }
+
+JSON_ACCESSOR_POINTER(std::unique_ptr);
+JSON_ACCESSOR_POINTER(std::shared_ptr);
+
+#if __cplusplus >= 201703L
+
+template <typename T>
+class JsonAccessor<std::optional<T>>
+    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::optional<T>>> {
+public:
+  static bool Read(std::optional<T> &ref, const ::rapidjson::Value &json_value) {
     if (json_value.IsNull()) {
       ref.reset();
       return true;
     }
-    ref = std::unique_ptr<T>(new T());
-    return JsonAccessor<T>::Read(*ref, json_value);
+    ref = T();
+    return JsonAccessor<T>::Read(ref.value(), json_value);
   }
-  static bool WillWrite(const std::unique_ptr<T> &ref, unsigned int flags) {
+  static bool WillWrite(const std::optional<T> &ref, unsigned int flags) {
     return (flags & json::WRITE_FLAG_WRITE_NULL_VALUES) != 0 ||
-           (ref != nullptr && JsonAccessor<T>::WillWrite(*ref, flags));
+           (ref.has_value() && JsonAccessor<T>::WillWrite(ref.value(), flags));
   }
   static void
-  Write(const std::unique_ptr<T> &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    if (ref == nullptr) {
+  Write(const std::optional<T> &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
+    if (!ref.has_value()) {
       writer.Null();
     } else {
-      return JsonAccessor<T>::Write(*ref, writer, flags);
+      return JsonAccessor<T>::Write(ref.value(), writer, flags);
     }
   }
-  static void WritePretty(const std::unique_ptr<T> &ref,
+  static void WritePretty(const std::optional<T> &ref,
                           ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer,
                           unsigned int flags) {
-    if (ref == nullptr) {
+    if (!ref.has_value()) {
       writer.Null();
     } else {
-      return JsonAccessor<T>::WritePretty(*ref, writer, flags);
+      return JsonAccessor<T>::WritePretty(ref.value(), writer, flags);
     }
   }
 };
 
-template <typename T>
-class JsonAccessor<std::vector<T>>
-    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::vector<T>>> {
-public:
-  static bool Read(std::vector<T> &ref, const ::rapidjson::Value &json_value) {
-    if (!json_value.IsArray()) {
-      return false;
-    }
-    ref.resize(json_value.Size());
-    for (size_t i = 0; i < ref.size(); ++i) {
-      if (!JsonAccessor<T>::Read(ref[i], json_value[(::rapidjson::SizeType)i])) {
-        return false;
-      }
-    }
-    return true;
+#endif
+
+#define JSON_ACCESSOR_CONTAINER(container)                                                                             \
+  template <typename T>                                                                                                \
+  class JsonAccessor<container<T>>                                                                                     \
+      : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<container<T>>> {                       \
+  public:                                                                                                              \
+    static bool Read(container<T> &ref, const ::rapidjson::Value &json_value) {                                        \
+      if (!json_value.IsArray()) {                                                                                     \
+        return false;                                                                                                  \
+      }                                                                                                                \
+      auto it = ref.begin();                                                                                           \
+      for (::rapidjson::SizeType i = 0; i < json_value.Size(); ++i) {                                                  \
+        T t;                                                                                                           \
+        if (!JsonAccessor<T>::Read(t, json_value[i])) {                                                                \
+          return false;                                                                                                \
+        }                                                                                                              \
+        ref.insert(ref.end(), std::move(t));                                                                           \
+      }                                                                                                                \
+      return true;                                                                                                     \
+    }                                                                                                                  \
+    static bool WillWrite(const container<T> &ref, unsigned int flags) {                                               \
+      return true;                                                                                                     \
+    }                                                                                                                  \
+    static void                                                                                                        \
+    Write(const container<T> &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {       \
+      writer.StartArray();                                                                                             \
+      for (const T &item : ref) {                                                                                      \
+        JsonAccessor<T>::Write(item, writer, flags);                                                                   \
+      }                                                                                                                \
+      writer.EndArray(rapidjson::SizeType(ref.size()));                                                                \
+    }                                                                                                                  \
+    static void WritePretty(const container<T> &ref,                                                                   \
+                            ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer,                              \
+                            unsigned int flags) {                                                                      \
+      writer.StartArray();                                                                                             \
+      for (const T &item : ref) {                                                                                      \
+        JsonAccessor<T>::WritePretty(item, writer, flags);                                                             \
+      }                                                                                                                \
+      writer.EndArray(rapidjson::SizeType(ref.size()));                                                                \
+    }                                                                                                                  \
   }
-  static bool WillWrite(const std::vector<T> &ref, unsigned int flags) {
-    return true;
+
+JSON_ACCESSOR_CONTAINER(std::vector);
+JSON_ACCESSOR_CONTAINER(std::list);
+JSON_ACCESSOR_CONTAINER(std::set);
+JSON_ACCESSOR_CONTAINER(std::unordered_set);
+
+#define JSON_ACCESSOR_MAP(map)                                                                                         \
+  template <typename T>                                                                                                \
+  class JsonAccessor<map<std::string, T>>                                                                              \
+      : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<map<std::string, T>>> {                \
+  public:                                                                                                              \
+    static bool Read(map<std::string, T> &ref, const ::rapidjson::Value &json_value) {                                 \
+      if (!json_value.IsObject()) {                                                                                    \
+        return false;                                                                                                  \
+      }                                                                                                                \
+      for (auto it = json_value.MemberBegin(); it != json_value.MemberEnd(); ++it) {                                   \
+        T t;                                                                                                           \
+        if (!JsonAccessor<T>::Read(t, it->value)) {                                                                    \
+          return false;                                                                                                \
+        }                                                                                                              \
+        ref[std::string(it->name.GetString(), it->name.GetStringLength())] = std::move(t);                             \
+      }                                                                                                                \
+      return true;                                                                                                     \
+    }                                                                                                                  \
+    static bool WillWrite(const map<std::string, T> &ref, unsigned int flags) {                                        \
+      return true;                                                                                                     \
+    }                                                                                                                  \
+    static void Write(const map<std::string, T> &ref,                                                                  \
+                      ::rapidjson::Writer<::rapidjson::StringBuffer> &writer,                                          \
+                      unsigned int flags) {                                                                            \
+      writer.StartObject();                                                                                            \
+      for (const auto &item : ref) {                                                                                   \
+        if (!JsonAccessor<T>::WillWrite(item.second, flags)) {                                                         \
+          continue;                                                                                                    \
+        }                                                                                                              \
+        writer.Key(item.first.c_str(), ::rapidjson::SizeType(item.first.length()));                                    \
+        JsonAccessor<T>::Write(item.second, writer, flags);                                                            \
+      }                                                                                                                \
+      writer.EndObject(rapidjson::SizeType(ref.size()));                                                               \
+    }                                                                                                                  \
+    static void WritePretty(const map<std::string, T> &ref,                                                            \
+                            ::rapidjson::PrettyWriter<rapidjson::StringBuffer> &writer,                                \
+                            unsigned int flags) {                                                                      \
+      writer.StartObject();                                                                                            \
+      for (const auto &item : ref) {                                                                                   \
+        if (!JsonAccessor<T>::WillWrite(item.second, flags)) {                                                         \
+          continue;                                                                                                    \
+        }                                                                                                              \
+        writer.Key(item.first.c_str(), rapidjson::SizeType(item.first.length()));                                      \
+        JsonAccessor<T>::WritePretty(item.second, writer, flags);                                                      \
+      }                                                                                                                \
+      writer.EndObject(rapidjson::SizeType(ref.size()));                                                               \
+    }                                                                                                                  \
   }
-  static void
-  Write(const std::vector<T> &ref, ::rapidjson::Writer<::rapidjson::StringBuffer> &writer, unsigned int flags) {
-    writer.StartArray();
-    for (const T &item : ref) {
-      JsonAccessor<T>::Write(item, writer, flags);
-    }
-    writer.EndArray(rapidjson::SizeType(ref.size()));
-  }
-  static void WritePretty(const std::vector<T> &ref,
-                          ::rapidjson::PrettyWriter<::rapidjson::StringBuffer> &writer,
-                          unsigned int flags) {
-    writer.StartArray();
-    for (const T &item : ref) {
-      JsonAccessor<T>::WritePretty(item, writer, flags);
-    }
-    writer.EndArray(rapidjson::SizeType(ref.size()));
-  }
-};
+
+JSON_ACCESSOR_MAP(std::map);
+JSON_ACCESSOR_MAP(std::unordered_map);
 
 } // namespace xl
 

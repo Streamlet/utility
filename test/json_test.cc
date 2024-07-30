@@ -245,8 +245,8 @@ TEST(json_test, nullable_values) {
 }
 
 XL_JSON_BEGIN(ArrayValues)
-  XL_JSON_MEMBER(std::list<int>, intArray)
-  XL_JSON_MEMBER(std::list<std::string>, stringArray)
+  XL_JSON_MEMBER(std::vector<int>, intArray)
+  XL_JSON_MEMBER(std::vector<std::string>, stringArray)
 XL_JSON_END()
 
 const char *ARRAY_VALUES_JSON = R"({
@@ -271,24 +271,24 @@ TEST(json_test, array_values) {
   {
     ArrayValues json;
     ASSERT_EQ(json.json_parse(ARRAY_VALUES_JSON), true);
-    ASSERT_EQ(json.intArray, (std::list<int>{1, 2, 3}));
-    ASSERT_EQ(json.stringArray, (std::list<std::string>{"a", "b", "c"}));
+    ASSERT_EQ(json.intArray, (std::vector<int>{1, 2, 3}));
+    ASSERT_EQ(json.stringArray, (std::vector<std::string>{"a", "b", "c"}));
     ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), ARRAY_VALUES_JSON);
     ASSERT_EQ(json.json_dump(), remove_blanks(ARRAY_VALUES_JSON));
   }
   {
     ArrayValues json;
     ASSERT_EQ(json.json_parse(EMPTY_ARRAY_VALUES_JSON), true);
-    ASSERT_EQ(json.intArray, (std::list<int>{}));
-    ASSERT_EQ(json.stringArray, (std::list<std::string>{}));
+    ASSERT_EQ(json.intArray, (std::vector<int>{}));
+    ASSERT_EQ(json.stringArray, (std::vector<std::string>{}));
     ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), EMPTY_ARRAY_VALUES_JSON);
     ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_ARRAY_VALUES_JSON));
   }
 }
 
 XL_JSON_BEGIN(ArrayNullableValues)
-  XL_JSON_MEMBER(std::list<std::unique_ptr<int>>, intArray)
-  XL_JSON_MEMBER(std::list<std::unique_ptr<std::string>>, stringArray)
+  XL_JSON_MEMBER(std::vector<std::unique_ptr<int>>, intArray)
+  XL_JSON_MEMBER(std::vector<std::unique_ptr<std::string>>, stringArray)
 XL_JSON_END()
 
 const char *ARRAY_NULL_VALUES_JSON = R"({
@@ -380,8 +380,8 @@ TEST(json_test, array_nullble_values) {
 }
 
 XL_JSON_BEGIN(NullableArrayValues)
-  XL_JSON_MEMBER(std::unique_ptr<std::list<int>>, intArray)
-  XL_JSON_MEMBER(std::unique_ptr<std::list<std::string>>, stringArray)
+  XL_JSON_MEMBER(std::unique_ptr<std::vector<int>>, intArray)
+  XL_JSON_MEMBER(std::unique_ptr<std::vector<std::string>>, stringArray)
 XL_JSON_END()
 
 const char *NULL_ARRAY_VALUES_JSON = R"({
@@ -441,7 +441,7 @@ TEST(json_test, nullable_array_values) {
     NullableArrayValues json;
     ASSERT_EQ(json.json_parse(HALF_NULL_ARRAY_VALUES_JSON), true);
     ASSERT_EQ(json.intArray, nullptr);
-    ASSERT_EQ(*json.stringArray, (std::list<std::string>{"a", "b"}));
+    ASSERT_EQ(*json.stringArray, (std::vector<std::string>{"a", "b"}));
     ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), R"({
     "stringArray": [
         "a",
@@ -461,8 +461,8 @@ TEST(json_test, nullable_array_values) {
 }
 
 XL_JSON_BEGIN(NullbleArrayNullableValues)
-  XL_JSON_MEMBER(std::unique_ptr<std::list<std::unique_ptr<int>>>, intArray)
-  XL_JSON_MEMBER(std::unique_ptr<std::list<std::unique_ptr<std::string>>>, stringArray)
+  XL_JSON_MEMBER(std::unique_ptr<std::vector<std::unique_ptr<int>>>, intArray)
+  XL_JSON_MEMBER(std::unique_ptr<std::vector<std::unique_ptr<std::string>>>, stringArray)
 XL_JSON_END()
 
 const char *HALF_NULL_ARRAY_HALF_NULL_VALUES_JSON = R"({
@@ -609,7 +609,7 @@ XL_JSON_END()
 XL_JSON_BEGIN(NestObjectValues)
   XL_JSON_MEMBER(SimpleObject, nestObject)
   XL_JSON_MEMBER(std::unique_ptr<SimpleObject>, nestNullableObject)
-  XL_JSON_MEMBER(std::list<SimpleObject>, nestObjectArray)
+  XL_JSON_MEMBER(std::vector<SimpleObject>, nestObjectArray)
 XL_JSON_END()
 
 const char *NEST_OBJECT_JSON = R"({
@@ -638,4 +638,14 @@ TEST(json_test, nest_object_values) {
   ASSERT_EQ(json.nestObjectArray.back().intValue, 10);
   ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), NEST_OBJECT_JSON);
   ASSERT_EQ(json.json_dump(), remove_blanks(NEST_OBJECT_JSON));
+}
+
+TEST(json_test, copy_and_move) {
+  SingleValues json;
+  ASSERT_EQ(json.json_parse(SILNGLE_VALUES_JSON), true);
+  ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
+  SingleValues json2 = json;
+  ASSERT_EQ(json2.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
+  SingleValues json3 = std::move(json2);
+  ASSERT_EQ(json3.json_dump(::xl::json::WRITE_FLAG_PRETTY), SILNGLE_VALUES_JSON);
 }

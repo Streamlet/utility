@@ -1,6 +1,5 @@
 #pragma once
 
-#include "reflect"
 #include <list>
 #include <map>
 #include <memory>
@@ -347,23 +346,25 @@ JSON_ACCESSOR_MAP(std::unordered_map);
 
 } // namespace xl
 
-#define XL_JSON_BEGIN_NO_REFLECT(struct_type)                                                                          \
-private:                                                                                                               \
-  template <typename T, size_t Index>                                                                                  \
-  struct FieldJsonAccessorT;                                                                                           \
-                                                                                                                       \
-public:                                                                                                                \
-  template <size_t Index>                                                                                              \
-  using FieldJsonAccessor = FieldJsonAccessorT<struct_type, Index>;
-
 #define XL_JSON_BEGIN(struct_type)                                                                                     \
-  XL_REFLECT_BEGIN(struct_type)                                                                                        \
-    XL_JSON_BEGIN_NO_REFLECT(struct_type)
+  struct struct_type {                                                                                                 \
+  private:                                                                                                             \
+    template <typename T, size_t Index>                                                                                \
+    struct FieldJsonAccessorT;                                                                                         \
+    typedef struct_type Type;                                                                                          \
+    static const size_t SEQUENCE = __COUNTER__;                                                                        \
+                                                                                                                       \
+  public:                                                                                                              \
+    template <size_t Index>                                                                                            \
+    using FieldJsonAccessor = FieldJsonAccessorT<struct_type, Index>;
 
-#define XL_JSON_MEMBER_NO_REFLECT(field_type, field_name)                                                              \
+#define XL_JSON_MEMBER(field_type, field_name)                                                                         \
+public:                                                                                                                \
+  field_type field_name;                                                                                               \
+                                                                                                                       \
 private:                                                                                                               \
   template <typename T>                                                                                                \
-  struct FieldJsonAccessorT<T, SEQUENCE_##field_name - SEQUENCE - 1> {                                                 \
+  struct FieldJsonAccessorT<T, __COUNTER__ - SEQUENCE - 1> {                                                           \
     static bool Read(Type &ref, const ::rapidjson::Value &json_value) {                                                \
       if (json_value.HasMember(#field_name)) {                                                                         \
         return ::xl::JsonAccessor<field_type>::Read(ref.field_name, json_value[#field_name]);                          \
@@ -390,12 +391,9 @@ private:                                                                        
     }                                                                                                                  \
   };
 
-#define XL_JSON_MEMBER(field_type, field_name)                                                                         \
-  XL_REFLECT_MEMBER(field_type, field_name)                                                                            \
-  XL_JSON_MEMBER_NO_REFLECT(field_type, field_name)
-
-#define XL_JSON_END_NO_REFLECT()                                                                                       \
+#define XL_JSON_END()                                                                                                  \
 private:                                                                                                               \
+  static const size_t FIELDS = __COUNTER__ - SEQUENCE - 1;                                                             \
   template <size_t Begin, size_t End>                                                                                  \
   struct FieldsJsonAccessorWalker {                                                                                    \
     static bool Read(Type &ref, const ::rapidjson::Value &json_value) {                                                \
@@ -484,10 +482,6 @@ public:                                                                         
       json_write(writer, flags);                                                                                       \
     }                                                                                                                  \
     return sb.GetString();                                                                                             \
-  }
-
-#define XL_JSON_END()                                                                                                  \
-  XL_JSON_END_NO_REFLECT                                                                                               \
-  ()                                                                                                                   \
-  XL_REFLECT_END                                                                                                       \
-  ()
+  }                                                                                                                    \
+  }                                                                                                                    \
+  ;

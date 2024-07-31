@@ -26,9 +26,8 @@ public:                                                                         
   field_type field_name;                                                                                               \
                                                                                                                        \
 private:                                                                                                               \
-  static const size_t SEQUENCE_##field_name = __COUNTER__;                                                             \
   template <typename T>                                                                                                \
-  struct FieldT<T, SEQUENCE_##field_name - SEQUENCE - 1> {                                                             \
+  struct FieldT<T, __COUNTER__ - SEQUENCE - 1> {                                                                       \
     static const std::type_info &type() {                                                                              \
       return typeid(field_type);                                                                                       \
     }                                                                                                                  \

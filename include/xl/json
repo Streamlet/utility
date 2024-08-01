@@ -28,7 +28,7 @@ enum WriteFlags {
 } // namespace json
 
 template <typename T>
-struct JsonAccessor : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<T>> {
+struct JsonAccessor {
   static bool Read(T &ref, const ::rapidjson::Value &json_value) {
     return ref.json_read(json_value);
   }
@@ -45,7 +45,7 @@ struct JsonAccessor : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>,
 };
 
 template <>
-class JsonAccessor<bool> : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<bool>> {
+class JsonAccessor<bool> {
 public:
   static bool Read(bool &ref, const ::rapidjson::Value &json_value) {
     if (!json_value.IsBool()) {
@@ -68,7 +68,7 @@ public:
 
 #define JSON_ACCESSOR_NUMBER(type, write_type)                                                                         \
   template <>                                                                                                          \
-  class JsonAccessor<type> : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<type>> {          \
+  class JsonAccessor<type> {                                                                                           \
   public:                                                                                                              \
     static bool Read(type &ref, const ::rapidjson::Value &json_value) {                                                \
       if (!json_value.IsNumber()) {                                                                                    \
@@ -117,8 +117,7 @@ JSON_ACCESSOR_NUMBER(float, Double);
 JSON_ACCESSOR_NUMBER(double, Double);
 
 template <>
-class JsonAccessor<std::string>
-    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::string>> {
+class JsonAccessor<std::string> {
 public:
   static bool Read(std::string &ref, const ::rapidjson::Value &json_value) {
     if (!json_value.IsString()) {
@@ -143,8 +142,7 @@ public:
 
 #if __cplusplus >= 201703L
 template <>
-class JsonAccessor<std::string_view>
-    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::string_view>> {
+class JsonAccessor<std::string_view> {
 public:
   static bool Read(std::string_view &ref, const ::rapidjson::Value &json_value) {
     if (!json_value.IsString()) {
@@ -170,8 +168,7 @@ public:
 
 #define JSON_ACCESSOR_POINTER(pointer)                                                                                 \
   template <typename T>                                                                                                \
-  class JsonAccessor<pointer<T>>                                                                                       \
-      : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<pointer<T>>> {                         \
+  class JsonAccessor<pointer<T>> {                                                                                     \
   public:                                                                                                              \
     static bool Read(pointer<T> &ref, const ::rapidjson::Value &json_value) {                                          \
       if (json_value.IsNull()) {                                                                                       \
@@ -210,8 +207,7 @@ JSON_ACCESSOR_POINTER(std::shared_ptr);
 #if __cplusplus >= 201703L
 
 template <typename T>
-class JsonAccessor<std::optional<T>>
-    : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<std::optional<T>>> {
+class JsonAccessor<std::optional<T>> {
 public:
   static bool Read(std::optional<T> &ref, const ::rapidjson::Value &json_value) {
     if (json_value.IsNull()) {
@@ -248,8 +244,7 @@ public:
 
 #define JSON_ACCESSOR_CONTAINER(container)                                                                             \
   template <typename T>                                                                                                \
-  class JsonAccessor<container<T>>                                                                                     \
-      : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<container<T>>> {                       \
+  class JsonAccessor<container<T>> {                                                                                   \
   public:                                                                                                              \
     static bool Read(container<T> &ref, const ::rapidjson::Value &json_value) {                                        \
       if (!json_value.IsArray()) {                                                                                     \
@@ -294,8 +289,7 @@ JSON_ACCESSOR_CONTAINER(std::unordered_set);
 
 #define JSON_ACCESSOR_MAP(map)                                                                                         \
   template <typename T>                                                                                                \
-  class JsonAccessor<map<std::string, T>>                                                                              \
-      : public ::rapidjson::BaseReaderHandler<::rapidjson::UTF8<>, JsonAccessor<map<std::string, T>>> {                \
+  class JsonAccessor<map<std::string, T>> {                                                                            \
   public:                                                                                                              \
     static bool Read(map<std::string, T> &ref, const ::rapidjson::Value &json_value) {                                 \
       if (!json_value.IsObject()) {                                                                                    \

@@ -2,15 +2,13 @@
 #include <xl/json>
 #include <xl/string>
 
-const char *EMPTY_JSON = R"({})";
-
 namespace {
+
+const char *EMPTY_JSON = R"({})";
 
 std::string remove_blanks(const std::string &s) {
   return xl::string::replace(xl::string::replace(s, " ", ""), "\n", "");
 }
-
-} // namespace
 
 XL_JSON_BEGIN(SingleValues)
   XL_JSON_MEMBER(bool, boolValue)
@@ -67,6 +65,8 @@ const char *SILNGLE_VALUES_JSON = R"({
     "stringValue": "s"
 })";
 
+} // namespace
+
 TEST(json_test, single_values) {
   SingleValues json;
   ASSERT_EQ(json.json_parse(SILNGLE_VALUES_JSON), true);
@@ -112,6 +112,8 @@ TEST(json_test, single_values_string_view) {
 }
 
 #endif
+
+namespace {
 
 XL_JSON_BEGIN(NullableValues)
   XL_JSON_MEMBER(std::unique_ptr<bool>, boolValue)
@@ -214,6 +216,8 @@ const char *HALF_NULL_VALUES_JSON = R"({
     "doubleValue": 2.25,
     "stringValue": "s"
 })";
+
+} // namespace
 
 TEST(json_test, nullable_values) {
   {
@@ -558,6 +562,8 @@ TEST(json_test, nullable_values_optional) {
 
 #endif
 
+namespace {
+
 XL_JSON_BEGIN(ArrayValues)
   XL_JSON_MEMBER(std::vector<int>, intArray)
   XL_JSON_MEMBER(std::vector<std::string>, stringArray)
@@ -581,6 +587,8 @@ const char *EMPTY_ARRAY_VALUES_JSON = R"({
     "stringArray": []
 })";
 
+} // namespace
+
 TEST(json_test, array_values) {
   {
     ArrayValues json;
@@ -599,6 +607,8 @@ TEST(json_test, array_values) {
     ASSERT_EQ(json.json_dump(), remove_blanks(EMPTY_ARRAY_VALUES_JSON));
   }
 }
+
+namespace {
 
 XL_JSON_BEGIN(ArrayNullableValues)
   XL_JSON_MEMBER(std::vector<std::unique_ptr<int>>, intArray)
@@ -625,6 +635,8 @@ const char *ARRAY_HALF_NULL_VALUES_JSON = R"({
         "b"
     ]
 })";
+
+} // namespace
 
 TEST(json_test, array_nullble_values) {
   {
@@ -693,6 +705,8 @@ TEST(json_test, array_nullble_values) {
   }
 }
 
+namespace {
+
 XL_JSON_BEGIN(NullableArrayValues)
   XL_JSON_MEMBER(std::unique_ptr<std::vector<int>>, intArray)
   XL_JSON_MEMBER(std::unique_ptr<std::vector<std::string>>, stringArray)
@@ -710,6 +724,8 @@ const char *HALF_NULL_ARRAY_VALUES_JSON = R"({
         "b"
     ]
 })";
+
+} // namespace
 
 TEST(json_test, nullable_array_values) {
   {
@@ -774,6 +790,8 @@ TEST(json_test, nullable_array_values) {
   }
 }
 
+namespace {
+
 XL_JSON_BEGIN(NullbleArrayNullableValues)
   XL_JSON_MEMBER(std::unique_ptr<std::vector<std::unique_ptr<int>>>, intArray)
   XL_JSON_MEMBER(std::unique_ptr<std::vector<std::unique_ptr<std::string>>>, stringArray)
@@ -786,6 +804,8 @@ const char *HALF_NULL_ARRAY_HALF_NULL_VALUES_JSON = R"({
         "b"
     ]
 })";
+
+} // namespace
 
 TEST(json_test, nullable_array_nullble_values) {
   {
@@ -916,6 +936,8 @@ TEST(json_test, nullable_array_nullble_values) {
   }
 }
 
+namespace {
+
 XL_JSON_BEGIN(SimpleObject)
   XL_JSON_MEMBER(int, intValue)
 XL_JSON_END()
@@ -942,6 +964,8 @@ const char *NEST_OBJECT_JSON = R"({
         }
     ]
 })";
+
+} // namespace
 
 TEST(json_test, nest_object_values) {
   NestObjectValues json;
@@ -1007,6 +1031,8 @@ TEST(json_test, array_values_for_list_set) {
   }
 }
 
+namespace {
+
 typedef std::map<std::string, int> StringIntMap;
 XL_JSON_BEGIN(MapValues)
   XL_JSON_MEMBER(StringIntMap, mapValues)
@@ -1023,6 +1049,8 @@ const char *MAP_VALUE_JSON = R"({
         "key3": 3
     }
 })";
+
+} // namespace
 
 TEST(json_test, map_values) {
   {

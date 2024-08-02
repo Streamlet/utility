@@ -52,6 +52,17 @@ static_library("libressl_crypto") {
   public_configs = [ ":libressl_crypto_public_config" ]
 }
 
+# rapidxml
+
+config("rapidxml_public_config") {
+  include_dirs = [ "rapidxml" ]
+  defines = []
+}
+
+group("rapidxml") {
+  public_configs = [ ":rapidxml_public_config" ]
+}
+
 # googletest
 
 config("googletest_public_config") {

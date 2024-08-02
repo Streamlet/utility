@@ -47,10 +47,7 @@ source_set("crypto") {
 
   deps = [ "../thirdparty:libressl_crypto" ]
 
-  public_configs = [
-    ":utility_public_config",
-    "../thirdparty:rapidjson_public_config",
-  ]
+  public_configs = [ ":utility_public_config" ]
 }
 
 source_set("file") {
@@ -75,6 +72,7 @@ source_set("config") {
   inputs = [
     "../include/xl/ini",
     "../include/xl/json",
+    "../include/xl/xml",
   ]
 
   cflags = []
@@ -85,9 +83,14 @@ source_set("config") {
   deps = [
     ":file",
     "../thirdparty:rapidjson",
+    "../thirdparty:rapidxml",
   ]
 
-  public_configs = [ ":utility_public_config" ]
+  public_configs = [
+    ":utility_public_config",
+    "../thirdparty:rapidjson_public_config",
+    "../thirdparty:rapidxml_public_config",
+  ]
 }
 
 source_set("log") {

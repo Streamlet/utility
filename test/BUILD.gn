@@ -14,6 +14,7 @@ executable("unittest") {
     "scope_exit_test.cc",
     "string_test.cc",
     "unittest.cc",
+    "xml_test.cc",
   ]
   deps = [
     "../src:config",

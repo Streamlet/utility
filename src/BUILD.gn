@@ -133,6 +133,7 @@ source_set("process") {
 
 group("src") {
   deps = [
+    ":config",
     ":crypto",
     ":file",
     ":log",

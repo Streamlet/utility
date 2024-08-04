@@ -70,7 +70,6 @@ source_set("minizip") {
   public_configs = [ ":zlib_public_config" ]
 }
 
-
 # crypto from libressl
 
 config("libressl_crypto_public_config") {
@@ -126,7 +125,6 @@ static_library("libressl_crypto") {
   public_configs = [ ":libressl_crypto_public_config" ]
 }
 
-
 # rapidxml
 
 config("rapidxml_public_config") {
@@ -137,20 +135,6 @@ config("rapidxml_public_config") {
 group("rapidxml") {
   public_configs = [ ":rapidxml_public_config" ]
 }
-
-
-# googletest
-
-config("googletest_public_config") {
-  include_dirs = [ "googletest/googletest/include" ]
-}
-
-static_library("googletest") {
-  sources = [ "googletest/googletest/src/gtest-all.cc" ]
-  include_dirs = [ "googletest/googletest" ]
-  public_configs = [ ":googletest_public_config" ]
-}
-
 
 # rapidjson
 
@@ -164,3 +148,16 @@ config("rapidjson_public_config") {
 
 group("rapidjson") {
   public_configs = [ ":rapidjson_public_config" ]
+}
+
+# googletest
+
+config("googletest_public_config") {
+  include_dirs = [ "googletest/googletest/include" ]
+}
+
+static_library("googletest") {
+  sources = [ "googletest/googletest/src/gtest-all.cc" ]
+  include_dirs = [ "googletest/googletest" ]
+  public_configs = [ ":googletest_public_config" ]
+}

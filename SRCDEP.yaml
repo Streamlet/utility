@@ -6,6 +6,10 @@ DEPS:
     GIT_REPO: https://github.com/Streamlet/gn_toolchain.git
     GIT_TAG: master
 
+  thirdparty/zlib:
+    GIT_REPO: https://github.com/madler/zlib.git
+    GIT_TAG: v1.2.13
+
   thirdparty/libressl:
     URL: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.8.0.tar.gz
     ROOT_DIR: libressl-3.8.0
@@ -26,3 +30,4 @@ DEPS:
   thirdparty/rapidjson:
     GIT_REPO: https://github.com/Tencent/rapidjson.git
     GIT_TAG: v1.1.0
+

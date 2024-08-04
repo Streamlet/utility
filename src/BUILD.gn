@@ -51,17 +51,33 @@ source_set("crypto") {
 }
 
 source_set("file") {
-  sources = [ "file.cc" ]
+  sources = [
+    "file.cc",
+    "zip.h",
+  ]
+  if (is_win) {
+    sources += [
+      "unzip_win.cc",
+      "zip_win.cc",
+    ]
+  } else {
+    sources += [
+      "unzip_posix.cc",
+      "zip_posix.cc",
+    ]
+  }
 
   inputs = [
     "../include/xl/byte_order.h",
     "../include/xl/file",
+    "../include/xl/zip",
   ]
 
   cflags = []
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
+  deps = [ "../thirdparty:minizip" ]
 
   public_configs = [ ":utility_public_config" ]
 }

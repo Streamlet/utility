@@ -5,7 +5,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <xl/scope_exit>
-#include <zlibwrap/zlibwrap.h>
+#include <xl/zip>
 
 namespace xl {
 

@@ -2,7 +2,7 @@
 
 #include "native_string"
 
-namespace zlibwrap {
+namespace xl {
 
 /**
  * @brief Compress files to a ZIP file.

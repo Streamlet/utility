@@ -47,6 +47,9 @@ inline native_string to_native_string(T _Val) {
 // Input and Output
 #define _tfopen fopen
 #define _tfreopen freopen
+#define _tmkdir mkdir
+#define _trmdir rmdir
+#define _tunlink unlink
 #define _tremove remove
 #define _trename rename
 

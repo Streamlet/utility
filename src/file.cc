@@ -9,13 +9,7 @@
 
 namespace xl {
 
-namespace file {
-
 namespace {
-
-const char UTF8_BOM[] = {'\xef', '\xbb', '\xbf'};
-const wchar_t UTF16_BOM = 0xfeff;
-const char UTF16_BOM_LE[] = {'\xff', '\xfe'}, UTF16_BOM_BE[] = {'\xfe', '\xff'};
 
 long long fsize(FILE *f) {
   if (fseek(f, 0, SEEK_END) != 0) {
@@ -23,6 +17,16 @@ long long fsize(FILE *f) {
   }
   return ftell(f);
 }
+
+} // namespace
+
+namespace file {
+
+namespace {
+
+const char UTF8_BOM[] = {'\xef', '\xbb', '\xbf'};
+const wchar_t UTF16_BOM = 0xfeff;
+const char UTF16_BOM_LE[] = {'\xff', '\xfe'}, UTF16_BOM_BE[] = {'\xfe', '\xff'};
 
 std::string fread(FILE *f, size_t size) {
   std::string content;
@@ -37,7 +41,11 @@ bool fwrite(FILE *f, const std::string &text) {
   return fwrite(text.c_str(), text.length(), 1, f) == 1;
 }
 
-constexpr bool is_little_endian() {
+#if __c_plus_plus__ > 201703L
+constexpr
+#endif
+    bool
+    is_little_endian() {
 #ifdef __BYTE_ORDER__
   return __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
 #else
@@ -145,15 +153,6 @@ bool fwrite_utf16_be(FILE *f, const std::wstring &text) {
 
 } // namespace
 
-bool exists(const TCHAR *path) {
-  FILE *f = _tfopen(path, _T("rb"));
-  if (f == nullptr) {
-    return errno != ENOENT;
-  }
-  XL_ON_BLOCK_EXIT(fclose, f);
-  return true;
-}
-
 #define OPEN_CLOSE_FILE_READ(path, errval)                                                                             \
   _tfopen(path, _T("rb"));                                                                                             \
   if (f == nullptr) {                                                                                                  \
@@ -161,10 +160,12 @@ bool exists(const TCHAR *path) {
   }                                                                                                                    \
   XL_ON_BLOCK_EXIT(fclose, f)
 
-long long size(const TCHAR *path) {
-  FILE *f = OPEN_CLOSE_FILE_READ(path, -1);
-  return fsize(f);
-}
+#define OPEN_CLOSE_FILE_WRITE(path)                                                                                    \
+  _tfopen(path, _T("wb"));                                                                                             \
+  if (f == nullptr) {                                                                                                  \
+    return false;                                                                                                      \
+  }                                                                                                                    \
+  XL_ON_BLOCK_EXIT(fclose, f)
 
 std::string read(const TCHAR *path) {
   FILE *f = OPEN_CLOSE_FILE_READ(path, "");
@@ -235,18 +236,6 @@ std::wstring read_text_utf16_be(const TCHAR *path) {
   return fread_utf16_be(f, size - sizeof(UTF16_BOM_BE));
 }
 
-#define OPEN_CLOSE_FILE_WRITE(path)                                                                                    \
-  _tfopen(path, _T("wb"));                                                                                             \
-  if (f == nullptr) {                                                                                                  \
-    return false;                                                                                                      \
-  }                                                                                                                    \
-  XL_ON_BLOCK_EXIT(fclose, f)
-
-bool touch(const TCHAR *path) {
-  FILE *f = OPEN_CLOSE_FILE_WRITE(path);
-  return true;
-}
-
 bool write(const TCHAR *path, const std::string &text) {
   FILE *f = OPEN_CLOSE_FILE_WRITE(path);
   return fwrite(f, text);
@@ -276,6 +265,58 @@ bool write_text_utf16_be(const TCHAR *path, const std::wstring &text) {
   return fwrite_utf16_be(f, text);
 }
 
+} // namespace file
+
+namespace fs {
+
+bool touch(const TCHAR *path) {
+  FILE *f = OPEN_CLOSE_FILE_WRITE(path);
+  return true;
+}
+
+bool exists(const TCHAR *path) {
+  FILE *f = _tfopen(path, _T("rb"));
+  if (f == nullptr) {
+    return errno != ENOENT;
+  }
+  XL_ON_BLOCK_EXIT(fclose, f);
+  return true;
+}
+
+long long size(const TCHAR *path) {
+  FILE *f = OPEN_CLOSE_FILE_READ(path, -1);
+  return fsize(f);
+}
+
+bool unlink(const TCHAR *path) {
+  return ::_tunlink(path) == 0;
+}
+
+bool mkdir(const TCHAR *path) {
+#ifdef _WIN32
+  return ::_tmkdir(path) == 0;
+#else
+  return ::_tmkdir(path, 0755) == 0;
+#endif
+}
+
+bool mkdirs(const TCHAR *path) {
+  native_string paths = path;
+  for (TCHAR *p = _tcschr(&paths[0], SEP); p != NULL; p = _tcschr(p + 1, SEP)) {
+    *p = _T('\0');
+    fs::mkdir(paths.c_str());
+    *p = SEP;
+  }
+  if (!fs::mkdir(paths.c_str())) {
+    return false;
+  }
+  return true;
+}
+
+bool rmdir(const TCHAR *path) {
+  return ::_trmdir(path) == 0;
+}
+
 bool remove(const TCHAR *path) {
   return ::_tremove(path) == 0;
 }
@@ -284,6 +325,6 @@ bool rename(const TCHAR *path, const TCHAR *new_path) {
   return ::_trename(path, new_path) == 0;
 }
 
-} // namespace file
+} // namespace fs
 
 } // namespace xl

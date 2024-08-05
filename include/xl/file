@@ -13,13 +13,20 @@
 #define fseek fseeko
 #endif
 
+#ifndef _WIN32
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+#ifdef _WIN32
+#define XL_FS_SEP _T("\\")
+#else
+#define XL_FS_SEP _T("/")
+#endif
+
 namespace xl {
 
 namespace file {
-
-bool exists(const TCHAR *path);
-
-long long size(const TCHAR *path);
 
 std::string read(const TCHAR *path);
 
@@ -31,8 +38,6 @@ std::wstring read_text_utf16_le(const TCHAR *path);
 
 std::wstring read_text_utf16_be(const TCHAR *path);
 
-bool touch(const TCHAR *path);
-
 bool write(const TCHAR *path, const std::string &text);
 
 bool write_text_uft8_bom(const TCHAR *path, const std::string &text);
@@ -41,10 +46,34 @@ bool write_text_utf16_le(const TCHAR *path, const std::wstring &text);
 
 bool write_text_utf16_be(const TCHAR *path, const std::wstring &text);
 
+} // namespace file
+
+namespace fs {
+
+#ifdef _WIN32
+const TCHAR SEP = _T('\\');
+#else
+const TCHAR SEP = _T('/');
+#endif
+
+bool touch(const TCHAR *path);
+
+bool exists(const TCHAR *path);
+
+long long size(const TCHAR *path);
+
+bool unlink(const TCHAR *path);
+
+bool mkdir(const TCHAR *path);
+
+bool mkdirs(const TCHAR *path);
+
+bool rmdir(const TCHAR *path);
+
 bool remove(const TCHAR *path);
 
 bool rename(const TCHAR *path, const TCHAR *new_path);
 
-} // namespace file
+} // namespace fs
 
 } // namespace xl

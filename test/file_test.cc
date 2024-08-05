@@ -2,18 +2,36 @@
 #include <xl/file>
 
 TEST(file_test, fs_operation) {
-  ASSERT_EQ(xl::file::exists(_T("f")), false);
-  ASSERT_EQ(xl::file::size(_T("f")), -1);
-  ASSERT_EQ(xl::file::touch(_T("f")), true);
-  ASSERT_EQ(xl::file::exists(_T("f")), true);
-  ASSERT_EQ(xl::file::size(_T("f")), 0);
-  ASSERT_EQ(xl::file::rename(_T("f"), _T("f1")), true);
-  ASSERT_EQ(xl::file::exists(_T("f")), false);
-  ASSERT_EQ(xl::file::exists(_T("f1")), true);
-  ASSERT_EQ(xl::file::size(_T("f1")), 0);
-  ASSERT_EQ(xl::file::remove(_T("f1")), true);
-  ASSERT_EQ(xl::file::exists(_T("f")), false);
-  ASSERT_EQ(xl::file::exists(_T("f1")), false);
+  ASSERT_EQ(xl::fs::exists(_T("f")), false);
+  ASSERT_EQ(xl::fs::size(_T("f")), -1);
+  ASSERT_EQ(xl::fs::touch(_T("f")), true);
+  ASSERT_EQ(xl::fs::exists(_T("f")), true);
+  ASSERT_EQ(xl::fs::size(_T("f")), 0);
+  ASSERT_EQ(xl::fs::rename(_T("f"), _T("f1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("f")), false);
+  ASSERT_EQ(xl::fs::exists(_T("f1")), true);
+  ASSERT_EQ(xl::fs::size(_T("f1")), 0);
+  ASSERT_EQ(xl::fs::unlink(_T("f1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("f")), false);
+  ASSERT_EQ(xl::fs::exists(_T("f1")), false);
+
+  ASSERT_EQ(xl::fs::exists(_T("d")), false);
+  ASSERT_EQ(xl::fs::mkdir(_T("d")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d")), true);
+  ASSERT_EQ(xl::fs::rename(_T("d"), _T("d1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d")), false);
+  ASSERT_EQ(xl::fs::exists(_T("d1")), true);
+  ASSERT_EQ(xl::fs::mkdirs(_T("d1") XL_FS_SEP _T("d2") XL_FS_SEP _T("d3")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1") XL_FS_SEP _T("d2")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1") XL_FS_SEP _T("d2") XL_FS_SEP _T("d3")), true);
+  ASSERT_EQ(xl::fs::rmdir(_T("d1") XL_FS_SEP _T("d2") XL_FS_SEP _T("d3")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1") XL_FS_SEP _T("d2")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1") XL_FS_SEP _T("d2") XL_FS_SEP _T("d3")), false);
+  ASSERT_EQ(xl::fs::rmdir(_T("d1") XL_FS_SEP _T("d2")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1") XL_FS_SEP _T("d2")), false);
+  ASSERT_EQ(xl::fs::rmdir(_T("d1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d1")), false);
 }
 
 TEST(file_test, bin_and_utf8) {
@@ -34,7 +52,7 @@ TEST(file_test, bin_and_utf8) {
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
 
-  ASSERT_EQ(xl::file::remove(_T("f")), true);
+  ASSERT_EQ(xl::fs::remove(_T("f")), true);
 }
 
 TEST(file_test, utf16_le) {
@@ -45,7 +63,7 @@ TEST(file_test, utf16_le) {
   ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"你好");
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
-  ASSERT_EQ(xl::file::remove(_T("f")), true);
+  ASSERT_EQ(xl::fs::remove(_T("f")), true);
 }
 
 TEST(file_test, utf16_be) {
@@ -55,5 +73,5 @@ TEST(file_test, utf16_be) {
   ASSERT_EQ(xl::file::read_text_utf16_le(_T("f")), L"");
   ASSERT_EQ(xl::file::read_text_utf16_be(_T("f")), L"你好");
   ASSERT_EQ(xl::file::read_text_auto(_T("f")), "你好");
-  ASSERT_EQ(xl::file::remove(_T("f")), true);
+  ASSERT_EQ(xl::fs::remove(_T("f")), true);
 }

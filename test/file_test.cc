@@ -58,19 +58,19 @@ TEST(file_test, fs_enum_remove_all) {
   };
 
   xl::fs::enum_dir(_T("d1"), callback, false, false);
-  ASSERT_EQ(dirs, (std::vector<xl::native_string>{
-                      _T("d21"),
-                      _T("d22"),
-                  }));
+  ASSERT_EQ(std::set<xl::native_string>(dirs.begin(), dirs.end()), (std::set<xl::native_string>{
+                                                                       _T("d21"),
+                                                                       _T("d22"),
+                                                                   }));
   dirs.clear();
 
   xl::fs::enum_dir(_T("d1") XL_FS_SEP _T("d21"), callback, false, false);
-  ASSERT_EQ(dirs, (std::vector<xl::native_string>{
-                      _T("d31"),
-                      _T("d32"),
-                      _T("f33"),
-                      _T("f34"),
-                  }));
+  ASSERT_EQ(std::set<xl::native_string>(dirs.begin(), dirs.end()), (std::set<xl::native_string>{
+                                                                       _T("d31"),
+                                                                       _T("d32"),
+                                                                       _T("f33"),
+                                                                       _T("f34"),
+                                                                   }));
   dirs.clear();
 
   xl::fs::enum_dir(_T("d1") XL_FS_SEP _T("d21") XL_FS_SEP _T("d31"), callback, false, false);
@@ -78,33 +78,37 @@ TEST(file_test, fs_enum_remove_all) {
   dirs.clear();
 
   xl::fs::enum_dir(_T("d1"), callback, true, false);
-  ASSERT_EQ(dirs, (std::vector<xl::native_string>{
-                      _T("d21"),
-                      _T("d21") XL_FS_SEP _T("d31"),
-                      _T("d21") XL_FS_SEP _T("d32"),
-                      _T("d21") XL_FS_SEP _T("f33"),
-                      _T("d21") XL_FS_SEP _T("f34"),
-                      _T("d22"),
-                      _T("d22") XL_FS_SEP _T("d31"),
-                      _T("d22") XL_FS_SEP _T("d32"),
-                      _T("d22") XL_FS_SEP _T("f33"),
-                      _T("d22") XL_FS_SEP _T("f34"),
-                  }));
+  ASSERT_EQ(dirs[0], _T("d21"));
+  ASSERT_EQ(std::set<xl::native_string>(dirs.begin() + 1, dirs.begin() + 5), (std::set<xl::native_string>{
+                                                                                 _T("d21") XL_FS_SEP _T("d31"),
+                                                                                 _T("d21") XL_FS_SEP _T("d32"),
+                                                                                 _T("d21") XL_FS_SEP _T("f33"),
+                                                                                 _T("d21") XL_FS_SEP _T("f34"),
+                                                                             }));
+  ASSERT_EQ(dirs[5], _T("d22"));
+  ASSERT_EQ(std::set<xl::native_string>(dirs.begin() + 6, dirs.begin() + 10), (std::set<xl::native_string>{
+                                                                                  _T("d22") XL_FS_SEP _T("d31"),
+                                                                                  _T("d22") XL_FS_SEP _T("d32"),
+                                                                                  _T("d22") XL_FS_SEP _T("f33"),
+                                                                                  _T("d22") XL_FS_SEP _T("f34"),
+                                                                              }));
   dirs.clear();
 
   xl::fs::enum_dir(_T("d1"), callback, true, true);
-  ASSERT_EQ(dirs, (std::vector<xl::native_string>{
-                      _T("d21") XL_FS_SEP _T("d31"),
-                      _T("d21") XL_FS_SEP _T("d32"),
-                      _T("d21") XL_FS_SEP _T("f33"),
-                      _T("d21") XL_FS_SEP _T("f34"),
-                      _T("d21"),
-                      _T("d22") XL_FS_SEP _T("d31"),
-                      _T("d22") XL_FS_SEP _T("d32"),
-                      _T("d22") XL_FS_SEP _T("f33"),
-                      _T("d22") XL_FS_SEP _T("f34"),
-                      _T("d22"),
-                  }));
+  ASSERT_EQ(std::set<xl::native_string>(dirs.begin() + 0, dirs.begin() + 4), (std::set<xl::native_string>{
+                                                                                 _T("d21") XL_FS_SEP _T("d31"),
+                                                                                 _T("d21") XL_FS_SEP _T("d32"),
+                                                                                 _T("d21") XL_FS_SEP _T("f33"),
+                                                                                 _T("d21") XL_FS_SEP _T("f34"),
+                                                                             }));
+  ASSERT_EQ(dirs[4], _T("d21"));
+  ASSERT_EQ(std::set<xl::native_string>(dirs.begin() + 5, dirs.begin() + 9), (std::set<xl::native_string>{
+                                                                                 _T("d22") XL_FS_SEP _T("d31"),
+                                                                                 _T("d22") XL_FS_SEP _T("d32"),
+                                                                                 _T("d22") XL_FS_SEP _T("f33"),
+                                                                                 _T("d22") XL_FS_SEP _T("f34"),
+                                                                             }));
+  ASSERT_EQ(dirs[9], _T("d22"));
   dirs.clear();
 
   ASSERT_EQ(xl::fs::remove_all(_T("d1")), true);

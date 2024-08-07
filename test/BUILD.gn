@@ -15,6 +15,7 @@ executable("unittest") {
     "string_test.cc",
     "unittest.cc",
     "xml_test.cc",
+    "zip_test.cc",
   ]
   deps = [
     "../src:config",

@@ -9,6 +9,8 @@
 
 namespace xl {
 
+namespace zip {
+
 namespace {
 
 bool ZipAddFile(zipFile zf, const std::string &inner_path, const std::string &source_file, const struct stat &st) {
@@ -94,7 +96,7 @@ bool ZipAddFiles(zipFile zf, const std::string &inner_dir, const std::string &pa
 
 } // namespace
 
-bool ZipCompress(const char *zip_file, const char *pattern) {
+bool zip_compress(const char *zip_file, const char *pattern) {
   zipFile zf = zipOpen64(zip_file, 0);
   if (zf == NULL) {
     return false;
@@ -103,5 +105,7 @@ bool ZipCompress(const char *zip_file, const char *pattern) {
 
   return ZipAddFiles(zf, "", pattern);
 }
+
+} // namespace zip
 
 } // namespace xl

@@ -1,8 +1,14 @@
 #include <cstring>
+#include <queue>
 #include <xl/byte_order.h>
 #include <xl/encoding>
 #include <xl/file>
 #include <xl/scope_exit>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <dirent.h>
+#endif
 #ifdef __APPLE__
 #include <sys/errno.h>
 #endif
@@ -313,12 +319,98 @@ bool mkdirs(const TCHAR *path) {
   return true;
 }
 
+namespace {
+
+bool enum_dir(const native_string &path,
+              EnumDirCallback callback,
+              bool recursive,
+              bool sub_dir_first,
+              const native_string &found_path_prefix) {
+#ifdef _WIN32
+  native_string pattern = path + XL_FS_SEP _T("*");
+  _wfinddata64_t find_data = {};
+  intptr_t find = _wfindfirst64(pattern.c_str(), &find_data);
+  if (find == -1) {
+    return false;
+  }
+  XL_ON_BLOCK_EXIT(_findclose, find);
+
+  do {
+    if (_tcscmp(find_data.name, _T(".")) == 0 || _tcscmp(find_data.name, _T("..")) == 0) {
+      continue;
+    }
+    native_string absolute_path = path + SEP + find_data.name;
+    native_string found_path = found_path_prefix + find_data.name;
+    bool is_dir = (find_data.attrib & _A_SUBDIR) != 0;
+#else
+  DIR *dir = opendir(path.c_str());
+  if (dir == NULL) {
+    return false;
+  }
+  XL_ON_BLOCK_EXIT(closedir, dir);
+  for (dirent *item = readdir(dir); item != nullptr; item = readdir(dir)) {
+    if (_tcscmp(item->d_name, _T(".")) == 0 || _tcscmp(item->d_name, _T("..")) == 0) {
+      continue;
+    }
+
+    native_string absolute_path = path + SEP + item->d_name;
+    native_string found_path = found_path_prefix + item->d_name;
+    bool is_dir = (item->d_type & DT_DIR) != 0;
+#endif
+
+    if (!is_dir || !recursive || !sub_dir_first) {
+      if (!callback(found_path, is_dir)) {
+        return false;
+      }
+    }
+    if (is_dir && recursive) {
+      if (!enum_dir(absolute_path, callback, recursive, sub_dir_first, found_path + SEP)) {
+        return false;
+      }
+    }
+    if (is_dir && recursive && sub_dir_first) {
+      if (!callback(found_path, is_dir)) {
+        return false;
+      }
+    }
+
+#ifdef _WIN32
+  } while (_wfindnext64(find, &find_data) == 0);
+#else
+  }
+#endif
+  return true;
+}
+
+} // namespace
+
+bool enum_dir(const TCHAR *path, EnumDirCallback callback, bool recursive, bool sub_dir_first) {
+  return enum_dir(path, callback, recursive, sub_dir_first, _T(""));
+}
+
 bool rmdir(const TCHAR *path) {
   return ::_trmdir(path) == 0;
 }
 
 bool remove(const TCHAR *path) {
   return ::_tremove(path) == 0;
+}
+
+bool remove_all(const TCHAR *path) {
+  if (!enum_dir(
+          path,
+          [path](const native_string &sub_path, bool is_dir) -> bool {
+            native_string p = path + (XL_FS_SEP + sub_path);
+            if (is_dir) {
+              return rmdir(p.c_str());
+            } else {
+              return unlink(p.c_str());
+            }
+          },
+          true, true)) {
+    return false;
+  }
+  return rmdir(path);
 }
 
 bool rename(const TCHAR *path, const TCHAR *new_path) {

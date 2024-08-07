@@ -2,6 +2,7 @@
 
 #include "native_string"
 #include <cstdio>
+#include <functional>
 #include <string>
 
 #ifdef _WIN32
@@ -68,9 +69,14 @@ bool mkdir(const TCHAR *path);
 
 bool mkdirs(const TCHAR *path);
 
+typedef std::function<bool(const native_string &path, bool is_dir)> EnumDirCallback;
+bool enum_dir(const TCHAR *path, EnumDirCallback callback, bool recursive = false, bool sub_dir_first = false);
+
 bool rmdir(const TCHAR *path);
 
 bool remove(const TCHAR *path);
+
+bool remove_all(const TCHAR *path);
 
 bool rename(const TCHAR *path, const TCHAR *new_path);
 

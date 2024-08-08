@@ -10,6 +10,8 @@
 
 namespace xl {
 
+namespace zip {
+
 namespace {
 
 void mkdirs(char *path) {
@@ -20,7 +22,7 @@ void mkdirs(char *path) {
   }
 }
 
-bool ZipExtractCurrentFile(unzFile uf, const std::string &target_dir) {
+bool unzip_current_file(unzFile uf, const std::string &target_dir) {
   std::string inner_path;
   inner_path.resize(1024);
   unz_file_info64 file_info;
@@ -84,7 +86,7 @@ bool ZipExtractCurrentFile(unzFile uf, const std::string &target_dir) {
 
 } // namespace
 
-bool ZipExtract(const char *zip_file, const char *target_dir) {
+bool zip_extract(const char *zip_file, const char *target_dir) {
   unzFile uf = unzOpen64(zip_file);
   if (uf == NULL) {
     return false;
@@ -104,7 +106,7 @@ bool ZipExtract(const char *zip_file, const char *target_dir) {
   mkdirs(root_dir_buffer);
 
   for (int i = 0; i < gi.number_entry; ++i) {
-    if (!ZipExtractCurrentFile(uf, root_dir)) {
+    if (!unzip_current_file(uf, root_dir)) {
       return false;
     }
     if (i < gi.number_entry - 1) {
@@ -116,5 +118,7 @@ bool ZipExtract(const char *zip_file, const char *target_dir) {
 
   return true;
 }
+
+} // namespace zip
 
 } // namespace xl

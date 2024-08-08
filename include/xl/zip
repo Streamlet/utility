@@ -4,6 +4,8 @@
 
 namespace xl {
 
+namespace zip {
+
 /**
  * @brief Compress files to a ZIP file.
  *
@@ -11,7 +13,7 @@ namespace xl {
  * @param pattern  Source files, supporting wildcards.
  * @return true/false
  */
-bool ZipCompress(const TCHAR *zip_file, const TCHAR *pattern);
+bool zip_compress(const TCHAR *zip_file, const TCHAR *pattern);
 
 /**
  * @brief Extract files from a ZIP file.
@@ -20,6 +22,10 @@ bool ZipCompress(const TCHAR *zip_file, const TCHAR *pattern);
  * @param target_dir Directory to output files.
  * @return true/false
  */
-bool ZipExtract(const TCHAR *zip_file, const TCHAR *target_dir);
+bool zip_extract(const TCHAR *zip_file, const TCHAR *target_dir);
 
-} // namespace zlibwrap
+std::string zip_read_file(const TCHAR *zip_file, const char *inner_zip_path);
+
+} // namespace zip
+
+} // namespace xl

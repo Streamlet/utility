@@ -290,8 +290,27 @@ bool exists(const TCHAR *path) {
 }
 
 long long size(const TCHAR *path) {
-  FILE *f = OPEN_CLOSE_FILE_READ(path, -1);
-  return fsize(f);
+#ifdef _WIN32
+  struct _stat64 stat = {};
+#else
+  struct stat64 stat = {};
+#endif
+  if (_tstat64(path, &stat) != 0) {
+    return -1;
+  }
+  return stat.st_size;
+}
+
+unsigned short attribute(const TCHAR *path) {
+#ifdef _WIN32
+  struct _stat64 stat = {};
+#else
+  struct stat64 stat = {};
+#endif
+  if (_tstat64(path, &stat) != 0) {
+    return 0;
+  }
+  return stat.st_mode;
 }
 
 bool unlink(const TCHAR *path) {
@@ -308,10 +327,10 @@ bool mkdir(const TCHAR *path) {
 
 bool mkdirs(const TCHAR *path) {
   native_string paths = path;
-  for (TCHAR *p = _tcschr(&paths[0], SEP); p != NULL; p = _tcschr(p + 1, SEP)) {
+  for (TCHAR *p = _tcschr(&paths[0], path::SEP); p != NULL; p = _tcschr(p + 1, path::SEP)) {
     *p = _T('\0');
     fs::mkdir(paths.c_str());
-    *p = SEP;
+    *p = path::SEP;
   }
   if (!fs::mkdir(paths.c_str())) {
     return false;
@@ -327,7 +346,7 @@ bool enum_dir(const native_string &path,
               bool sub_dir_first,
               const native_string &found_path_prefix) {
 #ifdef _WIN32
-  native_string pattern = path + XL_FS_SEP _T("*");
+  native_string pattern = path + path::SEP_STR + _T("*");
   _wfinddata64_t find_data = {};
   intptr_t find = _wfindfirst64(pattern.c_str(), &find_data);
   if (find == -1) {
@@ -339,7 +358,7 @@ bool enum_dir(const native_string &path,
     if (_tcscmp(find_data.name, _T(".")) == 0 || _tcscmp(find_data.name, _T("..")) == 0) {
       continue;
     }
-    native_string absolute_path = path + SEP + find_data.name;
+    native_string absolute_path = path + path::SEP_STR + find_data.name;
     native_string found_path = found_path_prefix + find_data.name;
     bool is_dir = (find_data.attrib & _A_SUBDIR) != 0;
 #else
@@ -353,7 +372,7 @@ bool enum_dir(const native_string &path,
       continue;
     }
 
-    native_string absolute_path = path + SEP + item->d_name;
+    native_string absolute_path = path + path::SEP_STR + item->d_name;
     native_string found_path = found_path_prefix + item->d_name;
     bool is_dir = (item->d_type & DT_DIR) != 0;
 #endif
@@ -364,7 +383,7 @@ bool enum_dir(const native_string &path,
       }
     }
     if (is_dir && recursive) {
-      if (!enum_dir(absolute_path, callback, recursive, sub_dir_first, found_path + SEP)) {
+      if (!enum_dir(absolute_path, callback, recursive, sub_dir_first, found_path + path::SEP_STR)) {
         return false;
       }
     }
@@ -400,7 +419,7 @@ bool remove_all(const TCHAR *path) {
   if (!enum_dir(
           path,
           [path](const native_string &sub_path, bool is_dir) -> bool {
-            native_string p = path + (XL_FS_SEP + sub_path);
+            native_string p = path + path::SEP_STR + sub_path;
             if (is_dir) {
               return rmdir(p.c_str());
             } else {
@@ -418,5 +437,69 @@ bool rename(const TCHAR *path, const TCHAR *new_path) {
 }
 
 } // namespace fs
+
+namespace path {
+
+#ifdef _WIN32
+const TCHAR SEP = _T('\\');
+const native_string SEP_STR = _T("\\");
+#else
+const TCHAR SEP = _T('/');
+const native_string SEP_STR = _T("/");
+#endif
+
+const TCHAR DOT = _T('.');
+const native_string DOT_STR = _T(".");
+
+native_string dirname(const TCHAR *path) {
+  const TCHAR *sep_pos = _tcsrchr(path, path::SEP);
+  if (sep_pos == nullptr) {
+    return _T("");
+  }
+  if (sep_pos == path) {
+    return SEP_STR;
+  }
+  return native_string(path, sep_pos - path);
+}
+
+native_string filename(const TCHAR *path) {
+  const TCHAR *name_pos = _tcsrchr(path, path::SEP);
+  if (name_pos == nullptr) {
+    name_pos = path;
+  } else {
+    ++name_pos;
+  }
+  return native_string(name_pos);
+}
+
+native_string basename(const TCHAR *path) {
+  const TCHAR *name_pos = _tcsrchr(path, path::SEP);
+  if (name_pos == nullptr) {
+    name_pos = path;
+  } else {
+    ++name_pos;
+  }
+  const TCHAR *dot_pos = _tcsrchr(name_pos, path::DOT);
+  if (dot_pos == nullptr) {
+    return name_pos;
+  }
+  return native_string(name_pos, dot_pos - name_pos);
+}
+
+native_string extname(const TCHAR *path) {
+  const TCHAR *name_pos = _tcsrchr(path, path::SEP);
+  if (name_pos == nullptr) {
+    name_pos = path;
+  } else {
+    ++name_pos;
+  }
+  const TCHAR *dot_pos = _tcsrchr(name_pos, path::DOT);
+  if (dot_pos == nullptr) {
+    return _T("");
+  }
+  return native_string(dot_pos);
+}
+
+} // namespace path
 
 } // namespace xl

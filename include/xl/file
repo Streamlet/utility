@@ -19,12 +19,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef _WIN32
-#define XL_FS_SEP _T("\\")
-#else
-#define XL_FS_SEP _T("/")
-#endif
-
 namespace xl {
 
 namespace file {
@@ -51,17 +45,13 @@ bool write_text_utf16_be(const TCHAR *path, const std::wstring &text);
 
 namespace fs {
 
-#ifdef _WIN32
-const TCHAR SEP = _T('\\');
-#else
-const TCHAR SEP = _T('/');
-#endif
-
 bool touch(const TCHAR *path);
 
 bool exists(const TCHAR *path);
 
 long long size(const TCHAR *path);
+
+unsigned short attribute(const TCHAR *path);
 
 bool unlink(const TCHAR *path);
 
@@ -81,5 +71,47 @@ bool remove_all(const TCHAR *path);
 bool rename(const TCHAR *path, const TCHAR *new_path);
 
 } // namespace fs
+
+namespace path {
+
+extern const TCHAR SEP;
+extern const native_string SEP_STR;
+extern const TCHAR DOT;
+extern const native_string DOT_STR;
+
+native_string dirname(const TCHAR *path);  // /path/to/file.ext => /path/to
+native_string filename(const TCHAR *path); // /path/to/file.ext => file.ext
+native_string basename(const TCHAR *path); // /path/to/file.ext => file
+native_string extname(const TCHAR *path);  // /path/to/file.ext => .ext
+
+template <typename... T>
+native_string join(T... args);
+
+template <typename... T>
+inline native_string join(const TCHAR *first, T... rest) {
+  return native_string(first) + native_string(1, SEP) + join(rest...);
+}
+template <typename... T>
+inline native_string join(const native_string &first, T... rest) {
+  return first + native_string(1, SEP) + join(rest...);
+}
+template <typename... T>
+inline native_string join(native_string &&first, T... rest) {
+  return std::move(first) + native_string(1, SEP) + join(rest...);
+}
+template <>
+inline native_string join(const TCHAR *last) {
+  return native_string(last);
+}
+template <>
+inline native_string join(const native_string &last) {
+  return last;
+}
+template <>
+inline native_string join(native_string &&last) {
+  return std::move(last);
+}
+
+} // namespace path
 
 } // namespace xl

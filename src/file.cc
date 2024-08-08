@@ -290,27 +290,39 @@ bool exists(const TCHAR *path) {
 }
 
 long long size(const TCHAR *path) {
-#ifdef _WIN32
-  struct _stat64 stat = {};
+#if defined(_WIN32)
+  struct _stat64 st = {};
+#elif defined(__APPLE__)
+  struct stat st = {};
 #else
-  struct stat64 stat = {};
+  struct stat64 st = {};
 #endif
-  if (_tstat64(path, &stat) != 0) {
+#if defined(__APPLE__)
+  if (_tstat(path, &st) != 0) {
+#else
+  if (_tstat64(path, &st) != 0) {
+#endif
     return -1;
   }
-  return stat.st_size;
+  return st.st_size;
 }
 
 unsigned short attribute(const TCHAR *path) {
-#ifdef _WIN32
-  struct _stat64 stat = {};
+#if defined(_WIN32)
+  struct _stat64 st = {};
+#elif defined(__APPLE__)
+  struct stat st = {};
 #else
-  struct stat64 stat = {};
+  struct stat64 st = {};
 #endif
-  if (_tstat64(path, &stat) != 0) {
+#if defined(__APPLE__)
+  if (_tstat(path, &st) != 0) {
+#else
+  if (_tstat64(path, &st) != 0) {
+#endif
     return 0;
   }
-  return stat.st_mode;
+  return st.st_mode;
 }
 
 bool unlink(const TCHAR *path) {

@@ -16,13 +16,9 @@
 
 namespace xl {
 
-namespace {
+namespace zip {
 
-#ifdef _UNICODE
-typedef std::wstring tstring;
-#else
-typedef std::string tstring;
-#endif
+namespace {
 
 void mkdirs(TCHAR *path) {
   for (TCHAR *p = _tcschr(path, _T('/')); p != NULL; p = _tcschr(p + 1, _T('/'))) {
@@ -34,7 +30,7 @@ void mkdirs(TCHAR *path) {
 
 char inner_path_buffer[1024] = {0};
 
-bool ZipExtractCurrentFile(unzFile uf, const tstring &target_dir) {
+bool unzip_current_file(unzFile uf, const native_string &target_dir) {
   unz_file_info64 file_info;
   if (unzGetCurrentFileInfo64(uf, &file_info, inner_path_buffer, (uLong)sizeof(inner_path_buffer), NULL, 0, NULL, 0) !=
       UNZ_OK) {
@@ -46,7 +42,7 @@ bool ZipExtractCurrentFile(unzFile uf, const tstring &target_dir) {
   }
   XL_ON_BLOCK_EXIT(unzCloseCurrentFile, uf);
 
-  tstring inner_path;
+  native_string inner_path;
   if ((file_info.flag & ZIP_GPBF_LANGUAGE_ENCODING_FLAG) != 0) {
 #ifdef _UNICODE
     inner_path = encoding::utf8_to_utf16(inner_path_buffer);
@@ -61,7 +57,7 @@ bool ZipExtractCurrentFile(unzFile uf, const tstring &target_dir) {
 #endif
   }
 
-  tstring target_path = target_dir + inner_path;
+  native_string target_path = target_dir + inner_path;
   mkdirs(&target_path[0]);
   bool is_dir = *inner_path.rbegin() == _T('/');
 
@@ -102,7 +98,7 @@ bool ZipExtractCurrentFile(unzFile uf, const tstring &target_dir) {
 
 } // namespace
 
-bool ZipExtract(const TCHAR *zip_file, const TCHAR *target_dir) {
+bool zip_extract(const TCHAR *zip_file, const TCHAR *target_dir) {
   zlib_filefunc64_def zlib_filefunc_def;
   fill_win32_filefunc64(&zlib_filefunc_def);
   unzFile uf = unzOpen2_64(zip_file, &zlib_filefunc_def);
@@ -124,7 +120,7 @@ bool ZipExtract(const TCHAR *zip_file, const TCHAR *target_dir) {
   mkdirs(root_dir_buffer);
 
   for (int i = 0; i < gi.number_entry; ++i) {
-    if (!ZipExtractCurrentFile(uf, root_dir)) {
+    if (!unzip_current_file(uf, root_dir)) {
       return false;
     }
     if (i < gi.number_entry - 1) {
@@ -136,5 +132,7 @@ bool ZipExtract(const TCHAR *zip_file, const TCHAR *target_dir) {
 
   return true;
 }
+
+} // namespace zip
 
 } // namespace xl

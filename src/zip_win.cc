@@ -14,15 +14,14 @@
 
 namespace xl {
 
+namespace zip {
+
 namespace {
 
-#ifdef _UNICODE
-typedef std::wstring tstring;
-#else
-typedef std::string tstring;
-#endif
-
-bool ZipAddFile(zipFile zf, const tstring &inner_path, const tstring &source_file, const _wfinddata64_t &find_data) {
+bool zip_add_file(zipFile zf,
+                  const native_string &inner_path,
+                  const native_string &source_file,
+                  const _wfinddata64_t &find_data) {
   zip_fileinfo file_info = {};
   file_info.internal_fa = 0;
   file_info.external_fa = find_data.attrib;
@@ -74,14 +73,14 @@ bool ZipAddFile(zipFile zf, const tstring &inner_path, const tstring &source_fil
   return true;
 }
 
-bool ZipAddFiles(zipFile zf, const tstring &inner_dir, const tstring &pattern) {
+bool zip_add_files_pattern(zipFile zf, const native_string &inner_dir, const native_string &pattern) {
   size_t slash = pattern.rfind(_T('/'));
   size_t back_slash = pattern.rfind(_T('\\'));
-  size_t slash_pos = slash != tstring::npos && back_slash != tstring::npos
+  size_t slash_pos = slash != native_string::npos && back_slash != native_string::npos
                          ? max(slash, back_slash)
-                         : (slash != tstring::npos ? slash : back_slash);
-  tstring source_dir;
-  if (slash_pos != tstring::npos) {
+                         : (slash != native_string::npos ? slash : back_slash);
+  native_string source_dir;
+  if (slash_pos != native_string::npos) {
     source_dir = pattern.substr(0, slash_pos) + _T("/");
   }
 
@@ -97,18 +96,18 @@ bool ZipAddFiles(zipFile zf, const tstring &inner_dir, const tstring &pattern) {
       continue;
     }
 
-    tstring inner_path = inner_dir + find_data.name;
-    tstring source_path = source_dir + find_data.name;
+    native_string inner_path = inner_dir + find_data.name;
+    native_string source_path = source_dir + find_data.name;
     if ((find_data.attrib & _A_SUBDIR) != 0) {
       inner_path += _T("/");
-      if (!ZipAddFile(zf, inner_path, source_path, find_data)) {
+      if (!zip_add_file(zf, inner_path, source_path, find_data)) {
         return false;
       }
-      if (!ZipAddFiles(zf, inner_path, source_path + _T("/*"))) {
+      if (!zip_add_files_pattern(zf, inner_path, source_path + _T("/*"))) {
         return false;
       }
     } else {
-      if (!ZipAddFile(zf, inner_path, source_path, find_data)) {
+      if (!zip_add_file(zf, inner_path, source_path, find_data)) {
         return false;
       }
     }
@@ -119,7 +118,7 @@ bool ZipAddFiles(zipFile zf, const tstring &inner_dir, const tstring &pattern) {
 
 } // namespace
 
-bool ZipCompress(const TCHAR *zip_file, const TCHAR *pattern) {
+bool zip_compress(const TCHAR *zip_file, const TCHAR *pattern) {
   zlib_filefunc64_def zlib_filefunc_def;
   fill_win32_filefunc64(&zlib_filefunc_def);
   zipFile zf = zipOpen2_64(zip_file, 0, NULL, &zlib_filefunc_def);
@@ -128,7 +127,9 @@ bool ZipCompress(const TCHAR *zip_file, const TCHAR *pattern) {
   }
   XL_ON_BLOCK_EXIT(zipClose, zf, (const char *)NULL);
 
-  return ZipAddFiles(zf, _T(""), pattern);
+  return zip_add_files_pattern(zf, _T(""), pattern);
 }
+
+} // namespace zip
 
 } // namespace xl

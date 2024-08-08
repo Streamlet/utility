@@ -9,10 +9,11 @@
 
 namespace xl {
 
+namespace zip {
+
 namespace {
 
-bool ZipAddFile(zipFile zf, const std::string &inner_path, const std::string &source_file, const struct stat &st) {
-
+bool zip_add_file(zipFile zf, const std::string &inner_path, const std::string &source_file, const struct stat &st) {
   zip_fileinfo file_info = {};
   file_info.internal_fa = 0;
   file_info.external_fa = st.st_mode;
@@ -54,7 +55,7 @@ bool ZipAddFile(zipFile zf, const std::string &inner_path, const std::string &so
   return true;
 }
 
-bool ZipAddFiles(zipFile zf, const std::string &inner_dir, const std::string &pattern) {
+bool zip_add_files_pattern(zipFile zf, const std::string &inner_dir, const std::string &pattern) {
   glob_t globbuf = {};
   if (glob(pattern.c_str(), 0, NULL, &globbuf) != 0) {
     return false;
@@ -66,7 +67,7 @@ bool ZipAddFiles(zipFile zf, const std::string &inner_dir, const std::string &pa
     std::string source_path = globbuf.gl_pathv[i];
     size_t slash_pos = source_path.rfind('/');
     if (slash_pos != std::string::npos) {
-      inner_path += source_path.substr(slash_pos);
+      inner_path += source_path.substr(slash_pos + 1);
     } else {
       inner_path += source_path;
     }
@@ -77,14 +78,14 @@ bool ZipAddFiles(zipFile zf, const std::string &inner_dir, const std::string &pa
     }
     if (S_ISDIR(st.st_mode)) {
       inner_path += "/";
-      if (!ZipAddFile(zf, inner_path, source_path, st)) {
+      if (!zip_add_file(zf, inner_path, source_path, st)) {
         return false;
       }
-      if (!ZipAddFiles(zf, inner_path, source_path + "/*")) {
+      if (!zip_add_files_pattern(zf, inner_path, source_path + "/*")) {
         return false;
       }
     } else {
-      if (!ZipAddFile(zf, inner_path, source_path, st)) {
+      if (!zip_add_file(zf, inner_path, source_path, st)) {
         return false;
       }
     }
@@ -94,14 +95,16 @@ bool ZipAddFiles(zipFile zf, const std::string &inner_dir, const std::string &pa
 
 } // namespace
 
-bool ZipCompress(const char *zip_file, const char *pattern) {
+bool zip_compress(const char *zip_file, const char *pattern) {
   zipFile zf = zipOpen64(zip_file, 0);
   if (zf == NULL) {
     return false;
   }
   XL_ON_BLOCK_EXIT(zipClose, zf, (const char *)NULL);
 
-  return ZipAddFiles(zf, "", pattern);
+  return zip_add_files_pattern(zf, "", pattern);
 }
+
+} // namespace zip
 
 } // namespace xl

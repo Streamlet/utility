@@ -103,5 +103,8 @@ inline native_string to_native_string(T _Val) {
 #define _tasctime asctime
 #define _tctime ctime
 #define _tcsftime strftime
+#define _tutime utime
+#define _tutime32 utime32
+#define _tutime64 utime64
 
 #endif

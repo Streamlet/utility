@@ -1,9 +1,11 @@
 #include <cstring>
 #include <queue>
+#include <sys/stat.h>
 #include <xl/byte_order.h>
 #include <xl/encoding>
 #include <xl/file>
 #include <xl/scope_exit>
+
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -289,40 +291,32 @@ bool exists(const TCHAR *path) {
   return true;
 }
 
-long long size(const TCHAR *path) {
-#if defined(_WIN32)
-  struct _stat64 st = {};
-#elif defined(__APPLE__)
-  struct stat st = {};
-#else
-  struct stat64 st = {};
-#endif
+bool stat(const TCHAR *path, stat_data *st) {
 #if defined(__APPLE__)
-  if (_tstat(path, &st) != 0) {
+  return tstat(path, st) == 0;
 #else
-  if (_tstat64(path, &st) != 0) {
+  return _tstat64(path, st) == 0;
 #endif
+}
+
+long long size(const TCHAR *path) {
+  stat_data st = {};
+  if (!fs::stat(path, &st)) {
     return -1;
   }
   return st.st_size;
 }
 
 unsigned short attribute(const TCHAR *path) {
-#if defined(_WIN32)
-  struct _stat64 st = {};
-#elif defined(__APPLE__)
-  struct stat st = {};
-#else
-  struct stat64 st = {};
-#endif
-#if defined(__APPLE__)
-  if (_tstat(path, &st) != 0) {
-#else
-  if (_tstat64(path, &st) != 0) {
-#endif
+  stat_data st = {};
+  if (!fs::stat(path, &st)) {
     return 0;
   }
   return st.st_mode;
+}
+
+bool is_dir(const TCHAR *path) {
+  return (attribute(path) & S_IFMT) == S_IFDIR;
 }
 
 bool unlink(const TCHAR *path) {

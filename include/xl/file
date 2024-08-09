@@ -49,9 +49,21 @@ bool touch(const TCHAR *path);
 
 bool exists(const TCHAR *path);
 
+#if defined(_WIN32)
+typedef struct _stat64 stat_data;
+#elif defined(__APPLE__)
+typedef struct stat stat_data;
+#else
+typedef struct stat64 stat_data;
+#endif
+
+bool stat(const TCHAR *path, stat_data *st);
+
 long long size(const TCHAR *path);
 
 unsigned short attribute(const TCHAR *path);
+
+bool is_dir(const TCHAR *path);
 
 bool unlink(const TCHAR *path);
 

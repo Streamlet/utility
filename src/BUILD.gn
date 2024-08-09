@@ -53,9 +53,7 @@ source_set("crypto") {
 source_set("file") {
   sources = [
     "file.cc",
-    "unzip.cc",
     "zip.cc",
-    "zip.h",
   ]
 
   inputs = [

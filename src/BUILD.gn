@@ -57,11 +57,6 @@ source_set("file") {
     "zip.cc",
     "zip.h",
   ]
-  if (is_win) {
-    sources += [ "unzip_win.cc" ]
-  } else {
-    sources += [ "unzip_posix.cc" ]
-  }
 
   inputs = [
     "../include/xl/byte_order.h",

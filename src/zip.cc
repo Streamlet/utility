@@ -20,7 +20,7 @@ namespace zip {
 
 namespace {
 
-const TCHAR *ZIP_SEP = _T("/");
+const TCHAR *ZIP_SEP_STR = _T("/");
 
 bool zip_add_item(zipFile zf,
                   const native_string &inner_path,
@@ -83,8 +83,8 @@ bool zip_add_file(zipFile zf, const native_string &inner_parent_path, const nati
     return false;
   }
   native_string inner_name = path::filename(outer_path.c_str());
-  const native_string &inner_path = (inner_parent_path.empty() ? _T("") : inner_parent_path + ZIP_SEP) + inner_name;
-  if (!zip_add_item(zf, inner_path + ((st.st_mode & S_IFMT) == S_IFDIR ? ZIP_SEP : _T("")), outer_path, st)) {
+  const native_string &inner_path = (inner_parent_path.empty() ? _T("") : inner_parent_path + ZIP_SEP_STR) + inner_name;
+  if (!zip_add_item(zf, inner_path + ((st.st_mode & S_IFMT) == S_IFDIR ? ZIP_SEP_STR : _T("")), outer_path, st)) {
     return false;
   }
   if ((st.st_mode & S_IFMT) != S_IFDIR) {

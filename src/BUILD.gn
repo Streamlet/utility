@@ -53,7 +53,7 @@ source_set("crypto") {
 source_set("file") {
   sources = [
     "file.cc",
-    "zip.cc",
+    "unzip.cc",
     "zip.h",
   ]
   if (is_win) {

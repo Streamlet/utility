@@ -293,9 +293,9 @@ bool exists(const TCHAR *path) {
 
 bool stat(const TCHAR *path, stat_data *st) {
 #if defined(__APPLE__)
-  return _tstat(path, st) == 0;
+  return ::_tstat(path, st) == 0;
 #else
-  return _tstat64(path, st) == 0;
+  return ::_tstat64(path, st) == 0;
 #endif
 }
 

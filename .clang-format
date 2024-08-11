@@ -19,7 +19,8 @@ BinPackParameters: false
 ShortNamespaceLines: 0
 SortIncludes: CaseInsensitive
 AlignArrayOfStructures: Left
+AlignConsecutiveMacros: true
 InsertBraces: True
 
-MacroBlockBegin: "(^|.*_)BEGIN(_.*|$)"
-MacroBlockEnd: "(^|.*_)END(_.*|$)"
+MacroBlockBegin: "^XL_.*_BEGIN$"
+MacroBlockEnd: "^XL_.*_END$"

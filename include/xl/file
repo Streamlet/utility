@@ -10,8 +10,8 @@
 #define fseek _fseeki64
 #else
 #define _FILE_OFFSET_BITS 64
-#define ftell ftello
-#define fseek fseeko
+#define ftell             ftello
+#define fseek             fseeko
 #endif
 
 #ifndef _WIN32
@@ -61,9 +61,11 @@ bool stat(const TCHAR *path, stat_data *st);
 
 long long size(const TCHAR *path);
 
-unsigned short attribute(const TCHAR *path);
+unsigned int attribute(const TCHAR *path);
+bool attribute(const TCHAR *path, unsigned int attribute);
 
 bool is_dir(const TCHAR *path);
+bool is_dir(unsigned int attribute);
 
 bool unlink(const TCHAR *path);
 

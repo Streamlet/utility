@@ -6,25 +6,14 @@ namespace xl {
 
 namespace zip {
 
-/**
- * @brief Compress files to a ZIP file.
- *
- * @param zip_file Target ZIP file path.
- * @param pattern  Source files, supporting wildcards.
- * @return true/false
- */
-bool zip_compress(const TCHAR *zip_file, const TCHAR *pattern);
+bool touch(const TCHAR *zip_file);
+bool add_file(const TCHAR *zip_file, const char *inner_path, const void *content, size_t length);
+bool add_file(const TCHAR *zip_file, const char *inner_path, const TCHAR *outer_path);
+bool compress(const TCHAR *zip_file, const TCHAR *outer_path);
+bool compress_folder_content(const TCHAR *zip_file, const TCHAR *outer_path);
 
-/**
- * @brief Extract files from a ZIP file.
- *
- * @param zip_file   Source ZIP file.
- * @param target_dir Directory to output files.
- * @return true/false
- */
-bool zip_extract(const TCHAR *zip_file, const TCHAR *target_dir);
-
-std::string zip_read_file(const TCHAR *zip_file, const char *inner_zip_path);
+std::string read_file(const TCHAR *zip_file, const char *inner_path);
+bool extract(const TCHAR *zip_file, const TCHAR *target_dir);
 
 } // namespace zip
 

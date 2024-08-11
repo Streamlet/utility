@@ -8,6 +8,7 @@
 
 #ifdef _WIN32
 #include <io.h>
+#include <Windows.h>
 #else
 #include <dirent.h>
 #endif
@@ -307,16 +308,40 @@ long long size(const TCHAR *path) {
   return st.st_size;
 }
 
-unsigned short attribute(const TCHAR *path) {
+unsigned int attribute(const TCHAR *path) {
+#ifdef _WIN32
+  DWORD attribute = ::GetFileAttributes(path);
+  if (attribute == INVALID_FILE_ATTRIBUTES) {
+    return -1;
+  }
+  return attribute;
+#else
   stat_data st = {};
   if (!fs::stat(path, &st)) {
-    return 0;
+    return -1;
   }
   return st.st_mode;
+#endif
+}
+
+bool attribute(const TCHAR *path, unsigned int attribute) {
+#ifdef _WIN32
+  return !!::SetFileAttributes(path, attribute);
+#else
+  return _tchmod(path, attribute) == 0;
+#endif
 }
 
 bool is_dir(const TCHAR *path) {
-  return (attribute(path) & S_IFMT) == S_IFDIR;
+  return is_dir(attribute(path));
+}
+
+bool is_dir(unsigned int attribute) {
+#ifdef _WIN32
+  return (attribute & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#else
+  return (attribute & S_IFMT) == S_IFDIR;
+#endif
 }
 
 bool unlink(const TCHAR *path) {

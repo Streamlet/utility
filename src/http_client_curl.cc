@@ -214,7 +214,8 @@ private:
   std::string user_agent_;
 };
 
-HttpClient::HttpClient(std::string user_agent) : session_(std::unique_ptr<HttpSession>(std::move(user_agent))) {
+HttpClient::HttpClient(std::string user_agent)
+    : session_(std::unique_ptr<HttpSession>(new HttpSession(std::move(user_agent)))) {
 }
 
 HttpClient::~HttpClient() {

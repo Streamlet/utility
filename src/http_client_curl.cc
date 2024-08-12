@@ -17,9 +17,9 @@ enum class HttpMethod : int {
 };
 
 struct CUrlReadContext {
-  const char *data = nullptr;
-  size_t total = 0;
-  size_t read = 0;
+  const char *data;
+  size_t total;
+  size_t read;
 };
 
 size_t read_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
@@ -153,7 +153,7 @@ public:
       }
     }
 
-    CUrlReadContext read_ctx{request_body.data(), request_body.size(), 0};
+    CUrlReadContext read_ctx{request_body.data(), request_body.length(), 0};
     if (!request_body.empty()) {
       error = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
       if (error != CURLE_OK) {
@@ -214,7 +214,7 @@ private:
   std::string user_agent_;
 };
 
-HttpClient::HttpClient(std::string user_agent) : session_(std::make_unique<HttpSession>(std::move(user_agent))) {
+HttpClient::HttpClient(std::string user_agent) : session_(std::unique_ptr<HttpSession>(std::move(user_agent))) {
 }
 
 HttpClient::~HttpClient() {

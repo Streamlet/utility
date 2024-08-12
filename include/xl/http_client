@@ -1,8 +1,10 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <string_view>
 #include <system_error>
+#include <xl/string>
+
+namespace xl {
 
 class HttpClient {
 public:
@@ -13,45 +15,45 @@ public:
   typedef std::multimap<std::string, std::string> ResponseHeader;
   typedef std::function<void(const void *data, size_t length)> ResponseBodyReceiver;
 
-  std::error_code Head(const std::string_view &url,
+  std::error_code Head(const string_ref &url,
                        const RequestHeader &request_header,
                        unsigned *response_status,
                        ResponseHeader *response_header,
                        unsigned timeout = 0);
-  std::error_code Get(const std::string_view &url,
+  std::error_code Get(const string_ref &url,
                       const RequestHeader &request_header,
                       unsigned *response_status,
                       ResponseHeader *response_header,
                       std::string *response_body,
                       unsigned timeout = 0);
-  std::error_code Get(const std::string_view &url,
+  std::error_code Get(const string_ref &url,
                       const RequestHeader &request_header,
                       unsigned *response_status,
                       ResponseHeader *response_header,
                       ResponseBodyReceiver response_body_receiver,
                       unsigned timeout = 0);
-  std::error_code Post(const std::string_view &url,
+  std::error_code Post(const string_ref &url,
                        const RequestHeader &request_header,
-                       const std::string_view &request_body,
+                       const string_ref &request_body,
                        unsigned *response_status,
                        ResponseHeader *response_header,
                        std::string *response_body,
                        unsigned timeout = 0);
-  std::error_code Post(const std::string_view &url,
+  std::error_code Post(const string_ref &url,
                        const RequestHeader &request_header,
-                       const std::string_view &request_body,
+                       const string_ref &request_body,
                        unsigned *response_status,
                        ResponseHeader *response_header,
                        ResponseBodyReceiver response_body_receiver,
                        unsigned timeout = 0);
-  std::error_code Put(const std::string_view &url,
+  std::error_code Put(const string_ref &url,
                       const RequestHeader &request_header,
-                      const std::string_view &request_body,
+                      const string_ref &request_body,
                       unsigned *response_status,
                       ResponseHeader *response_header,
                       std::string *response_body,
                       unsigned timeout = 0);
-  std::error_code Delete(const std::string_view &url,
+  std::error_code Delete(const string_ref &url,
                          const RequestHeader &request_header,
                          unsigned *response_status,
                          ResponseHeader *response_header,
@@ -63,3 +65,5 @@ private:
   class HttpSession;
   std::unique_ptr<HttpSession> session_;
 };
+
+} // namespace xl

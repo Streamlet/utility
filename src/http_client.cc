@@ -1,6 +1,8 @@
 #include <cstring>
 #include <xl/http_client>
 
+namespace xl {
+
 const char *HttpClient::DEFAULT_USER_AGENT =
     "Mozilla/5.0 (compatible; MSIE 7.0; Windows NT 10.0; Win64; x64; Trident/7.0) "
     "AppleWebKit/500.00 (KHTML, like Gecko) "
@@ -31,3 +33,5 @@ HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body) 
     response_body->append(static_cast<const char *>(data), length);
   };
 }
+
+} // namespace xl

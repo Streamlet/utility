@@ -1,20 +1,24 @@
-#include <string_view>
+#include <xl/string>
+
+namespace xl {
 
 template <typename CharType>
-struct UrlT {
-  static UrlT Parse(const std::basic_string_view<CharType> &url);
+struct url_t {
+  static url_t parse(const basic_string_ref<CharType> &url);
 
   bool valid = false;
-  std::basic_string_view<CharType> protocol;
-  std::basic_string_view<CharType> username;
-  std::basic_string_view<CharType> password;
-  std::basic_string_view<CharType> domain;
-  std::basic_string_view<CharType> port;
-  std::basic_string_view<CharType> full_path; // path with query and fragment
-  std::basic_string_view<CharType> path;
-  std::basic_string_view<CharType> query;
-  std::basic_string_view<CharType> fragment;
+  basic_string_ref<CharType> protocol;
+  basic_string_ref<CharType> username;
+  basic_string_ref<CharType> password;
+  basic_string_ref<CharType> domain;
+  basic_string_ref<CharType> port;
+  basic_string_ref<CharType> full_path; // path with query and fragment
+  basic_string_ref<CharType> path;
+  basic_string_ref<CharType> query;
+  basic_string_ref<CharType> fragment;
 };
 
-using Url = UrlT<char>;
-using UrlW = UrlT<wchar_t>;
+using url = url_t<char>;
+using wurl = url_t<char>;
+
+} // namespace xl

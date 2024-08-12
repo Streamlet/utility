@@ -3,13 +3,13 @@
 #include <xl/process>
 
 int main(int argc, char *argv[]) {
-  HttpClient http;
+  xl::HttpClient http;
   if (argc <= 1) {
     return -1;
   }
 
   unsigned status = 0;
-  HttpClient::ResponseHeader header;
+  xl::HttpClient::ResponseHeader header;
   std::string body;
   std::error_code ec = {};
   const int RETRY_TIMES = 3;

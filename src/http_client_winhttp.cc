@@ -1,14 +1,13 @@
-#include <Windows.h>
-#include <Winhttp.h>
-
-#include <charconv>
 #include <memory>
 #include <sstream>
-#include <string_view>
+#include <Windows.h>
+#include <Winhttp.h>
 #include <xl/encoding>
 #include <xl/http_client>
 #include <xl/scope_exit>
 #include <xl/url>
+
+namespace xl {
 
 namespace {
 
@@ -59,9 +58,9 @@ public:
   }
 
   std::error_code SendAndReceive(const wchar_t *method,
-                                 const std::string_view &url_string,
+                                 const string_ref &url_string,
                                  const RequestHeader &request_header,
-                                 const std::string_view &request_body,
+                                 const string_ref &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
                                  ResponseBodyReceiver response_body_receiver,
@@ -79,7 +78,7 @@ public:
     if (!::WinHttpCrackUrl(url.c_str(), (DWORD)url.length(), 0, &urlComp)) {
       return std::make_error_code(std::errc::invalid_argument);
     }
-    std::wstring_view url_protocol(urlComp.lpszScheme, urlComp.dwSchemeLength);
+    wstring_ref url_protocol(urlComp.lpszScheme, urlComp.dwSchemeLength);
     std::wstring url_host(urlComp.lpszHostName, urlComp.dwHostNameLength);
     std::wstring url_path(urlComp.lpszUrlPath, urlComp.dwUrlPathLength);
     std::wstring url_query(urlComp.lpszExtraInfo, urlComp.dwExtraInfoLength);
@@ -133,8 +132,7 @@ private:
                                 WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_REFRESH | (ssl ? WINHTTP_FLAG_SECURE : 0));
   }
 
-  std::error_code
-  SendRequest(HINTERNET request, const RequestHeader &request_header, const std::string_view &request_body) {
+  std::error_code SendRequest(HINTERNET request, const RequestHeader &request_header, const string_ref &request_body) {
     std::stringstream ss;
     for (const auto &h : request_header) {
       ss << h.first << ": " << h.second << "\r\n";
@@ -164,8 +162,8 @@ private:
       }
       std::wstring status_code;
       status_code.resize(status_code_size * sizeof(wchar_t));
-      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, status_code.data(),
-                                 &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
+                                 (void *)status_code.data(), &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
         return make_winhttp_error(::GetLastError());
       }
       *response_status = _wtoi(status_code.c_str());
@@ -182,8 +180,8 @@ private:
       }
       std::wstring buffer_w;
       buffer_w.resize(header_size);
-      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX, buffer_w.data(),
-                                 &header_size, WINHTTP_NO_HEADER_INDEX)) {
+      if (!::WinHttpQueryHeaders(request, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
+                                 (void *)buffer_w.data(), &header_size, WINHTTP_NO_HEADER_INDEX)) {
         return make_winhttp_error(::GetLastError());
       }
       std::string raw_header = xl::encoding::utf16_to_utf8(buffer_w);
@@ -206,7 +204,7 @@ private:
       while (bytes_available > 0) {
         buffer.resize(bytes_available);
         DWORD bytes_read = 0;
-        if (!::WinHttpReadData(request, buffer.data(), bytes_available, &bytes_read)) {
+        if (!::WinHttpReadData(request, (void *)buffer.data(), bytes_available, &bytes_read)) {
           return make_winhttp_error(::GetLastError());
         }
         if (bytes_read > 0) {
@@ -228,7 +226,7 @@ HttpClient::HttpClient(std::string user_agent) : session_(std::make_unique<HttpS
 HttpClient::~HttpClient() {
 }
 
-std::error_code HttpClient::Head(const std::string_view &url,
+std::error_code HttpClient::Head(const string_ref &url,
                                  const RequestHeader &request_header,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
@@ -236,7 +234,7 @@ std::error_code HttpClient::Head(const std::string_view &url,
   return session_->SendAndReceive(L"HEAD", url, request_header, "", response_status, response_header, nullptr);
 }
 
-std::error_code HttpClient::Get(const std::string_view &url,
+std::error_code HttpClient::Get(const string_ref &url,
                                 const RequestHeader &request_header,
                                 unsigned *response_status,
                                 ResponseHeader *response_header,
@@ -246,7 +244,7 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                   StringBodyReceiver(response_body));
 }
 
-std::error_code HttpClient::Get(const std::string_view &url,
+std::error_code HttpClient::Get(const string_ref &url,
                                 const RequestHeader &request_header,
                                 unsigned *response_status,
                                 ResponseHeader *response_header,
@@ -256,9 +254,9 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                   response_body_receiver);
 }
 
-std::error_code HttpClient::Post(const std::string_view &url,
+std::error_code HttpClient::Post(const string_ref &url,
                                  const RequestHeader &request_header,
-                                 const std::string_view &request_body,
+                                 const string_ref &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
                                  std::string *response_body,
@@ -267,9 +265,9 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                   StringBodyReceiver(response_body));
 }
 
-std::error_code HttpClient::Post(const std::string_view &url,
+std::error_code HttpClient::Post(const string_ref &url,
                                  const RequestHeader &request_header,
-                                 const std::string_view &request_body,
+                                 const string_ref &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
                                  ResponseBodyReceiver response_body_receiver,
@@ -278,9 +276,9 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                   response_body_receiver);
 }
 
-std::error_code HttpClient::Put(const std::string_view &url,
+std::error_code HttpClient::Put(const string_ref &url,
                                 const RequestHeader &request_header,
-                                const std::string_view &request_body,
+                                const string_ref &request_body,
                                 unsigned *response_status,
                                 ResponseHeader *response_header,
                                 std::string *response_body,
@@ -289,7 +287,7 @@ std::error_code HttpClient::Put(const std::string_view &url,
                                   StringBodyReceiver(response_body));
 }
 
-std::error_code HttpClient::Delete(const std::string_view &url,
+std::error_code HttpClient::Delete(const string_ref &url,
                                    const RequestHeader &request_header,
                                    unsigned *response_status,
                                    ResponseHeader *response_header,
@@ -298,3 +296,5 @@ std::error_code HttpClient::Delete(const std::string_view &url,
   return session_->SendAndReceive(L"DELETE", url, request_header, "", response_status, response_header,
                                   StringBodyReceiver(response_body));
 }
+
+} // namespace xl

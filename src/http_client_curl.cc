@@ -4,6 +4,8 @@
 #include <xl/http_client>
 #include <xl/scope_exit>
 
+namespace xl {
+
 namespace {
 
 enum class HttpMethod : int {
@@ -83,9 +85,9 @@ public:
   ~HttpSession() {
   }
   std::error_code SendAndReceive(HttpMethod method,
-                                 const std::string_view &url_string,
+                                 const string_ref &url_string,
                                  const RequestHeader &request_header,
-                                 const std::string_view &request_body,
+                                 const string_ref &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
                                  ResponseBodyReceiver response_body_receiver,
@@ -218,7 +220,7 @@ HttpClient::HttpClient(std::string user_agent) : session_(std::make_unique<HttpS
 HttpClient::~HttpClient() {
 }
 
-std::error_code HttpClient::Head(const std::string_view &url,
+std::error_code HttpClient::Head(const string_ref &url,
                                  const RequestHeader &request_header,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
@@ -226,7 +228,7 @@ std::error_code HttpClient::Head(const std::string_view &url,
   return session_->SendAndReceive(HttpMethod::Head, url, request_header, "", response_status, response_header, nullptr);
 }
 
-std::error_code HttpClient::Get(const std::string_view &url,
+std::error_code HttpClient::Get(const string_ref &url,
                                 const RequestHeader &request_header,
                                 unsigned *response_status,
                                 ResponseHeader *response_header,
@@ -236,7 +238,7 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                   StringBodyReceiver(response_body));
 }
 
-std::error_code HttpClient::Get(const std::string_view &url,
+std::error_code HttpClient::Get(const string_ref &url,
                                 const RequestHeader &request_header,
                                 unsigned *response_status,
                                 ResponseHeader *response_header,
@@ -246,9 +248,9 @@ std::error_code HttpClient::Get(const std::string_view &url,
                                   response_body_receiver);
 }
 
-std::error_code HttpClient::Post(const std::string_view &url,
+std::error_code HttpClient::Post(const string_ref &url,
                                  const RequestHeader &request_header,
-                                 const std::string_view &request_body,
+                                 const string_ref &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
                                  std::string *response_body,
@@ -257,9 +259,9 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                   StringBodyReceiver(response_body));
 }
 
-std::error_code HttpClient::Post(const std::string_view &url,
+std::error_code HttpClient::Post(const string_ref &url,
                                  const RequestHeader &request_header,
-                                 const std::string_view &request_body,
+                                 const string_ref &request_body,
                                  unsigned *response_status,
                                  ResponseHeader *response_header,
                                  ResponseBodyReceiver response_body_receiver,
@@ -268,9 +270,9 @@ std::error_code HttpClient::Post(const std::string_view &url,
                                   response_body_receiver);
 }
 
-std::error_code HttpClient::Put(const std::string_view &url,
+std::error_code HttpClient::Put(const string_ref &url,
                                 const RequestHeader &request_header,
-                                const std::string_view &request_body,
+                                const string_ref &request_body,
                                 unsigned *response_status,
                                 ResponseHeader *response_header,
                                 std::string *response_body,
@@ -279,7 +281,7 @@ std::error_code HttpClient::Put(const std::string_view &url,
                                   StringBodyReceiver(response_body));
 }
 
-std::error_code HttpClient::Delete(const std::string_view &url,
+std::error_code HttpClient::Delete(const string_ref &url,
                                    const RequestHeader &request_header,
                                    unsigned *response_status,
                                    ResponseHeader *response_header,
@@ -288,3 +290,5 @@ std::error_code HttpClient::Delete(const std::string_view &url,
   return session_->SendAndReceive(HttpMethod::Delete, url, request_header, "", response_status, response_header,
                                   StringBodyReceiver(response_body));
 }
+
+} // namespace xl

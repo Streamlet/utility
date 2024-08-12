@@ -537,7 +537,12 @@ bool add_file(const TCHAR *zip_file, const char *inner_path, const void *data, s
     return false;
   }
   XL_ON_BLOCK_EXIT(zip_close_file, zf);
-  return zip_add_entry(zf, inner_path, data, length, 0, time(NULL));
+#ifdef _WIN32
+  unsigned int attribute = FILE_ATTRIBUTE_NORMAL;
+#else
+  unsigned int attribute = S_IFREG;
+#endif
+  return zip_add_entry(zf, inner_path, data, length, attribute, time(NULL));
 }
 
 bool add_file(const TCHAR *zip_file, const char *inner_path, const TCHAR *outer_path) {

@@ -52,6 +52,12 @@ public:
   size_t length() const {
     return length_;
   }
+  size_t size() const {
+    return length_;
+  }
+  bool empty() const {
+    return length_ == 0;
+  }
   bool operator==(const basic_string_ref &that) const {
     return this->length_ == that.length_ && memcmp(this->data_, that.data_, length_) == 0;
   }

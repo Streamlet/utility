@@ -103,7 +103,7 @@ public:
       return make_curl_error(error);
     }
 
-    std::string url(url_string);
+    std::string url(url_string.data(), url_string.length());
     error = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     if (error != CURLE_OK) {
       return make_curl_error(error);

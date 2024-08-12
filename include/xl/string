@@ -30,16 +30,23 @@ inline size_t length(const wchar_t *s) {
 
 } // namespace string
 
+#if __cplusplus >= 201703L
+
+template <typename CharType>
+using basic_string_ref = std::basic_string_view<CharType>;
+
+#else
+
 template <typename CharType>
 class basic_string_ref {
 public:
   basic_string_ref() : data_(nullptr), length_(0) {
   }
-  basic_string_ref(const CharType *data, size_t length) : data_(data), length_(length) {
+  basic_string_ref(const CharType *s, size_t length) : data_(s), length_(length) {
   }
-  basic_string_ref(const CharType *data) : data_(data), length_(string::length(data)) {
+  basic_string_ref(const CharType *s) : data_(s), length_(string::length(s)) {
   }
-  const CharType *c_str() const {
+  const CharType *data() const {
     return data_;
   }
   size_t length() const {
@@ -51,18 +58,13 @@ public:
   bool operator!=(const basic_string_ref &that) const {
     return this->length_ != that.length_ || memcmp(this->data_, that.data_, length_) != 0;
   }
-  operator std::basic_string<CharType>() const {
-    return std::basic_string<CharType>(data_, length_);
-  }
-#if __cplusplus >= 201703L
-  operator std::basic_string_view<CharType>() const {
-    return std::basic_string_view<CharType>(data_, length_);
-  }
-#endif
+
 private:
   const CharType *data_;
   size_t length_;
 };
+
+#endif
 
 using string_ref = basic_string_ref<char>;
 using wstring_ref = basic_string_ref<wchar_t>;
@@ -254,7 +256,7 @@ join(const std::vector<ElementType> &string_list, const CharType *separator, siz
     if (it != string_list.begin()) {
       string.append(separator, separator_length);
     }
-    string.append(it->c_str(), it->c_str() + it->length());
+    string.append(it->data(), it->data() + it->length());
   }
   return string;
 }
@@ -311,7 +313,7 @@ inline std::basic_string<CharType> replace(const CharType *string,
     if (it != string_list.begin()) {
       replaced.append(replace_with, replace_length);
     }
-    replaced.append(it->c_str(), it->c_str() + it->length());
+    replaced.append(it->data(), it->data() + it->length());
   }
   return replaced;
 }

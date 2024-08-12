@@ -188,8 +188,8 @@ bool setup(const TCHAR *app_name, int level, int content, int target, const TCHA
 namespace {
 
 string_ref trim_spaces(const string_ref &s) {
-  const char *begin = s.c_str();
-  const char *end = s.c_str() + s.length();
+  const char *begin = s.data();
+  const char *end = s.data() + s.length();
   bool stop = false;
   while (begin != end && !stop) {
     switch (*begin) {

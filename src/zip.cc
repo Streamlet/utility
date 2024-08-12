@@ -540,7 +540,7 @@ bool add_file(const TCHAR *zip_file, const char *inner_path, const void *data, s
 #ifdef _WIN32
   unsigned int attribute = FILE_ATTRIBUTE_NORMAL;
 #else
-  unsigned int attribute = S_IFREG;
+  unsigned int attribute = S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR;
 #endif
   return zip_add_entry(zf, inner_path, data, length, attribute, time(NULL));
 }

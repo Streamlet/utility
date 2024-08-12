@@ -136,6 +136,40 @@ source_set("process") {
   public_configs = [ ":utility_public_config" ]
 }
 
+source_set("net") {
+  sources = [
+    "http_client.cc",
+    "url.cc",
+  ]
+
+  inputs = [
+    "../include/xl/url",
+    "../include/xl/http_client",
+  ]
+
+  if (is_win) {
+    sources += [ "http_client_winhttp.cc" ]
+  } else {
+    sources += [ "http_client_curl.cc" ]
+  }
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  libs = []
+  if (is_win) {
+    libs += [ "winhttp.lib" ]
+  } else {
+    libs += [ "curl" ]
+  }
+
+  deps = [ ":string" ]
+
+  public_configs = [ ":utility_public_config" ]
+}
+
 group("src") {
   deps = [
     ":config",
@@ -143,6 +177,7 @@ group("src") {
     ":file",
     ":log",
     ":meta",
+    ":net",
     ":process",
     ":string",
   ]

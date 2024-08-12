@@ -1,5 +1,5 @@
-#include "url.h"
 #include <gtest/gtest.h>
+#include <xl/url>
 
 TEST(URL_TEST, normal) {
   const char *url_string = "http://username:password@domain:80/path/to/page?query=value#fragment";

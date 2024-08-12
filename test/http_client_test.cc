@@ -1,6 +1,6 @@
-#include "http_client.h"
-#include "process_util.h"
 #include <iostream>
+#include <xl/http_client>
+#include <xl/process>
 
 int main(int argc, char *argv[]) {
   HttpClient http;
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout << ec.value() << ": " << ec.message().c_str() << (i + i < RETRY_TIMES ? ", retrying..." : ", failed")
               << std::endl;
-    process_util::Sleep(1000);
+    xl::process::sleep(1000);
   }
   if (ec) {
     return -1;

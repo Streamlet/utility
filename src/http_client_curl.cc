@@ -1,8 +1,8 @@
-#include "http_client.h"
 #include <cstring>
 #include <curl/curl.h>
-#include <loki/ScopeGuard.h>
 #include <memory>
+#include <xl/http_client>
+#include <xl/scope_exit>
 
 namespace {
 
@@ -94,7 +94,7 @@ public:
     if (curl == nullptr) {
       return make_curl_error(CURLE_FAILED_INIT);
     }
-    LOKI_ON_BLOCK_EXIT(curl_easy_cleanup, curl);
+    XL_ON_BLOCK_EXIT(curl_easy_cleanup, curl);
 
     CURLcode error = curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent_.empty() ? "cURL" : user_agent_.c_str());
     if (error != CURLE_OK) {
@@ -136,7 +136,7 @@ public:
     }
 
     curl_slist *header = nullptr;
-    LOKI_ON_BLOCK_EXIT(curl_slist_free_all, header);
+    XL_ON_BLOCK_EXIT(curl_slist_free_all, header);
     if (!request_header.empty()) {
       for (const auto &h : request_header) {
         std::string header_line;

@@ -1,14 +1,14 @@
 #include <Windows.h>
 #include <Winhttp.h>
 
-#include "encoding.h"
-#include "http_client.h"
-#include "url.h"
 #include <charconv>
-#include <loki/ScopeGuard.h>
 #include <memory>
 #include <sstream>
 #include <string_view>
+#include <xl/encoding>
+#include <xl/http_client>
+#include <xl/scope_exit>
+#include <xl/url>
 
 namespace {
 
@@ -24,7 +24,7 @@ class winhttp_error_category : public std::error_category {
     LPSTR buffer = nullptr;
     ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                      nullptr, _Errval, 0, reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
-    LOKI_ON_BLOCK_EXIT(::LocalFree, buffer);
+    XL_ON_BLOCK_EXIT(::LocalFree, buffer);
     return buffer == nullptr ? "unknown error" : buffer;
   }
 };
@@ -46,7 +46,7 @@ HttpClient::ResponseBodyReceiver StringBodyReceiver(std::string *response_body);
 class HttpClient::HttpSession {
 public:
   HttpSession(std::string user_agent) {
-    std::wstring ua = encoding::UTF8ToUCS2(user_agent);
+    std::wstring ua = xl::encoding::utf8_to_utf16(user_agent);
 
     session_ = ::WinHttpOpen(ua.empty() ? L"WinHttp" : ua.c_str(), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
                              WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
@@ -70,7 +70,7 @@ public:
       ::WinHttpSetTimeouts(session_, timeout, timeout, timeout, timeout);
     }
 
-    std::wstring url = encoding::UTF8ToUCS2(url_string);
+    std::wstring url = xl::encoding::utf8_to_utf16(url_string.data(), url_string.length());
     URL_COMPONENTS urlComp = {sizeof(urlComp)};
     urlComp.dwSchemeLength = (DWORD)-1;
     urlComp.dwHostNameLength = (DWORD)-1;
@@ -93,13 +93,13 @@ public:
     if (connection == nullptr) {
       return make_winhttp_error(::GetLastError());
     }
-    LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, connection);
+    XL_ON_BLOCK_EXIT(::WinHttpCloseHandle, connection);
 
     HINTERNET request = OpenRequest(connection, ssl, method, url_path + url_query);
     if (request == nullptr) {
       return make_winhttp_error(::GetLastError());
     }
-    LOKI_ON_BLOCK_EXIT(::WinHttpCloseHandle, request);
+    XL_ON_BLOCK_EXIT(::WinHttpCloseHandle, request);
 
     std::error_code ec = SendRequest(request, request_header, request_body);
     if (ec) {
@@ -139,7 +139,7 @@ private:
     for (const auto &h : request_header) {
       ss << h.first << ": " << h.second << "\r\n";
     }
-    std::wstring header_string = encoding::UTF8ToUCS2(ss.str());
+    std::wstring header_string = xl::encoding::utf8_to_utf16(ss.str());
     if (!::WinHttpSendRequest(request, header_string.c_str(), (DWORD)header_string.length(),
                               const_cast<char *>(request_body.data()), (DWORD)request_body.length(),
                               (DWORD)request_body.length(), 0)) {
@@ -186,7 +186,7 @@ private:
                                  &header_size, WINHTTP_NO_HEADER_INDEX)) {
         return make_winhttp_error(::GetLastError());
       }
-      std::string raw_header = encoding::UCS2ToUTF8(buffer_w);
+      std::string raw_header = xl::encoding::utf16_to_utf8(buffer_w);
       ParseHeader(raw_header, *response_header);
     }
 

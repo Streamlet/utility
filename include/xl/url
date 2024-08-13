@@ -3,9 +3,7 @@
 namespace xl {
 
 template <typename CharType>
-struct url_t {
-  static url_t parse(const basic_string_ref<CharType> &url);
-
+struct url_parts_t {
   bool valid = false;
   basic_string_ref<CharType> protocol;
   basic_string_ref<CharType> username;
@@ -18,7 +16,16 @@ struct url_t {
   basic_string_ref<CharType> fragment;
 };
 
-using url = url_t<char>;
-using wurl = url_t<char>;
+using url_parts = url_parts_t<char>;
+using url_parts_w = url_parts_t<wchar_t>;
+
+namespace url {
+
+url_parts parse(const char *s);
+url_parts parse(const char *s, size_t length);
+url_parts_w parse(const wchar_t *s);
+url_parts_w parse(const wchar_t *s, size_t length);
+
+} // namespace url
 
 } // namespace xl

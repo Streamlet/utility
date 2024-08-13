@@ -3,7 +3,7 @@
 
 TEST(URL_TEST, normal) {
   const char *url_string = "http://username:password@domain:80/path/to/page?query=value#fragment";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -19,7 +19,7 @@ TEST(URL_TEST, normal) {
 
 TEST(URL_TEST, no_password) {
   const char *url_string = "http://username@domain:80/path/to/page?query=value#fragment";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -35,7 +35,7 @@ TEST(URL_TEST, no_password) {
 
 TEST(URL_TEST, no_username_password) {
   const char *url_string = "http://domain:80/path/to/page?query=value#fragment";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -51,7 +51,7 @@ TEST(URL_TEST, no_username_password) {
 
 TEST(URL_TEST, no_port) {
   const char *url_string = "http://domain/path/to/page?query=value#fragment";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -67,7 +67,7 @@ TEST(URL_TEST, no_port) {
 
 TEST(URL_TEST, has_query_no_frament) {
   const char *url_string = "http://domain/path/to/page?query=value";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -83,7 +83,7 @@ TEST(URL_TEST, has_query_no_frament) {
 
 TEST(URL_TEST, has_query_no_frament_has_sharp) {
   const char *url_string = "http://domain/path/to/page?query=value#";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -99,7 +99,7 @@ TEST(URL_TEST, has_query_no_frament_has_sharp) {
 
 TEST(URL_TEST, no_query_has_frament) {
   const char *url_string = "http://domain/path/to/page#fragment";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -115,7 +115,7 @@ TEST(URL_TEST, no_query_has_frament) {
 
 TEST(URL_TEST, no_query_has_question_mask_has_frament) {
   const char *url_string = "http://domain/path/to/page?#fragment";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -131,7 +131,7 @@ TEST(URL_TEST, no_query_has_question_mask_has_frament) {
 
 TEST(URL_TEST, no_query_no_frament) {
   const char *url_string = "http://domain/path/to/page";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -147,7 +147,7 @@ TEST(URL_TEST, no_query_no_frament) {
 
 TEST(URL_TEST, root_path) {
   const char *url_string = "http://domain/";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");
@@ -163,7 +163,7 @@ TEST(URL_TEST, root_path) {
 
 TEST(URL_TEST, no_path) {
   const char *url_string = "http://domain";
-  xl::url url = xl::url::parse(url_string);
+  xl::url_parts url = xl::url::parse(url_string);
 
   ASSERT_EQ(url.valid, true);
   ASSERT_EQ(url.protocol, "http");

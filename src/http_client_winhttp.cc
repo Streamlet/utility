@@ -5,7 +5,6 @@
 #include <xl/encoding>
 #include <xl/http_client>
 #include <xl/scope_exit>
-#include <xl/url>
 
 namespace xl {
 

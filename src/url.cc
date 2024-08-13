@@ -44,7 +44,8 @@ struct char_type_traits<wchar_t> {
 
 template <typename CharType>
 url_parts_t<CharType> process_match_result(const std::match_results<const CharType *> &m) {
-  url_parts_t<CharType> url_parts = {true};
+  url_parts_t<CharType> url_parts;
+  url_parts.valid = true;
   if (m[Protocol].length() != 0) {
     url_parts.protocol = basic_string_ref<CharType>(&*m[Protocol].first, m[Protocol].length());
   }

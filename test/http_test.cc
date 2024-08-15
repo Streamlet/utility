@@ -1,28 +1,26 @@
 #include <iostream>
-#include <xl/http_client>
+#include <xl/http>
 #include <xl/process>
 
 int main(int argc, char *argv[]) {
-  xl::HttpClient http;
   if (argc <= 1) {
     return -1;
   }
+  const char *url = argv[1];
 
-  unsigned status = 0;
-  xl::HttpClient::ResponseHeader header;
+  xl::http::Header header;
   std::string body;
-  std::error_code ec = {};
+  int status = 0;
   const int RETRY_TIMES = 3;
   for (int i = 0; i < RETRY_TIMES; ++i) {
-    ec = http.Get(argv[1], {}, &status, &header, &body);
-    if (!ec) {
+    status = xl::http::get(url, {}, header, xl::http::BufferWriter(&body));
+    if (status >= 0) {
       break;
     }
-    std::cout << ec.value() << ": " << ec.message().c_str() << (i + i < RETRY_TIMES ? ", retrying..." : ", failed")
-              << std::endl;
+    std::cout << "Error: " << status << ", " << (i + i < RETRY_TIMES ? ", retrying..." : ", failed") << std::endl;
     xl::process::sleep(1000);
   }
-  if (ec) {
+  if (status < 0) {
     return -1;
   }
 

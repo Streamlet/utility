@@ -138,19 +138,19 @@ source_set("process") {
 
 source_set("net") {
   sources = [
-    "http_client.cc",
+    "http.cc",
     "url.cc",
   ]
 
   inputs = [
     "../include/xl/url",
-    "../include/xl/http_client",
+    "../include/xl/http",
   ]
 
   if (is_win) {
-    sources += [ "http_client_winhttp.cc" ]
+    sources += [ "http_win.cc" ]
   } else {
-    sources += [ "http_client_curl.cc" ]
+    sources += [ "http_posix.cc" ]
   }
 
   cflags = []

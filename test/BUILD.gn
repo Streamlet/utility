@@ -39,13 +39,14 @@ executable("process_test") {
   deps = [ "../src:process" ]
 }
 
-executable("http_client_test") {
+executable("http_test") {
   testonly = true
   if (is_win) {
     configs += [ "../build/config/win:console_subsystem" ]
   }
-  sources = [ "http_client_test.cc" ]
+  sources = [ "http_test.cc" ]
   deps = [
+    "../src:file",
     "../src:net",
     "../src:process",
   ]

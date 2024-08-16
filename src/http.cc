@@ -116,6 +116,7 @@ int get(const std::string &url, DataWriter response_body) {
   request.method = Get;
   request.url = url;
   Response response;
+  response.body = response_body;
   return send(request, &response, nullptr);
 }
 

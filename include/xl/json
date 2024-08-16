@@ -285,7 +285,9 @@ public:
 JSON_ACCESSOR_CONTAINER(std::vector);
 JSON_ACCESSOR_CONTAINER(std::list);
 JSON_ACCESSOR_CONTAINER(std::set);
+JSON_ACCESSOR_CONTAINER(std::multiset);
 JSON_ACCESSOR_CONTAINER(std::unordered_set);
+JSON_ACCESSOR_CONTAINER(std::unordered_multiset);
 
 #define JSON_ACCESSOR_MAP(map)                                                                                         \
   template <typename T>                                                                                                \
@@ -300,7 +302,7 @@ JSON_ACCESSOR_CONTAINER(std::unordered_set);
         if (!JsonAccessor<T>::Read(t, it->value)) {                                                                    \
           return false;                                                                                                \
         }                                                                                                              \
-        ref[std::string(it->name.GetString(), it->name.GetStringLength())] = std::move(t);                             \
+        ref.insert(std::make_pair(std::string(it->name.GetString(), it->name.GetStringLength()), std::move(t)));       \
       }                                                                                                                \
       return true;                                                                                                     \
     }                                                                                                                  \
@@ -336,7 +338,9 @@ JSON_ACCESSOR_CONTAINER(std::unordered_set);
   }
 
 JSON_ACCESSOR_MAP(std::map);
+JSON_ACCESSOR_MAP(std::multimap);
 JSON_ACCESSOR_MAP(std::unordered_map);
+JSON_ACCESSOR_MAP(std::unordered_multimap);
 
 } // namespace xl
 

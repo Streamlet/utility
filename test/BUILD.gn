@@ -8,6 +8,7 @@ executable("unittest") {
     "crypto_test.cc",
     "encoding_test.cc",
     "file_test.cc",
+    "http_test.cc",
     "ini_test.cc",
     "json_test.cc",
     "reflect_test.cc",
@@ -19,15 +20,24 @@ executable("unittest") {
     "zip_test.cc",
   ]
   deps = [
+    ":http_echo_server",
     "../src:config",
     "../src:crypto",
     "../src:file",
+    "../src:file",
     "../src:meta",
     "../src:net",
+    "../src:net",
+    "../src:process",
     "../src:process",
     "../src:string",
     "../thirdparty:googletest",
   ]
+}
+
+copy("http_echo_server") {
+  sources = [ "tools/http_echo.py" ]
+  outputs = [ "$root_out_dir/http_echo.py" ]
 }
 
 executable("process_test") {
@@ -37,19 +47,6 @@ executable("process_test") {
   }
   sources = [ "process_test.cc" ]
   deps = [ "../src:process" ]
-}
-
-executable("http_test") {
-  testonly = true
-  if (is_win) {
-    configs += [ "../build/config/win:console_subsystem" ]
-  }
-  sources = [ "http_test.cc" ]
-  deps = [
-    "../src:file",
-    "../src:net",
-    "../src:process",
-  ]
 }
 
 executable("cmdline_options_echo") {

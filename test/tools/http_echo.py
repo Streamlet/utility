@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import sys
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 

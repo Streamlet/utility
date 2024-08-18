@@ -135,6 +135,7 @@ int post(const std::string &url, DataReader request_body, DataWriter response_bo
   Request request;
   request.method = Post;
   request.url = url;
+  request.body = request_body;
   Response response;
   response.body = response_body;
   return send(request, &response, nullptr);

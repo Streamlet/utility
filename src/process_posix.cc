@@ -86,7 +86,7 @@ long start(const std::string &executable,
     argv.push_back(&argument[0]);
   }
   argv.push_back(NULL);
-  pid_t pid = vfork();
+  pid_t pid = fork();
   if (pid == -1) {
     return 0;
   }
@@ -95,8 +95,8 @@ long start(const std::string &executable,
     if (!start_dir.empty()) {
       chdir(start_dir.c_str());
     }
-    execv(executable.c_str(), &argv[0]);
-    exit(0);
+    int exit_code = execvp(executable.c_str(), &argv[0]);
+    exit(exit_code);
   }
 
   if (milliseconds > 0) {

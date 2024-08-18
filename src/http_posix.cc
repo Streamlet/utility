@@ -69,7 +69,7 @@ int send(const Request &request, Response *response, const Option *option) {
     error = curl_easy_setopt(curl, CURLOPT_POST, 1);
     break;
   case Put:
-    error = curl_easy_setopt(curl, CURLOPT_PUT, 1);
+    error = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
     break;
   case Delete:
   case Trace:

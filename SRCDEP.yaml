@@ -25,7 +25,7 @@ DEPS:
 
   thirdparty/rapidjson:
     GIT_REPO: https://github.com/Tencent/rapidjson.git
-    GIT_TAG: v1.1.0
+    GIT_TAG: 9bd618f545ab647e2c3bcbf2f1d87423d6edf800 # v1.1.0
 
   thirdparty/googletest:
     GIT_REPO: https://github.com/google/googletest.git

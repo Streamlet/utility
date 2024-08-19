@@ -148,9 +148,15 @@ source_set("net") {
   ]
 
   if (is_win) {
-    sources += [ "http_win.cc" ]
+    sources += [
+      "http_win.cc",
+      "url_win.cc",
+    ]
   } else {
-    sources += [ "http_posix.cc" ]
+    sources += [
+      "http_posix.cc",
+      "url_posix.cc",
+    ]
   }
 
   cflags = []

@@ -92,7 +92,7 @@ enum StatusCode {
   StatusNetworkAuthenticationRequired = 511,
 };
 
-typedef std::multimap<std::string, std::string> Header;
+typedef std::multimap<std::string, std::string> Headers;
 
 /**
  * @param buffer buffer to receive data
@@ -133,12 +133,12 @@ DataWriter FileWriter(const TCHAR *path);
 struct Request {
   Method method = Get;
   std::string url;
-  Header header;
+  Headers headers;
   DataReader body;
 };
 
 struct Response {
-  Header *header = nullptr;
+  Headers *headers = nullptr;
   DataWriter body;
 };
 
@@ -170,19 +170,19 @@ struct Option {
 int send(const Request &request, Response *response, const Option *option = nullptr);
 
 int get(const std::string &url, DataWriter response_body);
-int get(const std::string &url, const Header &request_header, Header &response_header, DataWriter response_body);
+int get(const std::string &url, const Headers &request_headers, Headers &response_headers, DataWriter response_body);
 
 int post(const std::string &url, DataReader request_body, DataWriter response_body);
 int post(const std::string &url,
-         const Header &request_header,
+         const Headers &request_headers,
          DataReader request_body,
-         Header &response_header,
+         Headers &response_headers,
          DataWriter response_body);
 
 typedef std::map<std::string, std::string> FormData;
 
 int post_form(const std::string &url,
-              const Header &request_header,
+              const Headers &request_headers,
               const FormData &form_data,
               Response *response,
               const Option *option = nullptr);
@@ -190,9 +190,9 @@ int post_form(const std::string &url,
 int post_form(const std::string &url, const FormData &form_data, DataWriter response_body);
 
 int post_form(const std::string &url,
-              const Header &request_header,
+              const Headers &request_headers,
               const FormData &form_data,
-              Header &response_header,
+              Headers &response_headers,
               DataWriter response_body);
 
 struct MultiPartFormValue {
@@ -203,7 +203,7 @@ struct MultiPartFormValue {
 typedef std::map<std::string, MultiPartFormValue> MultiPartFormData;
 
 int post_multipart_form(const std::string &url,
-                        const Header &request_header,
+                        const Headers &request_headers,
                         const MultiPartFormData form_data,
                         Response *response,
                         const Option *option = nullptr);
@@ -211,9 +211,9 @@ int post_multipart_form(const std::string &url,
 int post_multipart_form(const std::string &url, const MultiPartFormData form_data, DataWriter response_writer);
 
 int post_multipart_form(const std::string &url,
-                        const Header &request_header,
+                        const Headers &request_headers,
                         const MultiPartFormData form_data,
-                        Header &response_header,
+                        Headers &response_headers,
                         DataWriter response_body);
 
 } // namespace http

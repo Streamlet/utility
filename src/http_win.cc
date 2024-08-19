@@ -15,7 +15,7 @@ namespace http {
 
 extern const char *DEFAULT_USER_AGENT;
 
-void ParseHeader(const std::string &raw_header, Header &parsed_header);
+void ParseHeader(const std::string &raw_headers, Headers &parsed_headers);
 
 namespace {
 
@@ -44,17 +44,17 @@ int ParseUrl(const std::string url, bool &ssl, std::wstring &host, unsigned shor
   return ERROR_SUCCESS;
 }
 
-int SendHeader(HINTERNET hRequest, const Header &header, DataReader body_reader) {
+int SendHeaders(HINTERNET hRequest, const Headers &headers, DataReader body_reader) {
   std::stringstream ss;
-  for (const auto &h : header) {
+  for (const auto &h : headers) {
     ss << h.first << ": " << h.second << "\r\n";
   }
-  std::wstring header_string = xl::encoding::utf8_to_utf16(ss.str());
+  std::wstring headers_string = xl::encoding::utf8_to_utf16(ss.str());
   long long body_size = 0;
   if (body_reader) {
     body_reader(nullptr, 0, &body_size);
   }
-  if (!::WinHttpSendRequest(hRequest, header_string.c_str(), (DWORD)header_string.length(), nullptr, 0,
+  if (!::WinHttpSendRequest(hRequest, headers_string.c_str(), (DWORD)headers_string.length(), nullptr, 0,
                             (DWORD)body_size, 0)) {
     return ::GetLastError();
   }
@@ -80,7 +80,7 @@ int SendBody(HINTERNET hRequest, DataReader body_reader) {
   return ERROR_SUCCESS;
 }
 
-int ReceiveHeader(HINTERNET hRequest, StatusCode *status, Header *header) {
+int ReceiveHeaders(HINTERNET hRequest, StatusCode *status, Headers *headers) {
   if (status != nullptr) {
     DWORD status_code_size = 0;
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
@@ -99,23 +99,23 @@ int ReceiveHeader(HINTERNET hRequest, StatusCode *status, Header *header) {
     *status = (StatusCode)_wtoi(status_code.c_str());
   }
 
-  if (header != nullptr) {
-    DWORD header_size = 0;
+  if (headers != nullptr) {
+    DWORD headers_size = 0;
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
-                               WINHTTP_NO_OUTPUT_BUFFER, &header_size, WINHTTP_NO_HEADER_INDEX)) {
+                               WINHTTP_NO_OUTPUT_BUFFER, &headers_size, WINHTTP_NO_HEADER_INDEX)) {
       DWORD error = ::GetLastError();
       if (error != ERROR_INSUFFICIENT_BUFFER) {
         return error;
       }
     }
-    std::wstring header_buffer;
-    header_buffer.resize(header_size);
+    std::wstring headers_buffer;
+    headers_buffer.resize(headers_size);
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
-                               (void *)header_buffer.data(), &header_size, WINHTTP_NO_HEADER_INDEX)) {
+                               (void *)headers_buffer.data(), &headers_size, WINHTTP_NO_HEADER_INDEX)) {
       return ::GetLastError();
     }
-    std::string raw_header = xl::encoding::utf16_to_utf8(header_buffer);
-    ParseHeader(raw_header, *header);
+    std::string raw_headers = xl::encoding::utf16_to_utf8(headers_buffer);
+    ParseHeader(raw_headers, *headers);
   }
 
   return ERROR_SUCCESS;
@@ -197,7 +197,7 @@ int send(const Request &request, Response *response, const Option *option) {
   }
   XL_ON_BLOCK_EXIT(::WinHttpCloseHandle, hRequest);
 
-  error = SendHeader(hRequest, request.header, request.body);
+  error = SendHeaders(hRequest, request.headers, request.body);
   if (error != ERROR_SUCCESS) {
     return -error;
   }
@@ -213,13 +213,13 @@ int send(const Request &request, Response *response, const Option *option) {
   }
 
   StatusCode status;
-  error = ReceiveHeader(hRequest, &status, nullptr);
+  error = ReceiveHeaders(hRequest, &status, nullptr);
   if (error != ERROR_SUCCESS) {
     return -error;
   }
 
-  if (response != nullptr && response->header != nullptr) {
-    error = ReceiveHeader(hRequest, nullptr, response->header);
+  if (response != nullptr && response->headers != nullptr) {
+    error = ReceiveHeaders(hRequest, nullptr, response->headers);
     if (error != ERROR_SUCCESS) {
       return -error;
     }

@@ -24,7 +24,7 @@ size_t write_callback(char *buffer, size_t size, size_t nitems, void *userdata) 
 
 extern const char *DEFAULT_USER_AGENT;
 
-void ParseHeader(const std::string &raw_header, Header &parsed_header);
+void ParseHeader(const std::string &raw_headers, Headers &parsed_headers);
 
 int send(const Request &request, Response *response, const Option *option) {
   CURL *curl = curl_easy_init();
@@ -88,20 +88,20 @@ int send(const Request &request, Response *response, const Option *option) {
     return -error;
   }
 
-  curl_slist *header = nullptr;
-  XL_ON_BLOCK_EXIT(curl_slist_free_all, header);
-  header = curl_slist_append(header, "Content-Type:");
-  header = curl_slist_append(header, "Expect:");
-  if (!request.header.empty()) {
-    for (const auto &h : request.header) {
+  curl_slist *headers = nullptr;
+  XL_ON_BLOCK_EXIT(curl_slist_free_all, headers);
+  headers = curl_slist_append(headers, "Content-Type:");
+  headers = curl_slist_append(headers, "Expect:");
+  if (!request.headers.empty()) {
+    for (const auto &h : request.headers) {
       std::string header_line;
       header_line += h.first;
       header_line += ": ";
       header_line += h.second;
-      header = curl_slist_append(header, header_line.c_str());
+      headers = curl_slist_append(headers, header_line.c_str());
     }
   }
-  error = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+  error = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
   if (error != CURLE_OK) {
     return -error;
   }
@@ -125,14 +125,14 @@ int send(const Request &request, Response *response, const Option *option) {
       return -error;
     }
   }
-  std::string raw_header;
-  DataWriter header_writer = BufferWriter(&raw_header);
-  if (response != nullptr && response->header) {
+  std::string raw_headers;
+  DataWriter headers_writer = BufferWriter(&raw_headers);
+  if (response != nullptr && response->headers) {
     error = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_callback);
     if (error != CURLE_OK) {
       return -error;
     }
-    error = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_writer);
+    error = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &headers_writer);
     if (error != CURLE_OK) {
       return -error;
     }
@@ -160,8 +160,8 @@ int send(const Request &request, Response *response, const Option *option) {
     return -error;
   }
 
-  if (response != nullptr && response->header != nullptr) {
-    ParseHeader(raw_header, *response->header);
+  if (response != nullptr && response->headers != nullptr) {
+    ParseHeader(raw_headers, *response->headers);
   }
 
   return (int)status;

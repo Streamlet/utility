@@ -6,7 +6,7 @@ XL_JSON_BEGIN(HttpEchoResult)
   XL_JSON_MEMBER(std::string, version)
   XL_JSON_MEMBER(std::string, method)
   XL_JSON_MEMBER(std::string, path)
-  XL_JSON_MEMBER(xl::http::Header, header)
+  XL_JSON_MEMBER(xl::http::Headers, header)
   XL_JSON_MEMBER(std::unique_ptr<std::string>, body)
 XL_JSON_END()
 
@@ -24,10 +24,10 @@ TEST(http_test, simple_get) {
 }
 
 TEST(http_test, get_with_header) {
-  xl::http::Header request_header = {
+  xl::http::Headers request_header = {
       {"TestCase", "get_with_header"}
   };
-  xl::http::Header response_header;
+  xl::http::Headers response_header;
   std::string response_body;
   int status = xl::http::get("http://localhost:8080/echo", request_header, response_header,
                              xl::http::BufferWriter(&response_body));
@@ -60,10 +60,10 @@ TEST(http_test, simple_post) {
 }
 
 TEST(http_test, post_with_header) {
-  xl::http::Header request_header = {
+  xl::http::Headers request_header = {
       {"TestCase", "post_with_header"}
   };
-  xl::http::Header response_header;
+  xl::http::Headers response_header;
   std::string request_body = "request_body_content";
   std::string response_body;
   int status = xl::http::post("http://localhost:8080/echo", request_header, xl::http::BufferReader(request_body),

@@ -88,16 +88,16 @@ DataWriter FileWriter(const TCHAR *path) {
   };
 }
 
-void ParseHeader(const std::string &raw_header, Header &parsed_header) {
-  for (size_t i = 0; i < raw_header.length();) {
-    const char *p = raw_header.c_str() + i;
+void ParseHeader(const std::string &raw_headers, Headers &parsed_headers) {
+  for (size_t i = 0; i < raw_headers.length();) {
+    const char *p = raw_headers.c_str() + i;
     const char *crlf = strstr(p, "\r\n");
     if (crlf == nullptr) {
       break;
     }
     const char *colon = strstr(p, ": ");
     if (colon != nullptr && colon <= crlf) {
-      parsed_header.insert(std::make_pair(std::string(p, colon), std::string(colon + 2, crlf)));
+      parsed_headers.insert(std::make_pair(std::string(p, colon), std::string(colon + 2, crlf)));
     }
     i += crlf - p + 2;
   }
@@ -120,13 +120,13 @@ int get(const std::string &url, DataWriter response_body) {
   return send(request, &response, nullptr);
 }
 
-int get(const std::string &url, const Header &request_header, Header &response_header, DataWriter response_body) {
+int get(const std::string &url, const Headers &request_headers, Headers &response_headers, DataWriter response_body) {
   Request request;
   request.method = Get;
   request.url = url;
-  request.header = request_header;
+  request.headers = request_headers;
   Response response;
-  response.header = &response_header;
+  response.headers = &response_headers;
   response.body = response_body;
   return send(request, &response, nullptr);
 }
@@ -142,30 +142,30 @@ int post(const std::string &url, DataReader request_body, DataWriter response_bo
 }
 
 int post(const std::string &url,
-         const Header &request_header,
+         const Headers &request_headers,
          DataReader request_body,
-         Header &response_header,
+         Headers &response_headers,
          DataWriter response_body) {
   Request request;
   request.method = Post;
   request.url = url;
-  request.header = request_header;
+  request.headers = request_headers;
   request.body = request_body;
   Response response;
-  response.header = &response_header;
+  response.headers = &response_headers;
   response.body = response_body;
   return send(request, &response, nullptr);
 }
 
 int post_form(const std::string &url,
-              const Header &request_header,
+              const Headers &request_headers,
               const FormData &form_data,
               Response *response,
               const Option *option) {
   Request request;
   request.method = Post;
   request.url = url;
-  request.header = request_header;
+  request.headers = request_headers;
   request.body = BufferReader(FormDataToBody(form_data));
   return send(request, response, option);
 }
@@ -177,25 +177,25 @@ int post_form(const std::string &url, const FormData &form_data, DataWriter resp
 }
 
 int post_form(const std::string &url,
-              const Header &request_header,
+              const Headers &request_headers,
               const FormData &form_data,
-              Header &response_header,
+              Headers &response_headers,
               DataWriter response_body) {
   Response response;
-  response.header = &response_header;
+  response.headers = &response_headers;
   response.body = response_body;
-  return post_form(url, request_header, form_data, &response);
+  return post_form(url, request_headers, form_data, &response);
 }
 
 int post_multipart_form(const std::string &url,
-                        const Header &request_header,
+                        const Headers &request_headers,
                         const MultiPartFormData form_data,
                         Response *response,
                         const Option *option) {
   Request request;
   request.method = Post;
   request.url = url;
-  request.header = request_header;
+  request.headers = request_headers;
   request.body = BufferReader(MultiPartFormDataToBody(form_data));
   return send(request, response, option);
 }
@@ -207,14 +207,14 @@ int post_multipart_form(const std::string &url, const MultiPartFormData form_dat
 }
 
 int post_multipart_form(const std::string &url,
-                        const Header &request_header,
+                        const Headers &request_headers,
                         const MultiPartFormData form_data,
-                        Header &response_header,
+                        Headers &response_headers,
                         DataWriter response_body) {
   Response response;
-  response.header = &response_header;
+  response.headers = &response_headers;
   response.body = response_body;
-  return post_multipart_form(url, request_header, form_data, &response);
+  return post_multipart_form(url, request_headers, form_data, &response);
 }
 
 } // namespace http

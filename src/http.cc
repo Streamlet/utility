@@ -1,7 +1,10 @@
 #include <cstring>
+#include <sstream>
 #include <utility>
 #include <xl/file>
 #include <xl/http>
+#include <xl/string>
+#include <xl/url>
 
 namespace xl {
 
@@ -22,17 +25,15 @@ const char *DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; MSIE 7.0; Windows NT 
                                  "Edg/100.0.0.0";
 
 DataReader BufferReader(const std::string &string_buffer) {
-  const char *data_source = &string_buffer[0];
-  size_t total_bytes = string_buffer.size();
   size_t bytes_read = 0;
-  return [data_source, total_bytes, bytes_read](void *buffer, size_t size, long long *total_size) mutable -> size_t {
-    size_t bytes_copy = std::min(size, total_bytes - bytes_read);
+  return [string_buffer, bytes_read](void *buffer, size_t size, long long *total_size) mutable -> size_t {
+    size_t bytes_copy = std::min(size, string_buffer.length() - bytes_read);
     if (bytes_copy > 0) {
-      memcpy(buffer, data_source + bytes_read, bytes_copy);
+      memcpy(buffer, string_buffer.c_str() + bytes_read, bytes_copy);
       bytes_read += bytes_copy;
     }
     if (total_size != nullptr) {
-      *total_size = total_bytes;
+      *total_size = string_buffer.length();
     }
     return bytes_copy;
   };
@@ -88,6 +89,30 @@ DataWriter FileWriter(const TCHAR *path) {
   };
 }
 
+std::string build_query_string(const FormData &form_data) {
+  std::stringstream ss;
+  for (const auto &item : form_data) {
+    ss << url::encode(item.first) << '=' << url::encode(item.second) << '&';
+  }
+  std::string r = ss.str();
+  if (!r.empty()) {
+    r.resize(r.size() - 1);
+  }
+  return r;
+}
+
+FormData parse_query_string(const std::string &query_string) {
+  FormData r;
+  auto parts = xl::string::split_ref(query_string, "&");
+  for (const auto &p : parts) {
+    auto kv = xl::string::split(p.data(), "=", 2, p.length());
+    if (!kv.empty()) {
+      r.insert(std::make_pair(kv[0], kv.size() > 1 ? kv[1] : ""));
+    }
+  }
+  return r;
+}
+
 void ParseHeader(const std::string &raw_headers, Headers &parsed_headers) {
   for (size_t i = 0; i < raw_headers.length();) {
     const char *p = raw_headers.c_str() + i;
@@ -104,7 +129,7 @@ void ParseHeader(const std::string &raw_headers, Headers &parsed_headers) {
 }
 
 std::string FormDataToBody(const FormData &form_data) {
-  return "";
+  return build_query_string(form_data);
 }
 
 std::string MultiPartFormDataToBody(const MultiPartFormData &form_data) {
@@ -166,6 +191,7 @@ int post_form(const std::string &url,
   request.method = Post;
   request.url = url;
   request.headers = request_headers;
+  request.headers.insert(std::make_pair("Content-Type", "application/x-www-form-urlencoded"));
   request.body = BufferReader(FormDataToBody(form_data));
   return send(request, response, option);
 }

@@ -63,7 +63,7 @@ int SendHeaders(HINTERNET hRequest, const Headers &headers, DataReader body_read
 
 int SendBody(HINTERNET hRequest, DataReader body_reader) {
   const DWORD BUFFER_SIZE = 1024;
-  char *BUFFER[BUFFER_SIZE];
+  char BUFFER[BUFFER_SIZE];
   while (true) {
     size_t bytes_to_write = body_reader(BUFFER, BUFFER_SIZE, nullptr);
     if (bytes_to_write == 0) {
@@ -123,7 +123,7 @@ int ReceiveHeaders(HINTERNET hRequest, StatusCode *status, Headers *headers) {
 
 int ReceiveBody(HINTERNET hRequest, DataWriter body_writer) {
   const DWORD BUFFER_SIZE = 1024;
-  char *BUFFER[BUFFER_SIZE];
+  char BUFFER[BUFFER_SIZE];
   while (true) {
     DWORD bytes_available = 0;
     if (!::WinHttpQueryDataAvailable(hRequest, &bytes_available)) {

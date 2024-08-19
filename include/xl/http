@@ -159,6 +159,11 @@ struct Option {
   bool follow_redirect = true;
 };
 
+typedef std::multimap<std::string, std::string> FormData;
+
+std::string build_query(const FormData &form_data);
+FormData parse_query(const std::string &query_string);
+
 /**
  * @brief performance an HTTP request
  * @param request request data
@@ -178,8 +183,6 @@ int post(const std::string &url,
          DataReader request_body,
          Headers &response_headers,
          DataWriter response_body);
-
-typedef std::map<std::string, std::string> FormData;
 
 int post_form(const std::string &url,
               const Headers &request_headers,

@@ -80,3 +80,23 @@ TEST(http_test, post_with_header) {
   ASSERT_EQ(response_header.find("EchoServerVersion")->second, "1.0");
   ASSERT_EQ(response_header.find("Content-Type")->second, "application/json");
 }
+
+TEST(http_test, post_form) {
+  xl::http::FormData form_data = {
+      {"key1",  "value1" },
+      {"key2",  "value2" },
+      {"key3&", "value3="},
+  };
+  std::string response_body;
+  int status = xl::http::post_form("http://localhost:8080/echo", form_data, xl::http::BufferWriter(&response_body));
+  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  printf("%s\n", response_body.c_str());
+  HttpEchoResult echo_result;
+  ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
+  ASSERT_EQ(echo_result.version, "HTTP/1.1");
+  ASSERT_EQ(echo_result.method, "POST");
+  ASSERT_EQ(echo_result.path, "/echo");
+  ASSERT_EQ(echo_result.header.find("Host")->second, "localhost:8080");
+  ASSERT_EQ(echo_result.header.find("Content-Type")->second, "application/x-www-form-urlencoded");
+  ASSERT_EQ(*echo_result.body, "key1=value1&key2=value2&key3%26=value3%3D");
+}

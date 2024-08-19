@@ -50,7 +50,7 @@ int send(const Request &request, Response *response, const Option *option) {
     }
   }
 
-  if (option != nullptr && option->follow_redirect) {
+  if (option == nullptr || option->follow_redirect) {
     error = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     if (error != CURLE_OK) {
       return -error;
@@ -90,6 +90,8 @@ int send(const Request &request, Response *response, const Option *option) {
 
   curl_slist *header = nullptr;
   XL_ON_BLOCK_EXIT(curl_slist_free_all, header);
+  header = curl_slist_append(header, "Content-Type:");
+  header = curl_slist_append(header, "Expect:");
   if (!request.header.empty()) {
     for (const auto &h : request.header) {
       std::string header_line;
@@ -98,10 +100,19 @@ int send(const Request &request, Response *response, const Option *option) {
       header_line += h.second;
       header = curl_slist_append(header, header_line.c_str());
     }
-    error = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
-    if (error != CURLE_OK) {
-      return -error;
-    }
+  }
+  error = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+  if (error != CURLE_OK) {
+    return -error;
+  }
+
+  long long content_length = 0;
+  if (request.body) {
+    request.body(nullptr, 0, &content_length);
+  }
+  if (content_length > 0) {
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)content_length);
   }
 
   if (request.body) {

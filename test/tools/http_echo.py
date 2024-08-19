@@ -22,11 +22,13 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         for h in self.headers:
             response['header'][h] = self.headers[h]
         content_length = self.headers['Content-Length']
-        if content_length is not None:
+        if content_length is not None and int(content_length) > 0:
             content = self.rfile.read(int(content_length))
             response['body'] = content.decode('utf-8')
 
-        self.wfile.write(json.dumps(response).encode('utf-8'))
+        response_body = json.dumps(response)
+        print(response_body)
+        self.wfile.write(response_body.encode('utf-8'))
 
     do_OPTIONS = do_REQUEST
     do_HEADER = do_REQUEST

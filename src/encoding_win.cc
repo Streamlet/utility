@@ -55,6 +55,30 @@ std::string utf16_to_utf8(const std::wstring &ucs2) {
   return utf16_to_utf8(ucs2.c_str(), ucs2.length());
 }
 
+native_string utf8_to_native(const char *utf8, size_t length) {
+  return utf8_to_utf16(utf8, length);
+}
+
+native_string utf8_to_native(const char *utf8) {
+  return utf8_to_utf16(utf8);
+}
+
+native_string utf8_to_native(const std::string &utf8) {
+  return utf8_to_utf16(utf8);
+}
+
+std::string native_to_utf8(const TCHAR *native, size_t length) {
+  return utf16_to_utf8(native, length);
+}
+
+std::string native_to_utf8(const TCHAR *native) {
+  return utf16_to_utf8(native);
+}
+
+std::string native_to_utf8(const native_string &native) {
+  return utf16_to_utf8(native);
+}
+
 std::wstring ansi_to_utf16(const char *ansi, size_t length) {
   return a2w(ansi, length, CP_ACP);
 }

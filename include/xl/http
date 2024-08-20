@@ -199,8 +199,8 @@ int post_form(const std::string &url,
               DataWriter response_body);
 
 struct MultiPartFormValue {
-  native_string file_path;
   std::string value;
+  native_string file_path;
 };
 
 typedef std::map<std::string, MultiPartFormValue> MultiPartFormData;

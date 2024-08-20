@@ -1,6 +1,8 @@
 #include <cstring>
 #include <sstream>
 #include <utility>
+#include <xl/crypto>
+#include <xl/encoding>
 #include <xl/file>
 #include <xl/http>
 #include <xl/string>
@@ -132,8 +134,36 @@ std::string FormDataToBody(const FormData &form_data) {
   return build_query_string(form_data);
 }
 
-std::string MultiPartFormDataToBody(const MultiPartFormData &form_data) {
-  return "";
+std::string EscapeQuotedValue(const std::string &value) {
+  return xl::string::replace(xl::string::replace(value, "\\", "\\\\"), "\"", "\\\"");
+}
+
+std::string MultiPartFormDataToBody(const MultiPartFormData &form_data, std::string &boundary) {
+  std::vector<std::string> flat_data;
+  flat_data.reserve(form_data.size());
+  for (const auto &item : form_data) {
+    std::stringstream ss;
+    ss << "Content-Disposition: form-data; name=\"" << EscapeQuotedValue(item.first) << "\"";
+    if (!item.second.file_path.empty()) {
+      std::string filename = xl::encoding::native_to_utf8(xl::path::filename(item.second.file_path.c_str()));
+      ss << "; filename=\"" << EscapeQuotedValue(filename) << "\"";
+    }
+    ss << "\r\n\r\n";
+    if (!item.second.file_path.empty()) {
+      ss << xl::file::read(item.second.file_path.c_str());
+    } else {
+      ss << item.second.value;
+    }
+    ss << "\r\n";
+    flat_data.push_back(ss.str());
+  }
+  std::string content = xl::string::join(flat_data, "\r\n");
+  boundary = xl::crypto::md5(content);
+  if (content.find(boundary) != std::string::npos) {
+    boundary = xl::crypto::sha1(content);
+  }
+  content = xl::string::join(flat_data, "--" + boundary + "\r\n");
+  return "--" + boundary + "\r\n" + content + "--" + boundary + "--\r\n";
 }
 
 int get(const std::string &url, DataWriter response_body) {
@@ -222,7 +252,10 @@ int post_multipart_form(const std::string &url,
   request.method = Post;
   request.url = url;
   request.headers = request_headers;
-  request.body = BufferReader(MultiPartFormDataToBody(form_data));
+  std::string boundary;
+  std::string request_body = MultiPartFormDataToBody(form_data, boundary);
+  request.headers.insert(std::make_pair("Content-Type", "multipart/form-data; boundary=" + boundary));
+  request.body = BufferReader(request_body);
   return send(request, response, option);
 }
 

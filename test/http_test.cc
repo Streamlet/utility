@@ -3,6 +3,7 @@
 #include <xl/http>
 #include <xl/json>
 #include <xl/process>
+#include <xl/scope_exit>
 
 class http_test : public ::testing::Test {
 protected:
@@ -125,4 +126,40 @@ TEST_F(http_test, post_form) {
   ASSERT_EQ(echo_result.header.find("Host")->second, "localhost:8080");
   ASSERT_EQ(echo_result.header.find("Content-Type")->second, "application/x-www-form-urlencoded");
   ASSERT_EQ(*echo_result.body, "key1=value1&key2=value2&key3%26=value3%3D");
+}
+
+TEST_F(http_test, post_multipart_form) {
+  ASSERT_EQ(xl::file::write(_T("upload.txt"), "upload_content"), true);
+  XL_ON_BLOCK_EXIT(xl::fs::remove, _T("upload.txt"));
+  xl::http::MultiPartFormData form_data = {
+      {"key1",     {"value1"}            },
+      {"key2",     {"", _T("upload.txt")}},
+      {"key\\3\"", {"value3"}            },
+  };
+  std::string response_body;
+  int status =
+      xl::http::post_multipart_form("http://localhost:8080/echo", form_data, xl::http::BufferWriter(&response_body));
+  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  printf("%s\n", response_body.c_str());
+  HttpEchoResult echo_result;
+  ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
+  ASSERT_EQ(echo_result.version, "HTTP/1.1");
+  ASSERT_EQ(echo_result.method, "POST");
+  ASSERT_EQ(echo_result.path, "/echo");
+  ASSERT_EQ(echo_result.header.find("Host")->second, "localhost:8080");
+  ASSERT_EQ(echo_result.header.find("Content-Type")->second,
+            "multipart/form-data; boundary=0e46906c66aae1fcbf6443d8d937a5ce");
+  ASSERT_EQ(*echo_result.body, "--0e46906c66aae1fcbf6443d8d937a5ce\r\n"
+                               "Content-Disposition: form-data; name=\"key1\"\r\n"
+                               "\r\n"
+                               "value1\r\n"
+                               "--0e46906c66aae1fcbf6443d8d937a5ce\r\n"
+                               "Content-Disposition: form-data; name=\"key2\"; filename=\"upload.txt\"\r\n"
+                               "\r\n"
+                               "upload_content\r\n"
+                               "--0e46906c66aae1fcbf6443d8d937a5ce\r\n"
+                               "Content-Disposition: form-data; name=\"key\\\\3\\\"\"\r\n"
+                               "\r\n"
+                               "value3\r\n"
+                               "--0e46906c66aae1fcbf6443d8d937a5ce--\r\n");
 }

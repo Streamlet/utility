@@ -136,6 +136,30 @@ std::string utf16_to_utf8(const std::wstring &utf16) {
   return utf16_to_utf8(utf16.c_str(), utf16.length());
 }
 
+native_string utf8_to_native(const char *utf8, size_t length) {
+  return native_string(utf8, length);
+}
+
+native_string utf8_to_native(const char *utf8) {
+  return utf8;
+}
+
+native_string utf8_to_native(const std::string &utf8) {
+  return utf8;
+}
+
+std::string native_to_utf8(const TCHAR *native, size_t length) {
+  return std::string(native, length);
+}
+
+std::string native_to_utf8(const TCHAR *native) {
+  return native;
+}
+
+std::string native_to_utf8(const native_string &native) {
+  return native;
+}
+
 } // namespace encoding
 
 } // namespace xl

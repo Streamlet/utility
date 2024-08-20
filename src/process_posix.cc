@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <xl/process>
 #ifdef __APPLE__
+#include <AvailabilityMacros.h>
 #include <mach-o/dyld.h>
 #include <pthread.h>
 #include <sys/errno.h>

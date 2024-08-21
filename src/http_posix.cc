@@ -23,8 +23,9 @@ size_t write_callback(char *buffer, size_t size, size_t nitems, void *userdata) 
 } // namespace
 
 extern const char *DEFAULT_USER_AGENT;
+extern const char *METHOD_NAME[MethodCount];
 
-void ParseHeader(const std::string &raw_headers, Headers &parsed_headers);
+void parse_header(const std::string &raw_headers, Headers &parsed_headers);
 
 int send(const Request &request, Response *response, const Option *option) {
   CURL *curl = curl_easy_init();
@@ -52,9 +53,11 @@ int send(const Request &request, Response *response, const Option *option) {
 
   if (option == nullptr || option->follow_redirect) {
     error = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-    if (error != CURLE_OK) {
-      return -error;
-    }
+  } else {
+    error = curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0);
+  }
+  if (error != CURLE_OK) {
+    return -error;
   }
 
   switch (request.method) {
@@ -126,7 +129,7 @@ int send(const Request &request, Response *response, const Option *option) {
     }
   }
   std::string raw_headers;
-  DataWriter headers_writer = BufferWriter(&raw_headers);
+  DataWriter headers_writer = buffer_writer(&raw_headers);
   if (response != nullptr && response->headers) {
     error = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_callback);
     if (error != CURLE_OK) {
@@ -161,7 +164,7 @@ int send(const Request &request, Response *response, const Option *option) {
   }
 
   if (response != nullptr && response->headers != nullptr) {
-    ParseHeader(raw_headers, *response->headers);
+    parse_header(raw_headers, *response->headers);
   }
 
   return (int)status;

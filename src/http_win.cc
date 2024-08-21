@@ -14,15 +14,16 @@ namespace xl {
 namespace http {
 
 extern const char *DEFAULT_USER_AGENT;
+extern const wchar_t *METHOD_NAME_W[MethodCount];
 
-void ParseHeader(const std::string &raw_headers, Headers &parsed_headers);
+void parse_header(const std::string &raw_headers, Headers &parsed_headers);
 
 namespace {
 
 const wchar_t *PROTOCOL_HTTPS = L"https";
 const wchar_t *PROTOCOL_HTTP = L"http";
 
-int ParseUrl(const std::string url, bool &ssl, std::wstring &host, unsigned short &port, std::wstring &path) {
+int parse_url(const std::string url, bool &ssl, std::wstring &host, unsigned short &port, std::wstring &path) {
   std::wstring url_w = xl::encoding::utf8_to_utf16(url);
 
   URL_COMPONENTS urlComp = {sizeof(urlComp)};
@@ -44,7 +45,7 @@ int ParseUrl(const std::string url, bool &ssl, std::wstring &host, unsigned shor
   return ERROR_SUCCESS;
 }
 
-int SendHeaders(HINTERNET hRequest, const Headers &headers, DataReader body_reader) {
+int send_headers(HINTERNET hRequest, const Headers &headers, DataReader body_reader) {
   std::stringstream ss;
   for (const auto &h : headers) {
     ss << h.first << ": " << h.second << "\r\n";
@@ -61,7 +62,7 @@ int SendHeaders(HINTERNET hRequest, const Headers &headers, DataReader body_read
   return ERROR_SUCCESS;
 }
 
-int SendBody(HINTERNET hRequest, DataReader body_reader) {
+int send_body(HINTERNET hRequest, DataReader body_reader) {
   const DWORD BUFFER_SIZE = 1024;
   char BUFFER[BUFFER_SIZE];
   while (true) {
@@ -80,7 +81,7 @@ int SendBody(HINTERNET hRequest, DataReader body_reader) {
   return ERROR_SUCCESS;
 }
 
-int ReceiveHeaders(HINTERNET hRequest, StatusCode *status, Headers *headers) {
+int receive_headers(HINTERNET hRequest, StatusCode *status, Headers *headers) {
   if (status != nullptr) {
     DWORD status_code_size = 0;
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
@@ -115,13 +116,13 @@ int ReceiveHeaders(HINTERNET hRequest, StatusCode *status, Headers *headers) {
       return ::GetLastError();
     }
     std::string raw_headers = xl::encoding::utf16_to_utf8(headers_buffer);
-    ParseHeader(raw_headers, *headers);
+    parse_header(raw_headers, *headers);
   }
 
   return ERROR_SUCCESS;
 }
 
-int ReceiveBody(HINTERNET hRequest, DataWriter body_writer) {
+int receive_body(HINTERNET hRequest, DataWriter body_writer) {
   const DWORD BUFFER_SIZE = 1024;
   char BUFFER[BUFFER_SIZE];
   while (true) {
@@ -158,7 +159,7 @@ int send(const Request &request, Response *response, const Option *option) {
   bool ssl = false;
   std::wstring host, path;
   unsigned short port = 0;
-  int error = ParseUrl(request.url, ssl, host, port, path);
+  int error = parse_url(request.url, ssl, host, port, path);
   if (error != ERROR_SUCCESS) {
     return -error;
   }
@@ -173,13 +174,25 @@ int send(const Request &request, Response *response, const Option *option) {
 
   HINTERNET hSession =
       ::WinHttpOpen(ua.c_str(), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  if (hSession == nullptr) {
+    return -(int)::GetLastError();
+  }
   XL_ON_BLOCK_EXIT(WinHttpCloseHandle, hSession);
 
-  DWORD options = WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP;
-  ::WinHttpSetOption(hSession, WINHTTP_OPTION_REDIRECT_POLICY, &options, sizeof(options));
-
   if (option != nullptr && option->timeout > 0) {
-    ::WinHttpSetTimeouts(hSession, option->timeout, option->timeout, option->timeout, option->timeout);
+    if (!::WinHttpSetTimeouts(hSession, option->timeout, option->timeout, option->timeout, option->timeout)) {
+      return -(int)::GetLastError();
+    }
+  }
+
+  DWORD options = 0;
+  if (option == nullptr || option->follow_redirect) {
+    options = WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP;
+  } else {
+    options = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+  }
+  if (!::WinHttpSetOption(hSession, WINHTTP_OPTION_REDIRECT_POLICY, &options, sizeof(options))) {
+    return -(int)::GetLastError();
   }
 
   HINTERNET hConnection = ::WinHttpConnect(hSession, host.c_str(), port, 0);
@@ -197,12 +210,12 @@ int send(const Request &request, Response *response, const Option *option) {
   }
   XL_ON_BLOCK_EXIT(::WinHttpCloseHandle, hRequest);
 
-  error = SendHeaders(hRequest, request.headers, request.body);
+  error = send_headers(hRequest, request.headers, request.body);
   if (error != ERROR_SUCCESS) {
     return -error;
   }
   if (request.body) {
-    error = SendBody(hRequest, request.body);
+    error = send_body(hRequest, request.body);
     if (error != ERROR_SUCCESS) {
       return -error;
     }
@@ -213,20 +226,20 @@ int send(const Request &request, Response *response, const Option *option) {
   }
 
   StatusCode status;
-  error = ReceiveHeaders(hRequest, &status, nullptr);
+  error = receive_headers(hRequest, &status, nullptr);
   if (error != ERROR_SUCCESS) {
     return -error;
   }
 
   if (response != nullptr && response->headers != nullptr) {
-    error = ReceiveHeaders(hRequest, nullptr, response->headers);
+    error = receive_headers(hRequest, nullptr, response->headers);
     if (error != ERROR_SUCCESS) {
       return -error;
     }
   }
 
   if (response != nullptr && response->body != nullptr) {
-    error = ReceiveBody(hRequest, response->body);
+    error = receive_body(hRequest, response->body);
     if (error != ERROR_SUCCESS) {
       return -error;
     }

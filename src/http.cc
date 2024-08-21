@@ -26,7 +26,7 @@ const char *DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; MSIE 7.0; Windows NT 
                                  "Safari/500.00 "
                                  "Edg/100.0.0.0";
 
-DataReader BufferReader(const std::string &string_buffer) {
+DataReader buffer_reader(const std::string &string_buffer) {
   size_t bytes_read = 0;
   return [string_buffer, bytes_read](void *buffer, size_t size, long long *total_size) mutable -> size_t {
     size_t bytes_copy = std::min(size, string_buffer.length() - bytes_read);
@@ -41,7 +41,7 @@ DataReader BufferReader(const std::string &string_buffer) {
   };
 }
 
-DataReader FileReader(const TCHAR *path) {
+DataReader file_reader(const TCHAR *path) {
   long long file_size = fs::size(path);
   FILE *f = _tfopen(path, _T("rb"));
   return [file_size, f](void *buffer, size_t size, long long *total_size) -> size_t {
@@ -66,14 +66,14 @@ DataReader FileReader(const TCHAR *path) {
   };
 }
 
-DataWriter BufferWriter(std::string *string_buffer) {
+DataWriter buffer_writer(std::string *string_buffer) {
   return [string_buffer](const void *buffer, size_t size) -> size_t {
     string_buffer->append((const char *)buffer, size);
     return size;
   };
 }
 
-DataWriter FileWriter(const TCHAR *path) {
+DataWriter file_writer(const TCHAR *path) {
   FILE *f = _tfopen(path, _T("wb"));
   return [f](const void *buffer, size_t size) -> size_t {
     if (f == NULL) {
@@ -115,7 +115,7 @@ FormData parse_query_string(const std::string &query_string) {
   return r;
 }
 
-void ParseHeader(const std::string &raw_headers, Headers &parsed_headers) {
+void parse_header(const std::string &raw_headers, Headers &parsed_headers) {
   for (size_t i = 0; i < raw_headers.length();) {
     const char *p = raw_headers.c_str() + i;
     const char *crlf = strstr(p, "\r\n");
@@ -130,23 +130,19 @@ void ParseHeader(const std::string &raw_headers, Headers &parsed_headers) {
   }
 }
 
-std::string FormDataToBody(const FormData &form_data) {
-  return build_query_string(form_data);
-}
-
-std::string EscapeQuotedValue(const std::string &value) {
+std::string escape_quoted_value(const std::string &value) {
   return xl::string::replace(xl::string::replace(value, "\\", "\\\\"), "\"", "\\\"");
 }
 
-std::string MultiPartFormDataToBody(const MultiPartFormData &form_data, std::string &boundary) {
+std::string encode_multipart_form(const MultiPartFormData &form_data, std::string &boundary) {
   std::vector<std::string> flat_data;
   flat_data.reserve(form_data.size());
   for (const auto &item : form_data) {
     std::stringstream ss;
-    ss << "Content-Disposition: form-data; name=\"" << EscapeQuotedValue(item.first) << "\"";
+    ss << "Content-Disposition: form-data; name=\"" << escape_quoted_value(item.first) << "\"";
     if (!item.second.file_path.empty()) {
       std::string filename = xl::encoding::native_to_utf8(xl::path::filename(item.second.file_path.c_str()));
-      ss << "; filename=\"" << EscapeQuotedValue(filename) << "\"";
+      ss << "; filename=\"" << escape_quoted_value(filename) << "\"";
     }
     ss << "\r\n\r\n";
     if (!item.second.file_path.empty()) {
@@ -222,7 +218,7 @@ int post_form(const std::string &url,
   request.url = url;
   request.headers = request_headers;
   request.headers.insert(std::make_pair("Content-Type", "application/x-www-form-urlencoded"));
-  request.body = BufferReader(FormDataToBody(form_data));
+  request.body = buffer_reader(build_query_string(form_data));
   return send(request, response, option);
 }
 
@@ -253,9 +249,9 @@ int post_multipart_form(const std::string &url,
   request.url = url;
   request.headers = request_headers;
   std::string boundary;
-  std::string request_body = MultiPartFormDataToBody(form_data, boundary);
+  std::string request_body = encode_multipart_form(form_data, boundary);
   request.headers.insert(std::make_pair("Content-Type", "multipart/form-data; boundary=" + boundary));
-  request.body = BufferReader(request_body);
+  request.body = buffer_reader(request_body);
   return send(request, response, option);
 }
 

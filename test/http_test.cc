@@ -13,7 +13,7 @@ protected:
     printf("Waiting for HTTP server ready...\n");
     while (true) {
       int status = xl::http::get("http://localhost:8080/", nullptr);
-      if (status == xl::http::StatusOK) {
+      if (status == xl::http::STATUS_OK) {
         break;
       }
       xl::process::sleep(100);
@@ -40,7 +40,7 @@ XL_JSON_END()
 TEST_F(http_test, simple_get) {
   std::string response_body;
   int status = xl::http::get("http://localhost:8080/echo", xl::http::buffer_writer(&response_body));
-  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  ASSERT_EQ(status, xl::http::STATUS_OK);
   HttpEchoResult echo_result;
   ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
   ASSERT_EQ(echo_result.version, "HTTP/1.1");
@@ -58,7 +58,7 @@ TEST_F(http_test, get_with_header) {
   std::string response_body;
   int status = xl::http::get("http://localhost:8080/echo", request_header, response_header,
                              xl::http::buffer_writer(&response_body));
-  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  ASSERT_EQ(status, xl::http::STATUS_OK);
   HttpEchoResult echo_result;
   ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
   ASSERT_EQ(echo_result.version, "HTTP/1.1");
@@ -76,7 +76,7 @@ TEST_F(http_test, simple_post) {
   std::string response_body;
   int status = xl::http::post("http://localhost:8080/echo", xl::http::buffer_reader(request_body),
                               xl::http::buffer_writer(&response_body));
-  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  ASSERT_EQ(status, xl::http::STATUS_OK);
   HttpEchoResult echo_result;
   ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
   ASSERT_EQ(echo_result.version, "HTTP/1.1");
@@ -95,7 +95,7 @@ TEST_F(http_test, post_with_header) {
   std::string response_body;
   int status = xl::http::post("http://localhost:8080/echo", request_header, xl::http::buffer_reader(request_body),
                               response_header, xl::http::buffer_writer(&response_body));
-  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  ASSERT_EQ(status, xl::http::STATUS_OK);
   HttpEchoResult echo_result;
   ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
   ASSERT_EQ(echo_result.version, "HTTP/1.1");
@@ -116,7 +116,7 @@ TEST_F(http_test, post_form) {
   };
   std::string response_body;
   int status = xl::http::post_form("http://localhost:8080/echo", form_data, xl::http::buffer_writer(&response_body));
-  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
+  ASSERT_EQ(status, xl::http::STATUS_OK);
   printf("%s\n", response_body.c_str());
   HttpEchoResult echo_result;
   ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
@@ -139,8 +139,7 @@ TEST_F(http_test, post_multipart_form) {
   std::string response_body;
   int status =
       xl::http::post_multipart_form("http://localhost:8080/echo", form_data, xl::http::buffer_writer(&response_body));
-  ASSERT_EQ(status, xl::http::StatusCode::StatusOK);
-  printf("%s\n", response_body.c_str());
+  ASSERT_EQ(status, xl::http::STATUS_OK);
   HttpEchoResult echo_result;
   ASSERT_EQ(echo_result.json_parse(response_body.c_str()), true);
   ASSERT_EQ(echo_result.version, "HTTP/1.1");

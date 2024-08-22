@@ -12,11 +12,11 @@ namespace xl {
 
 namespace http {
 
-const char *METHOD_NAME[MethodCount] = {
+const char *METHOD_NAME[METHOD_COUNT] = {
     "OPTIONS", "HEAD", "GET", "POST", "PUT", "DELETE", "TRACE", "CONNECT",
 };
 
-const wchar_t *METHOD_NAME_W[MethodCount] = {
+const wchar_t *METHOD_NAME_W[METHOD_COUNT] = {
     L"OPTIONS", L"HEAD", L"GET", L"POST", L"PUT", L"DELETE", L"TRACE", L"CONNECT",
 };
 
@@ -164,7 +164,7 @@ std::string encode_multipart_form(const MultiPartFormData &form_data, std::strin
 
 int get(const std::string &url, DataWriter response_body) {
   Request request;
-  request.method = Get;
+  request.method = METHOD_GET;
   request.url = url;
   Response response;
   response.body = response_body;
@@ -173,7 +173,7 @@ int get(const std::string &url, DataWriter response_body) {
 
 int get(const std::string &url, const Headers &request_headers, Headers &response_headers, DataWriter response_body) {
   Request request;
-  request.method = Get;
+  request.method = METHOD_GET;
   request.url = url;
   request.headers = request_headers;
   Response response;
@@ -184,7 +184,7 @@ int get(const std::string &url, const Headers &request_headers, Headers &respons
 
 int post(const std::string &url, DataReader request_body, DataWriter response_body) {
   Request request;
-  request.method = Post;
+  request.method = METHOD_POST;
   request.url = url;
   request.body = request_body;
   Response response;
@@ -198,7 +198,7 @@ int post(const std::string &url,
          Headers &response_headers,
          DataWriter response_body) {
   Request request;
-  request.method = Post;
+  request.method = METHOD_POST;
   request.url = url;
   request.headers = request_headers;
   request.body = request_body;
@@ -214,7 +214,7 @@ int post_form(const std::string &url,
               Response *response,
               const Option *option) {
   Request request;
-  request.method = Post;
+  request.method = METHOD_POST;
   request.url = url;
   request.headers = request_headers;
   request.headers.insert(std::make_pair("Content-Type", "application/x-www-form-urlencoded"));
@@ -245,7 +245,7 @@ int post_multipart_form(const std::string &url,
                         Response *response,
                         const Option *option) {
   Request request;
-  request.method = Post;
+  request.method = METHOD_POST;
   request.url = url;
   request.headers = request_headers;
   std::string boundary;

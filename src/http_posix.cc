@@ -23,7 +23,7 @@ size_t write_callback(char *buffer, size_t size, size_t nitems, void *userdata) 
 } // namespace
 
 extern const char *DEFAULT_USER_AGENT;
-extern const char *METHOD_NAME[MethodCount];
+extern const char *METHOD_NAME[METHOD_COUNT];
 
 void parse_header(const std::string &raw_headers, Headers &parsed_headers);
 
@@ -61,22 +61,22 @@ int send(const Request &request, Response *response, const Option *option) {
   }
 
   switch (request.method) {
-  case Options:
-  case Head:
+  case MEHOD_OPTIONS:
+  case METHOD_HEAD:
     error = curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
     break;
-  case Get:
+  case METHOD_GET:
     error = curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
     break;
-  case Post:
+  case METHOD_POST:
     error = curl_easy_setopt(curl, CURLOPT_POST, 1);
     break;
-  case Put:
+  case METHOD_PUT:
     error = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
     break;
-  case Delete:
-  case Trace:
-  case Connect:
+  case METHOD_DELETE:
+  case METHOD_TRACE:
+  case METHOD_CONNECT:
     error = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, METHOD_NAME[request.method]);
     break;
   default:

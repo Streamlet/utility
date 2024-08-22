@@ -14,7 +14,7 @@ namespace xl {
 namespace http {
 
 extern const char *DEFAULT_USER_AGENT;
-extern const wchar_t *METHOD_NAME_W[MethodCount];
+extern const wchar_t *METHOD_NAME_W[METHOD_COUNT];
 
 void parse_header(const std::string &raw_headers, Headers &parsed_headers);
 
@@ -81,7 +81,7 @@ int send_body(HINTERNET hRequest, DataReader body_reader) {
   return ERROR_SUCCESS;
 }
 
-int receive_headers(HINTERNET hRequest, StatusCode *status, Headers *headers) {
+int receive_headers(HINTERNET hRequest, Status *status, Headers *headers) {
   if (status != nullptr) {
     DWORD status_code_size = 0;
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
@@ -97,7 +97,7 @@ int receive_headers(HINTERNET hRequest, StatusCode *status, Headers *headers) {
                                (void *)status_code.data(), &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
       return ::GetLastError();
     }
-    *status = (StatusCode)_wtoi(status_code.c_str());
+    *status = (Status)_wtoi(status_code.c_str());
   }
 
   if (headers != nullptr) {
@@ -225,7 +225,7 @@ int send(const Request &request, Response *response, const Option *option) {
     return -(int)::GetLastError();
   }
 
-  StatusCode status;
+  Status status;
   error = receive_headers(hRequest, &status, nullptr);
   if (error != ERROR_SUCCESS) {
     return -error;

@@ -6,20 +6,20 @@
 
 // gcc does not support explicit specialization in class scope,
 // and does not support default template parameter in partitial specialization
-// so here we add an extra template parameter 'typename T' at FieldT
-// and make Field = FieldT<Type, Index> for using
+// so here we add an extra template parameter 'typename T' at field_t
+// and make field = field_t<Type, Index> for using
 
 #define XL_REFLECT_BEGIN(struct_type)                                                                                  \
   struct struct_type {                                                                                                 \
   private:                                                                                                             \
     template <typename T, size_t Index>                                                                                \
-    struct FieldT;                                                                                                     \
+    struct field_t;                                                                                                    \
     typedef struct_type Type;                                                                                          \
     static const size_t SEQUENCE = __COUNTER__;                                                                        \
                                                                                                                        \
   public:                                                                                                              \
     template <size_t Index>                                                                                            \
-    using Field = FieldT<Type, Index>;
+    using field = field_t<Type, Index>;
 
 #define XL_REFLECT_MEMBER(field_type, field_name)                                                                      \
 public:                                                                                                                \
@@ -27,7 +27,7 @@ public:                                                                         
                                                                                                                        \
 private:                                                                                                               \
   template <typename T>                                                                                                \
-  struct FieldT<T, __COUNTER__ - SEQUENCE - 1> {                                                                       \
+  struct field_t<T, __COUNTER__ - SEQUENCE - 1> {                                                                      \
     static const std::type_info &type() {                                                                              \
       return typeid(field_type);                                                                                       \
     }                                                                                                                  \
@@ -54,67 +54,67 @@ public:                                                                         
                                                                                                                        \
 private:                                                                                                               \
   template <size_t Begin, size_t End>                                                                                  \
-  struct FieldsWalker {                                                                                                \
+  struct fields_walker {                                                                                               \
     static const std::type_info &field_type(size_t index) {                                                            \
       if (index == Begin) {                                                                                            \
-        return Field<Begin>::type();                                                                                   \
+        return field<Begin>::type();                                                                                   \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_type(index);                                                        \
+        return fields_walker<Begin + 1, End>::field_type(index);                                                       \
       }                                                                                                                \
     }                                                                                                                  \
     static const char *field_name(size_t index) {                                                                      \
       if (index == Begin) {                                                                                            \
-        return Field<Begin>::name();                                                                                   \
+        return field<Begin>::name();                                                                                   \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_name(index);                                                        \
+        return fields_walker<Begin + 1, End>::field_name(index);                                                       \
       }                                                                                                                \
     }                                                                                                                  \
     static size_t field_index(const char *field_name) {                                                                \
-      if (strcmp(Field<Begin>::name(), field_name) == 0) {                                                             \
+      if (strcmp(field<Begin>::name(), field_name) == 0) {                                                             \
         return Begin;                                                                                                  \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_index(field_name);                                                  \
+        return fields_walker<Begin + 1, End>::field_index(field_name);                                                 \
       }                                                                                                                \
     }                                                                                                                  \
     static size_t field_index(const char *field_name, size_t length) {                                                 \
-      if (strncmp(Field<Begin>::name(), field_name, length) == 0) {                                                    \
+      if (strncmp(field<Begin>::name(), field_name, length) == 0) {                                                    \
         return Begin;                                                                                                  \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_index(field_name, length);                                          \
+        return fields_walker<Begin + 1, End>::field_index(field_name, length);                                         \
       }                                                                                                                \
     }                                                                                                                  \
     static size_t field_offset(size_t index) {                                                                         \
       if (index == Begin) {                                                                                            \
-        return Field<Begin>::offset();                                                                                 \
+        return field<Begin>::offset();                                                                                 \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_offset(index);                                                      \
+        return fields_walker<Begin + 1, End>::field_offset(index);                                                     \
       }                                                                                                                \
     }                                                                                                                  \
     static size_t field_size(size_t index) {                                                                           \
       if (index == Begin) {                                                                                            \
-        return Field<Begin>::size();                                                                                   \
+        return field<Begin>::size();                                                                                   \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_size(index);                                                        \
+        return fields_walker<Begin + 1, End>::field_size(index);                                                       \
       }                                                                                                                \
     }                                                                                                                  \
     template <typename T>                                                                                              \
     static T &field_value(Type &ref, size_t index) {                                                                   \
       if (index == Begin) {                                                                                            \
-        return (T &)Field<Begin>::value(ref);                                                                          \
+        return (T &)field<Begin>::value(ref);                                                                          \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::template field_value<T>(ref, index);                                      \
+        return fields_walker<Begin + 1, End>::template field_value<T>(ref, index);                                     \
       }                                                                                                                \
     }                                                                                                                  \
     static void *field_data(Type &ref, size_t index) {                                                                 \
       if (index == Begin) {                                                                                            \
-        return &Field<Begin>::value(ref);                                                                              \
+        return &field<Begin>::value(ref);                                                                              \
       } else {                                                                                                         \
-        return FieldsWalker<Begin + 1, End>::field_data(ref, index);                                                   \
+        return fields_walker<Begin + 1, End>::field_data(ref, index);                                                  \
       }                                                                                                                \
     }                                                                                                                  \
   };                                                                                                                   \
   template <size_t Index>                                                                                              \
-  struct FieldsWalker<Index, Index> {                                                                                  \
+  struct fields_walker<Index, Index> {                                                                                 \
     static const std::type_info &field_type(size_t index) {                                                            \
       return typeid(nullptr);                                                                                          \
     }                                                                                                                  \
@@ -145,29 +145,29 @@ private:                                                                        
                                                                                                                        \
 public:                                                                                                                \
   static const std::type_info &field_type(size_t index) {                                                              \
-    return FieldsWalker<0, FIELDS>::field_type(index);                                                                 \
+    return fields_walker<0, FIELDS>::field_type(index);                                                                \
   }                                                                                                                    \
   static const char *field_name(size_t index) {                                                                        \
-    return FieldsWalker<0, FIELDS>::field_name(index);                                                                 \
+    return fields_walker<0, FIELDS>::field_name(index);                                                                \
   }                                                                                                                    \
   static size_t field_index(const char *field_name) {                                                                  \
-    return FieldsWalker<0, FIELDS>::field_index(field_name);                                                           \
+    return fields_walker<0, FIELDS>::field_index(field_name);                                                          \
   }                                                                                                                    \
   static size_t field_index(const char *field_name, size_t length) {                                                   \
-    return FieldsWalker<0, FIELDS>::field_index(field_name, length);                                                   \
+    return fields_walker<0, FIELDS>::field_index(field_name, length);                                                  \
   }                                                                                                                    \
   static size_t field_offset(size_t index) {                                                                           \
-    return FieldsWalker<0, FIELDS>::field_offset(index);                                                               \
+    return fields_walker<0, FIELDS>::field_offset(index);                                                              \
   }                                                                                                                    \
   static size_t field_size(size_t index) {                                                                             \
-    return FieldsWalker<0, FIELDS>::field_size(index);                                                                 \
+    return fields_walker<0, FIELDS>::field_size(index);                                                                \
   }                                                                                                                    \
   template <typename T>                                                                                                \
   T &field_value(size_t index) {                                                                                       \
-    return FieldsWalker<0, FIELDS>::template field_value<T>(*this, index);                                             \
+    return fields_walker<0, FIELDS>::template field_value<T>(*this, index);                                            \
   }                                                                                                                    \
   void *field_data(size_t index) {                                                                                     \
-    return FieldsWalker<0, FIELDS>::field_data(*this, index);                                                          \
+    return fields_walker<0, FIELDS>::field_data(*this, index);                                                         \
   }                                                                                                                    \
   }                                                                                                                    \
   ;

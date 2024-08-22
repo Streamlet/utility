@@ -14,7 +14,7 @@
 /* Adding declarations to make it compatible with gcc 4.7 and greater */
 namespace rapidxml {
 namespace internal {
-  
+
 template <class OutIt, class Ch>
 inline OutIt print_children(OutIt out, const xml_node<Ch> *node, int flags, int indent);
 
@@ -60,59 +60,59 @@ enum WriteFlags {
 } // namespace xml
 
 template <typename T>
-struct XmlAccessor {
-  static bool Read(T &ref, const ::rapidxml::xml_node<> &xml_node) {
+struct xml_accessor {
+  static bool read(T &ref, const ::rapidxml::xml_node<> &xml_node) {
     return ref.xml_read(xml_node);
   }
-  static bool WillWrite(const T &ref, unsigned int flags) {
+  static bool will_write(const T &ref, unsigned int flags) {
     return true;
   }
-  static void Write(const T &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {
+  static void write(const T &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {
     ref.xml_write(xml_node, flags);
   }
 };
 
 template <>
-class XmlAccessor<std::string> {
+class xml_accessor<std::string> {
 public:
-  static bool Read(std::string &ref, const ::rapidxml::xml_node<> &xml_node) {
+  static bool read(std::string &ref, const ::rapidxml::xml_node<> &xml_node) {
     ref.assign(xml_node.value(), xml_node.value_size());
     return true;
   }
-  static bool Read(std::string &ref, const ::rapidxml::xml_attribute<> &xml_attribute) {
+  static bool read(std::string &ref, const ::rapidxml::xml_attribute<> &xml_attribute) {
     ref.assign(xml_attribute.value(), xml_attribute.value_size());
     return true;
   }
-  static bool WillWrite(const std::string &ref, unsigned int flags) {
+  static bool will_write(const std::string &ref, unsigned int flags) {
     return true;
   }
-  static void Write(const std::string &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {
+  static void write(const std::string &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {
     xml_node.value(ref.c_str(), ref.length());
   }
-  static void Write(const std::string &ref, ::rapidxml::xml_attribute<> &xml_attribute, unsigned int flags) {
+  static void write(const std::string &ref, ::rapidxml::xml_attribute<> &xml_attribute, unsigned int flags) {
     xml_attribute.value(ref.c_str(), ref.length());
   }
 };
 
 #if __cplusplus >= 201703L
 template <>
-class XmlAccessor<std::string_view> {
+class xml_accessor<std::string_view> {
 public:
-  static bool Read(std::string_view &ref, const ::rapidxml::xml_node<> &xml_node) {
+  static bool read(std::string_view &ref, const ::rapidxml::xml_node<> &xml_node) {
     ref = {xml_node.value(), xml_node.value_size()};
     return true;
   }
-  static bool Read(std::string_view &ref, const ::rapidxml::xml_attribute<> &xml_attribute) {
+  static bool read(std::string_view &ref, const ::rapidxml::xml_attribute<> &xml_attribute) {
     ref = {xml_attribute.value(), xml_attribute.value_size()};
     return true;
   }
-  static bool WillWrite(const std::string_view &ref, unsigned int flags) {
+  static bool will_write(const std::string_view &ref, unsigned int flags) {
     return true;
   }
-  static void Write(const std::string_view &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {
+  static void write(const std::string_view &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {
     xml_node.value(ref.data(), ref.length());
   }
-  static void Write(const std::string_view &ref, ::rapidxml::xml_attribute<> &xml_attribute, unsigned int flags) {
+  static void write(const std::string_view &ref, ::rapidxml::xml_attribute<> &xml_attribute, unsigned int flags) {
     xml_attribute.value(ref.data(), ref.length());
   }
 };
@@ -120,23 +120,23 @@ public:
 
 #define XML_ACCESSOR_CONTAINER(container)                                                                              \
   template <typename T>                                                                                                \
-  class XmlAccessor<container<T>> {                                                                                    \
+  class xml_accessor<container<T>> {                                                                                   \
   public:                                                                                                              \
-    static bool Read(container<T> &ref, const ::rapidxml::xml_node<> &xml_node) {                                      \
+    static bool read(container<T> &ref, const ::rapidxml::xml_node<> &xml_node) {                                      \
       for (const ::rapidxml::xml_node<> *p = &xml_node; p != nullptr;                                                  \
            p = p->next_sibling(xml_node.name(), xml_node.name_size())) {                                               \
         T t;                                                                                                           \
-        if (!XmlAccessor<T>::Read(t, *p)) {                                                                            \
+        if (!xml_accessor<T>::read(t, *p)) {                                                                           \
           return false;                                                                                                \
         }                                                                                                              \
         ref.insert(ref.end(), std::move(t));                                                                           \
       }                                                                                                                \
       return true;                                                                                                     \
     }                                                                                                                  \
-    static bool WillWrite(const container<T> &ref, unsigned int flags) {                                               \
+    static bool will_write(const container<T> &ref, unsigned int flags) {                                              \
       return true;                                                                                                     \
     }                                                                                                                  \
-    static void Write(const container<T> &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {                 \
+    static void write(const container<T> &ref, ::rapidxml::xml_node<> &xml_node, unsigned int flags) {                 \
       ::rapidxml::xml_node<> *parent = xml_node.parent();                                                              \
       if (parent == nullptr) {                                                                                         \
         return;                                                                                                        \
@@ -144,13 +144,13 @@ public:
       bool written_first = false;                                                                                      \
       for (const T &item : ref) {                                                                                      \
         if (!written_first) {                                                                                          \
-          XmlAccessor<T>::Write(item, xml_node, flags);                                                                \
+          xml_accessor<T>::write(item, xml_node, flags);                                                               \
           written_first = true;                                                                                        \
         } else {                                                                                                       \
           ::rapidxml::xml_node<> *new_node = xml_node.document()->allocate_node(                                       \
               ::rapidxml::node_element, xml_node.name(), nullptr, xml_node.name_size());                               \
           parent->append_node(new_node);                                                                               \
-          XmlAccessor<T>::Write(item, *new_node, flags);                                                               \
+          xml_accessor<T>::write(item, *new_node, flags);                                                              \
         }                                                                                                              \
       }                                                                                                                \
     }                                                                                                                  \
@@ -167,13 +167,13 @@ XML_ACCESSOR_CONTAINER(std::unordered_set);
   struct struct_type {                                                                                                 \
   private:                                                                                                             \
     template <typename T, size_t Index>                                                                                \
-    struct FieldXmlAccessorT;                                                                                          \
+    struct field_xml_accessor_t;                                                                                       \
     typedef struct_type Type;                                                                                          \
     static const size_t SEQUENCE = __COUNTER__;                                                                        \
                                                                                                                        \
   public:                                                                                                              \
     template <size_t Index>                                                                                            \
-    using FieldXmlAccessor = FieldXmlAccessorT<struct_type, Index>;
+    using field_xml_accessor = field_xml_accessor_t<struct_type, Index>;
 
 #define XL_XML_MEMBER_NODE(field_type, field_name)                                                                     \
 public:                                                                                                                \
@@ -181,24 +181,24 @@ public:                                                                         
                                                                                                                        \
 private:                                                                                                               \
   template <typename T>                                                                                                \
-  struct FieldXmlAccessorT<T, __COUNTER__ - SEQUENCE - 1> {                                                            \
-    static bool Read(Type &ref, const ::rapidxml::xml_node<> &parent) {                                                \
+  struct field_xml_accessor_t<T, __COUNTER__ - SEQUENCE - 1> {                                                         \
+    static bool read(Type &ref, const ::rapidxml::xml_node<> &parent) {                                                \
       const ::rapidxml::xml_node<> *xml_node = parent.first_node(#field_name);                                         \
       if (xml_node != nullptr) {                                                                                       \
-        return ::xl::XmlAccessor<field_type>::Read(ref.field_name, *xml_node);                                         \
+        return ::xl::xml_accessor<field_type>::read(ref.field_name, *xml_node);                                        \
       }                                                                                                                \
       return true;                                                                                                     \
     }                                                                                                                  \
-    static bool WillWrite(const Type &ref, unsigned int flags) {                                                       \
-      return ::xl::XmlAccessor<field_type>::WillWrite(ref.field_name, flags);                                          \
+    static bool will_write(const Type &ref, unsigned int flags) {                                                      \
+      return ::xl::xml_accessor<field_type>::will_write(ref.field_name, flags);                                        \
     }                                                                                                                  \
-    static void Write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
-      if (!WillWrite(ref, flags)) {                                                                                    \
+    static void write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
+      if (!will_write(ref, flags)) {                                                                                   \
         return;                                                                                                        \
       }                                                                                                                \
       ::rapidxml::xml_node<> *xml_node = parent.document()->allocate_node(::rapidxml::node_element, #field_name);      \
       parent.append_node(xml_node);                                                                                    \
-      ::xl::XmlAccessor<field_type>::Write(ref.field_name, *xml_node, flags);                                          \
+      ::xl::xml_accessor<field_type>::write(ref.field_name, *xml_node, flags);                                         \
     }                                                                                                                  \
   };
 
@@ -208,24 +208,24 @@ public:                                                                         
                                                                                                                        \
 private:                                                                                                               \
   template <typename T>                                                                                                \
-  struct FieldXmlAccessorT<T, __COUNTER__ - SEQUENCE - 1> {                                                            \
-    static bool Read(Type &ref, const ::rapidxml::xml_node<> &parent) {                                                \
+  struct field_xml_accessor_t<T, __COUNTER__ - SEQUENCE - 1> {                                                         \
+    static bool read(Type &ref, const ::rapidxml::xml_node<> &parent) {                                                \
       const ::rapidxml::xml_attribute<> *xml_attribute = parent.first_attribute(#field_name);                          \
       if (xml_attribute != nullptr) {                                                                                  \
-        return ::xl::XmlAccessor<field_type>::Read(ref.field_name, *xml_attribute);                                    \
+        return ::xl::xml_accessor<field_type>::read(ref.field_name, *xml_attribute);                                   \
       }                                                                                                                \
       return true;                                                                                                     \
     }                                                                                                                  \
-    static bool WillWrite(const Type &ref, unsigned int flags) {                                                       \
-      return ::xl::XmlAccessor<field_type>::WillWrite(ref.field_name, flags);                                          \
+    static bool will_write(const Type &ref, unsigned int flags) {                                                      \
+      return ::xl::xml_accessor<field_type>::will_write(ref.field_name, flags);                                        \
     }                                                                                                                  \
-    static void Write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
-      if (!WillWrite(ref, flags)) {                                                                                    \
+    static void write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
+      if (!will_write(ref, flags)) {                                                                                   \
         return;                                                                                                        \
       }                                                                                                                \
       ::rapidxml::xml_attribute<> *xml_attribute = parent.document()->allocate_attribute(#field_name);                 \
       parent.append_attribute(xml_attribute);                                                                          \
-      ::xl::XmlAccessor<field_type>::Write(ref.field_name, *xml_attribute, flags);                                     \
+      ::xl::xml_accessor<field_type>::write(ref.field_name, *xml_attribute, flags);                                    \
     }                                                                                                                  \
   };
 
@@ -233,49 +233,49 @@ private:                                                                        
 private:                                                                                                               \
   static const size_t FIELDS = __COUNTER__ - SEQUENCE - 1;                                                             \
   template <size_t Begin, size_t End>                                                                                  \
-  struct FieldsXmlAccessorWalker {                                                                                     \
-    static bool Read(Type &ref, const ::rapidxml::xml_node<> &parent) {                                                \
-      if (!FieldXmlAccessor<Begin>::Read(ref, parent)) {                                                               \
+  struct fields_xml_accessor_walker {                                                                                  \
+    static bool read(Type &ref, const ::rapidxml::xml_node<> &parent) {                                                \
+      if (!field_xml_accessor<Begin>::read(ref, parent)) {                                                             \
         return false;                                                                                                  \
       }                                                                                                                \
-      if (!FieldsXmlAccessorWalker<Begin + 1, End>::Read(ref, parent)) {                                               \
+      if (!fields_xml_accessor_walker<Begin + 1, End>::read(ref, parent)) {                                            \
         return false;                                                                                                  \
       }                                                                                                                \
       return true;                                                                                                     \
     }                                                                                                                  \
-    static bool WillWrite(const Type &ref, unsigned int flags) {                                                       \
-      if (FieldXmlAccessor<Begin>::WillWrite(ref, flags)) {                                                            \
+    static bool will_write(const Type &ref, unsigned int flags) {                                                      \
+      if (field_xml_accessor<Begin>::will_write(ref, flags)) {                                                         \
         return true;                                                                                                   \
       }                                                                                                                \
-      return FieldsXmlAccessorWalker<Begin + 1, End>::WillWrite(ref, flags);                                           \
+      return fields_xml_accessor_walker<Begin + 1, End>::will_write(ref, flags);                                       \
     }                                                                                                                  \
-    static void Write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
-      FieldXmlAccessor<Begin>::Write(ref, parent, flags);                                                              \
-      FieldsXmlAccessorWalker<Begin + 1, End>::Write(ref, parent, flags);                                              \
+    static void write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
+      field_xml_accessor<Begin>::write(ref, parent, flags);                                                            \
+      fields_xml_accessor_walker<Begin + 1, End>::write(ref, parent, flags);                                           \
     }                                                                                                                  \
   };                                                                                                                   \
   template <size_t Index>                                                                                              \
-  struct FieldsXmlAccessorWalker<Index, Index> {                                                                       \
-    static bool Read(Type &ref, const ::rapidxml::xml_node<> &xml_node) {                                              \
+  struct fields_xml_accessor_walker<Index, Index> {                                                                    \
+    static bool read(Type &ref, const ::rapidxml::xml_node<> &xml_node) {                                              \
       return true;                                                                                                     \
     }                                                                                                                  \
-    static bool WillWrite(const Type &ref, unsigned int flags) {                                                       \
+    static bool will_write(const Type &ref, unsigned int flags) {                                                      \
       return false;                                                                                                    \
     }                                                                                                                  \
-    static void Write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
+    static void write(const Type &ref, ::rapidxml::xml_node<> &parent, unsigned int flags) {                           \
     }                                                                                                                  \
   };                                                                                                                   \
                                                                                                                        \
 private:                                                                                                               \
-  friend ::xl::XmlAccessor<Type>;                                                                                      \
+  friend ::xl::xml_accessor<Type>;                                                                                     \
   bool xml_read(const ::rapidxml::xml_node<> &xml_node) {                                                              \
-    return FieldsXmlAccessorWalker<0, FIELDS>::Read(*this, xml_node);                                                  \
+    return fields_xml_accessor_walker<0, FIELDS>::read(*this, xml_node);                                               \
   }                                                                                                                    \
   bool xml_will_write(unsigned int flags) const {                                                                      \
-    return FieldsXmlAccessorWalker<0, FIELDS>::WillWrite(*this, flags);                                                \
+    return fields_xml_accessor_walker<0, FIELDS>::will_write(*this, flags);                                            \
   }                                                                                                                    \
   void xml_write(::rapidxml::xml_node<> &parent, unsigned int flags) const {                                           \
-    FieldsXmlAccessorWalker<0, FIELDS>::Write(*this, parent, flags);                                                   \
+    fields_xml_accessor_walker<0, FIELDS>::write(*this, parent, flags);                                                \
   }                                                                                                                    \
                                                                                                                        \
 public:                                                                                                                \

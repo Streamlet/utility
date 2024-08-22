@@ -1,7 +1,7 @@
+#include "byte_order.h"
 #include <cstring>
 #include <queue>
 #include <sys/stat.h>
-#include <xl/byte_order.h>
 #include <xl/encoding>
 #include <xl/file>
 #include <xl/scope_exit>

@@ -52,12 +52,12 @@ source_set("crypto") {
 
 source_set("file") {
   sources = [
+    "byte_order.h",
     "file.cc",
     "zip.cc",
   ]
 
   inputs = [
-    "../include/xl/byte_order.h",
     "../include/xl/file",
     "../include/xl/zip",
   ]

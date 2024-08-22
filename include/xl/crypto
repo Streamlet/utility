@@ -27,23 +27,154 @@ namespace xl {
 
 namespace crypto {
 
+//
+// @brief Calculate MD5 checksum for a buffer.
+//
+// @param data The buffer address
+// @param length The buffer size
+// @return Return checksum in lowercase hex string.
+//
 std::string md5(const void *data, size_t length);
+
+//
+// @brief Calculate MD5 checksum for a string.
+//
+// @param s The string
+// @return Return checksum in lowercase hex string.
+//
 std::string md5(const std::string &s);
+
+//
+// @brief Calculate MD5 checksum for a file.
+//
+// @param file_path The path of file
+// @return Return checksum in lowercase hex string.
+//
 std::string md5_file(const TCHAR *file_path);
+
+//
+// @brief Calculate SHA1 checksum for a buffer.
+//
+// @param data The buffer address
+// @param length The buffer size
+// @return Return checksum in lowercase hex string.
+//
 std::string sha1(const void *data, size_t length);
+
+//
+// @brief Calculate SHA1 checksum for a string.
+//
+// @param s The string
+// @return Return checksum in lowercase hex string.
+//
 std::string sha1(const std::string &s);
+
+//
+// @brief Calculate SHA1 checksum for a file.
+//
+// @param file_path The path of file
+// @return Return checksum in lowercase hex string.
+//
 std::string sha1_file(const TCHAR *file_path);
+
+//
+// @brief Calculate SHA224 checksum for a buffer.
+//
+// @param data The buffer address
+// @param length The buffer size
+// @return Return checksum in lowercase hex string.
+//
 std::string sha224(const void *data, size_t length);
+
+//
+// @brief Calculate SHA224 checksum for a string.
+//
+// @param s The string
+// @return Return checksum in lowercase hex string.
+//
 std::string sha224(const std::string &s);
+
+//
+// @brief Calculate SHA224 checksum for a file.
+//
+// @param file_path The path of file
+// @return Return checksum in lowercase hex string.
+//
 std::string sha224_file(const TCHAR *file_path);
+
+//
+// @brief Calculate SHA256 checksum for a buffer.
+//
+// @param data The buffer address
+// @param length The buffer size
+// @return Return checksum in lowercase hex string.
+//
 std::string sha256(const void *data, size_t length);
+
+//
+// @brief Calculate SHA256 checksum for a string.
+//
+// @param s The string
+// @return Return checksum in lowercase hex string.
+//
 std::string sha256(const std::string &s);
+
+//
+// @brief Calculate SHA256 checksum for a file.
+//
+// @param file_path The path of file
+// @return Return checksum in lowercase hex string.
+//
 std::string sha256_file(const TCHAR *file_path);
+
+//
+// @brief Calculate SHA384 checksum for a buffer.
+//
+// @param data The buffer address
+// @param length The buffer size
+// @return Return checksum in lowercase hex string.
+//
 std::string sha384(const void *data, size_t length);
+
+//
+// @brief Calculate SHA384 checksum for a string.
+//
+// @param s The string
+// @return Return checksum in lowercase hex string.
+//
 std::string sha384(const std::string &s);
+
+//
+// @brief Calculate SHA384 checksum for a file.
+//
+// @param file_path The path of file
+// @return Return checksum in lowercase hex string.
+//
 std::string sha384_file(const TCHAR *file_path);
+
+//
+// @brief Calculate SHA512 checksum for a buffer.
+//
+// @param data The buffer address
+// @param length The buffer size
+// @return Return checksum in lowercase hex string.
+//
 std::string sha512(const void *data, size_t length);
+
+//
+// @brief Calculate SHA512 checksum for a string.
+//
+// @param s The string
+// @return Return checksum in lowercase hex string.
+//
 std::string sha512(const std::string &s);
+
+//
+// @brief Calculate SHA512 checksum for a file.
+//
+// @param file_path The path of file
+// @return Return checksum in lowercase hex string.
+//
 std::string sha512_file(const TCHAR *file_path);
 
 } // namespace crypto

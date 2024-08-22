@@ -22,49 +22,88 @@
 
 #pragma once
 
-// Boost.ProgramOptions is too large, so implement an easy one here
-
+#include "native_string"
 #include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 
-#ifdef _WIN32
-#include <tchar.h>
-#else
-#define TCHAR char
-#endif
-
 namespace xl {
 
 namespace cmdline_options {
 
+//
+// @brief A struct to hold native_string map and provides helper functions
+//
 struct parsed_options {
-  std::map<std::basic_string<TCHAR>, std::basic_string<TCHAR>> parsed_map;
 
+  //
+  // @brief Raw parsed key-value map
+  //
+  std::map<native_string, native_string> parsed_map;
+
+  //
+  // @brief Check if an option exists
+  //
+  // @param option_name Option name to check
+  // @return Return true if option_name exists, otherwise return false.
+  //
   bool has(const TCHAR *option_name) const {
     return parsed_map.find(option_name) != parsed_map.end();
   }
 
-  std::basic_string<TCHAR> get(const TCHAR *option_name) const {
+  //
+  // @brief Get value of an option
+  //
+  // @param option_name Option name to get value
+  // @return Return option value of option_name exists, otherwise return empty string.
+  //
+  native_string get(const TCHAR *option_name) const {
     auto it = parsed_map.find(option_name);
-    return it != parsed_map.end() ? it->second : std::basic_string<TCHAR>();
+    return it != parsed_map.end() ? it->second : native_string();
   }
 
+  //
+  // @brief Get value of an option and transform to specified type
+  //
+  // @tparam T Ttarget type to transfrom to
+  // @param option_name Option name to get value
+  // @return Return transformed value if option_name exists, otherwise return default value of type T.
+  // @remark The transform result depends on implement of std::basic_stringstream.
+  //
   template <typename T>
   T get_as(const TCHAR *option_name) const {
-    std::basic_stringstream<TCHAR> ss;
-    ss << get(option_name);
     T t = {};
+    native_string value = get(option_name);
+    if (value.empty()) {
+      return t;
+    }
+    native_string_stream ss;
+    ss << value;
     ss >> t;
     return t;
   }
 };
 
+//
+// @brief Parse command line from argc and argv.
+//
+// @param argc The argc argument of main function
+// @param argv The argv argument of main function
+// @return return native string map stored in parsed_options
+//
 parsed_options parse(int argc, const TCHAR *argv[]);
 
 #ifdef _WIN32
+
+//
+// @brief Parse command line from entire command line. (Windows only)
+//
+// @param cmdline The command line argument of WinMain function
+// @return return native string map stored in parsed_options
+//
 parsed_options parse(const TCHAR *cmdline);
+
 #endif
 
 } // namespace cmdline_options

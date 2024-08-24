@@ -114,6 +114,14 @@ source_set("log") {
   public_configs = [ ":utility_public_config" ]
 }
 
+source_set("thread") {
+  sources = [ "task_thread.cc" ]
+
+  inputs = [ "../include/xl/task_thread" ]
+
+  public_configs = [ ":utility_public_config" ]
+}
+
 source_set("process") {
   sources = [ "cmdline_options.cc" ]
 

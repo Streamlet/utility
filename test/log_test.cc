@@ -38,10 +38,10 @@ TEST(log_test, normal) {
 
   xl::log::shutdown();
 
-  ASSERT_EQ(xl::file::read(_T("test.log")), "[FATAL][test]fatal 1 2 3 log\r\n"
-                                            "[ERROR][test]error 1 2 3 log\r\n"
-                                            "[WARN][test]warn 1 2 3 log\r\n"
-                                            "[INFO][test]info 1 2 3 log\r\n");
+  ASSERT_EQ(xl::file::read(_T("test.log")), "[FATAL][test]fatal 1 2 3 log\n"
+                                            "[ERROR][test]error 1 2 3 log\n"
+                                            "[WARN][test]warn 1 2 3 log\n"
+                                            "[INFO][test]info 1 2 3 log\n");
 
   ASSERT_EQ(xl::fs::unlink(_T("test.log")), true);
 }

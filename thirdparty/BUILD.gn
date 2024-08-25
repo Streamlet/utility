@@ -1,4 +1,78 @@
+# zlib
+
+config("zlib_public_config") {
+  include_dirs = [
+    "zlib",
+    "zlib/contrib",
+  ]
+}
+
+source_set("zlib") {
+  sources = [
+    "zlib/adler32.c",
+    "zlib/compress.c",
+    "zlib/crc32.c",
+    "zlib/crc32.h",
+    "zlib/deflate.c",
+    "zlib/deflate.h",
+    "zlib/gzclose.c",
+    "zlib/gzguts.h",
+    "zlib/gzlib.c",
+    "zlib/gzread.c",
+    "zlib/gzwrite.c",
+    "zlib/infback.c",
+    "zlib/inffast.c",
+    "zlib/inffast.h",
+    "zlib/inffixed.h",
+    "zlib/inflate.c",
+    "zlib/inflate.h",
+    "zlib/inftrees.c",
+    "zlib/inftrees.h",
+    "zlib/trees.c",
+    "zlib/trees.h",
+    "zlib/uncompr.c",
+    "zlib/zconf.h",
+    "zlib/zlib.h",
+    "zlib/zutil.c",
+    "zlib/zutil.h",
+  ]
+  if (!is_win) {
+    cflags = [
+      "-Wno-implicit-function-declaration",
+      "-Wno-deprecated-non-prototype",
+    ]
+  }
+  public_configs = [ ":zlib_public_config" ]
+}
+
+source_set("minizip") {
+  sources = [
+    "zlib/contrib/minizip/crypt.h",
+    "zlib/contrib/minizip/ioapi.c",
+    "zlib/contrib/minizip/ioapi.h",
+    "zlib/contrib/minizip/mztools.c",
+    "zlib/contrib/minizip/mztools.h",
+    "zlib/contrib/minizip/unzip.c",
+    "zlib/contrib/minizip/unzip.h",
+    "zlib/contrib/minizip/zip.c",
+    "zlib/contrib/minizip/zip.h",
+  ]
+  if (is_win) {
+    sources += [
+      "zlib/contrib/minizip/iowin32.c",
+      "zlib/contrib/minizip/iowin32.h",
+    ]
+    cflags = [ "/wd5105" ]
+  } else {
+    cflags = [ "-Wno-deprecated-non-prototype" ]
+  }
+  deps = [ ":zlib" ]
+  public_configs = [ ":zlib_public_config" ]
+}
+
+
 # crypto from libressl
+
 config("libressl_crypto_public_config") {
   include_dirs = [ "libressl/include" ]
   if (is_posix) {
@@ -52,6 +126,7 @@ static_library("libressl_crypto") {
   public_configs = [ ":libressl_crypto_public_config" ]
 }
 
+
 # rapidxml
 
 config("rapidxml_public_config") {
@@ -62,6 +137,7 @@ config("rapidxml_public_config") {
 group("rapidxml") {
   public_configs = [ ":rapidxml_public_config" ]
 }
+
 
 # googletest
 
@@ -75,6 +151,7 @@ static_library("googletest") {
   public_configs = [ ":googletest_public_config" ]
 }
 
+
 # rapidjson
 
 config("rapidjson_public_config") {
@@ -87,4 +164,3 @@ config("rapidjson_public_config") {
 
 group("rapidjson") {
   public_configs = [ ":rapidjson_public_config" ]
-}

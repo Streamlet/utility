@@ -3,7 +3,7 @@ config("utility_public_config") {
 }
 
 group("all") {
-  deps = [ "src" ]
+  public_deps = [ "src" ]
   public_configs = [ ":utility_public_config" ]
 }
 

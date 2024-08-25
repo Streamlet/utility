@@ -85,8 +85,9 @@ source_set("config") {
     cflags += [ "-Wno-unused-result" ]
   }
 
-  deps = [
-    ":file",
+  deps = [ ":file" ]
+
+  public_deps = [
     "../thirdparty:rapidjson",
     "../thirdparty:rapidxml",
   ]
@@ -204,7 +205,7 @@ source_set("net") {
 }
 
 group("src") {
-  deps = [
+  public_deps = [
     ":config",
     ":crypto",
     ":file",
@@ -214,4 +215,5 @@ group("src") {
     ":process",
     ":string",
   ]
+  public_configs = [ ":utility_public_config" ]
 }

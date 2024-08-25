@@ -20,52 +20,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <xl/task_thread>
+#include <gtest/gtest.h>
+#include <xl/file>
+#include <xl/log>
+#include <xl/log_setup>
 
-namespace xl {
+TEST(log_test, normal) {
+  xl::fs::unlink(_T("test.log"));
+  xl::log::setup(_T("test"), XL_LOG_LEVEL_INFO, xl::log::LOG_CONTENT_LEVEL | xl::log::LOG_CONTENT_APP_NAME,
+                 xl::log::LOG_TARGET_FILE, _T("test.log"));
 
-task_thread::task_thread() : thread_(std::bind(&task_thread::run, this)) {
+  XL_LOG_FATAL("fatal ", 1, " 2 ", 3, " log");
+  XL_LOG_ERROR("error ", 1, " 2 ", 3, " log");
+  XL_LOG_WARN("warn ", 1, " 2 ", 3, " log");
+  XL_LOG_INFO("info ", 1, " 2 ", 3, " log");
+  XL_LOG_DEBUG("debug ", 1, " 2 ", 3, " log");
+
+  xl::log::shutdown();
+
+  ASSERT_EQ(xl::file::read(_T("test.log")), "[FATAL][test]fatal 1 2 3 log\r\n"
+                                            "[ERROR][test]error 1 2 3 log\r\n"
+                                            "[WARN][test]warn 1 2 3 log\r\n"
+                                            "[INFO][test]info 1 2 3 log\r\n");
+
+  ASSERT_EQ(xl::fs::unlink(_T("test.log")), true);
 }
-
-task_thread::~task_thread() {
-  quit();
-  join();
-}
-
-bool task_thread::post_task(std::function<void()> &&task) {
-  lock_guard lock(locker_);
-  if (quit_) {
-    return false;
-  }
-  tasks_.push(std::move(task));
-  return true;
-}
-
-void task_thread::quit() {
-  lock_guard lock(locker_);
-  quit_ = true;
-}
-
-void task_thread::join() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
-}
-
-void task_thread::run() {
-  bool run = true;
-  while (run) {
-    std::queue<std::function<void()>> tasks;
-    {
-      lock_guard lock(locker_);
-      run = !quit_;
-      std::swap(tasks, tasks_);
-    }
-    while (!tasks.empty()) {
-      tasks.front()();
-      tasks.pop();
-    }
-  }
-}
-
-} // namespace xl

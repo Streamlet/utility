@@ -59,7 +59,7 @@ enum LogContent {
 };
 
 bool setup(const TCHAR *app_name,
-           int level = LOG_LEVEL_DEFAULT,
+           int level = XL_LOG_LEVEL_DEFAULT,
            int content = LOG_CONTENT_DEFAULT,
            int target = LOG_TARGET_DEFAULT,
            const TCHAR *log_file = NULL);

@@ -51,7 +51,7 @@ xl::task_thread log_thread_;
 
 struct GlobalLogContext {
   std::string app_name = "";
-  int level = LOG_LEVEL_OFF;
+  int level = XL_LOG_LEVEL_OFF;
   unsigned int content = LOG_CONTENT_DEFAULT;
   unsigned int target = LOG_TARGET_ALL;
   FILE *log_file = NULL;
@@ -85,11 +85,11 @@ std::string format(std::chrono::time_point<std::chrono::system_clock, std::chron
   }
   if ((log_context_.content & LOG_CONTENT_LEVEL) != 0) {
     ss << GROUP_BEGIN;
-    if (level < LOG_LEVEL_OFF) {
-      level = LOG_LEVEL_OFF;
+    if (level < XL_LOG_LEVEL_OFF) {
+      level = XL_LOG_LEVEL_OFF;
     }
-    if (level > LOG_LEVEL_DEBUG) {
-      level = LOG_LEVEL_DEBUG;
+    if (level > XL_LOG_LEVEL_DEBUG) {
+      level = XL_LOG_LEVEL_DEBUG;
     }
     ss << LOG_LEVEL_STRING[level];
     ss << GROUP_END;
@@ -127,8 +127,9 @@ std::string format(std::chrono::time_point<std::chrono::system_clock, std::chron
     ss << GROUP_BEGIN << 'T' << xl::process::tid() << GROUP_END;
   }
   for (auto &message : messages) {
-    ss << message.c_str() << std::endl;
+    ss << message.c_str();
   }
+  ss << "\r\n";
   return ss.str();
 }
 
@@ -156,6 +157,9 @@ void thread_log(std::chrono::time_point<std::chrono::system_clock, std::chrono::
                 const char *function,
                 int line,
                 std::vector<std::string> messages) {
+  if (log_context_.level < level || log_context_.target == 0) {
+    return;
+  }
   std::string log = format(time, level, file, function, line, std::move(messages));
   print(std::move(log));
 }
@@ -163,22 +167,19 @@ void thread_log(std::chrono::time_point<std::chrono::system_clock, std::chrono::
 } // namespace
 
 void log(int level, const char *file, const char *function, int line, std::vector<std::string> messages) {
-  if (log_context_.level < level || log_context_.target == 0) {
-    return;
-  }
   log_thread_.post_task(
       std::bind(thread_log, std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()),
                 level, file, function, line, std::move(messages)));
 }
 
 void thread_setup(native_string app_name, int level, int content, int target, native_string log_file) {
-  if (level <= LOG_LEVEL_OFF) {
+  if (level <= XL_LOG_LEVEL_OFF) {
     return;
   }
 
   FILE *f = NULL;
   if ((target & LOG_TARGET_FILE) != 0 && !log_file.empty()) {
-    f = _tfopen(log_file.c_str(), _T("a"));
+    f = _tfopen(log_file.c_str(), _T("ab"));
     if (f == NULL) {
       return;
     }
@@ -197,7 +198,7 @@ void thread_setup(native_string app_name, int level, int content, int target, na
 }
 
 bool setup(const TCHAR *app_name, int level, int content, int target, const TCHAR *log_file) {
-  if (level <= LOG_LEVEL_OFF) {
+  if (level <= XL_LOG_LEVEL_OFF) {
     return false;
   }
 
@@ -250,13 +251,13 @@ const char *KEY_LOG_CONTENT = "LogContent";
 const char *KEY_LOG_TARGET = "LogTarget";
 const char *KEY_LOG_FILE = "LogFile";
 
-const char *VALUE_LOG_LEVEL_OFF = "Off";
-const char *VALUE_LOG_LEVEL_FATAL = "Fatal";
-const char *VALUE_LOG_LEVEL_ERROR = "Error";
-const char *VALUE_LOG_LEVEL_WARN = "Warn";
-const char *VALUE_LOG_LEVEL_INFO = "Info";
-const char *VALUE_LOG_LEVEL_DEBUG = "Debug";
-const char *VALUE_LOG_LEVEL_DEFAULT = "Default";
+const char *VALUE_XL_LOG_LEVEL_OFF = "Off";
+const char *VALUE_XL_LOG_LEVEL_FATAL = "Fatal";
+const char *VALUE_XL_LOG_LEVEL_ERROR = "Error";
+const char *VALUE_XL_LOG_LEVEL_WARN = "Warn";
+const char *VALUE_XL_LOG_LEVEL_INFO = "Info";
+const char *VALUE_XL_LOG_LEVEL_DEBUG = "Debug";
+const char *VALUE_XL_LOG_LEVEL_DEFAULT = "Default";
 
 const char *VALUE_LOG_CONTENT_TIME = "Time";
 const char *VALUE_LOG_CONTENT_LEVEL = "Level";
@@ -289,20 +290,20 @@ void parse_settings(
 #endif
 
   std::string ini_log_level = ini_file.get_value(SECTION_LOG, KEY_LOG_LEVEL);
-  if (ini_log_level == VALUE_LOG_LEVEL_OFF) {
-    level = LOG_LEVEL_OFF;
-  } else if (ini_log_level == VALUE_LOG_LEVEL_FATAL) {
-    level = LOG_LEVEL_FATAL;
-  } else if (ini_log_level == VALUE_LOG_LEVEL_ERROR) {
-    level = LOG_LEVEL_ERROR;
-  } else if (ini_log_level == VALUE_LOG_LEVEL_WARN) {
-    level = LOG_LEVEL_WARN;
-  } else if (ini_log_level == VALUE_LOG_LEVEL_INFO) {
-    level = LOG_LEVEL_INFO;
-  } else if (ini_log_level == VALUE_LOG_LEVEL_DEBUG) {
-    level = LOG_LEVEL_DEBUG;
-  } else if (ini_log_level == VALUE_LOG_LEVEL_DEFAULT) {
-    level = LOG_LEVEL_DEFAULT;
+  if (ini_log_level == VALUE_XL_LOG_LEVEL_OFF) {
+    level = XL_LOG_LEVEL_OFF;
+  } else if (ini_log_level == VALUE_XL_LOG_LEVEL_FATAL) {
+    level = XL_LOG_LEVEL_FATAL;
+  } else if (ini_log_level == VALUE_XL_LOG_LEVEL_ERROR) {
+    level = XL_LOG_LEVEL_ERROR;
+  } else if (ini_log_level == VALUE_XL_LOG_LEVEL_WARN) {
+    level = XL_LOG_LEVEL_WARN;
+  } else if (ini_log_level == VALUE_XL_LOG_LEVEL_INFO) {
+    level = XL_LOG_LEVEL_INFO;
+  } else if (ini_log_level == VALUE_XL_LOG_LEVEL_DEBUG) {
+    level = XL_LOG_LEVEL_DEBUG;
+  } else if (ini_log_level == VALUE_XL_LOG_LEVEL_DEFAULT) {
+    level = XL_LOG_LEVEL_DEFAULT;
   } else {
     // ignore illegal values
   }
@@ -382,7 +383,7 @@ bool setup_from_file(const TCHAR *log_setting_file) {
   }
 
   native_string app_name;
-  int level = LOG_LEVEL_DEFAULT;
+  int level = XL_LOG_LEVEL_DEFAULT;
   int content = LOG_CONTENT_DEFAULT;
   int target = LOG_TARGET_ALL;
   native_string log_file;

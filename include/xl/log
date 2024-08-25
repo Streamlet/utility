@@ -27,21 +27,21 @@
 #include <sstream>
 #include <string>
 
-#define LOG_LEVEL_OFF   0
-#define LOG_LEVEL_FATAL 1
-#define LOG_LEVEL_ERROR 2
-#define LOG_LEVEL_WARN  3
-#define LOG_LEVEL_INFO  4
-#define LOG_LEVEL_DEBUG 5
+#define XL_LOG_LEVEL_OFF   0
+#define XL_LOG_LEVEL_FATAL 1
+#define XL_LOG_LEVEL_ERROR 2
+#define XL_LOG_LEVEL_WARN  3
+#define XL_LOG_LEVEL_INFO  4
+#define XL_LOG_LEVEL_DEBUG 5
 
 #ifdef _DEBUG
-#define LOG_LEVEL_DEFAULT LOG_LEVEL_DEBUG
+#define XL_LOG_LEVEL_DEFAULT XL_LOG_LEVEL_DEBUG
 #else
-#define LOG_LEVEL_DEFAULT LOG_LEVEL_INFO
+#define XL_LOG_LEVEL_DEFAULT XL_LOG_LEVEL_INFO
 #endif
 
-#ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_LEVEL_DEFAULT
+#ifndef XL_LOG_LEVEL
+#define XL_LOG_LEVEL XL_LOG_LEVEL_DEBUG
 #endif
 
 namespace xl {
@@ -52,6 +52,14 @@ void log(int level, const char *file, const char *function, int line, std::vecto
 
 template <typename... T>
 inline void log_collect_messages(std::vector<std::string> &messages, T... args);
+
+template <typename T, typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, T arg, R... rest) {
+  std::stringstream ss;
+  ss << arg;
+  messages.push_back(ss.str());
+  log_collect_messages(messages, std::forward<R>(rest)...);
+}
 
 template <>
 inline void log_collect_messages(std::vector<std::string> &messages) {
@@ -97,14 +105,6 @@ inline void log_collect_messages(std::vector<std::string> &messages, const std::
 
 #endif
 
-template <typename T, typename... R>
-inline void log_collect_messages(std::vector<std::string> &messages, T arg, R... rest) {
-  std::stringstream ss;
-  ss << arg;
-  messages.push_back(ss.str());
-  log_collect_messages(messages, std::forward<R>(rest)...);
-}
-
 template <typename... T>
 inline void log_va(int level, const char *file, const char *function, int line, T... args) {
   std::vector<std::string> messages;
@@ -116,34 +116,34 @@ inline void log_va(int level, const char *file, const char *function, int line, 
 
 } // namespace xl
 
-#define LOG(level, ...) ::xl::logging::log_va(level, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define XL_LOG(level, ...) ::xl::log::log_va(level, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 
-#if (LOG_LEVEL >= LOG_LEVEL_FATAL)
-#define LOG_FATAL(...) LOG(LOG_LEVEL_FATAL, __VA_ARGS__)
+#if (XL_LOG_LEVEL >= LOG_LEVEL_FATAL)
+#define XL_LOG_FATAL(...) XL_LOG(XL_LOG_LEVEL_FATAL, __VA_ARGS__)
 #else
-#define LOG_FATAL(...)
+#define XL_LOG_FATAL(...)
 #endif
 
-#if (LOG_LEVEL >= LOG_LEVEL_ERROR)
-#define LOG_ERROR(...) LOG(LOG_LEVEL_ERROR, __VA_ARGS__)
+#if (XL_LOG_LEVEL >= LOG_LEVEL_ERROR)
+#define XL_LOG_ERROR(...) XL_LOG(XL_LOG_LEVEL_ERROR, __VA_ARGS__)
 #else
 #define LOG_ERROR(...)
 #endif
 
-#if (LOG_LEVEL >= LOG_LEVEL_WARN)
-#define LOG_WARN(...) LOG(LOG_LEVEL_WARN, __VA_ARGS__)
+#if (XL_LOG_LEVEL >= LOG_LEVEL_WARN)
+#define XL_LOG_WARN(...) XL_LOG(XL_LOG_LEVEL_WARN, __VA_ARGS__)
 #else
-#define LOG_WARN(...)
+#define XL_LOG_WARN(...)
 #endif
 
-#if (LOG_LEVEL >= LOG_LEVEL_INFO)
-#define LOG_INFO(...) LOG(LOG_LEVEL_INFO, __VA_ARGS__)
+#if (XL_LOG_LEVEL >= LOG_LEVEL_INFO)
+#define XL_LOG_INFO(...) XL_LOG(XL_LOG_LEVEL_INFO, __VA_ARGS__)
 #else
-#define LOG_INFO(...)
+#define XL_LOG_INFO(...)
 #endif
 
-#if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
-#define LOG_DEBUG(...) LOG(LOG_LEVEL_DEBUG, __VA_ARGS__)
+#if (XL_LOG_LEVEL >= LOG_LEVEL_DEBUG)
+#define XL_LOG_DEBUG(...) XL_LOG(XL_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #else
-#define LOG_DEBUG(...)
+#define XL_LOG_DEBUG(...)
 #endif

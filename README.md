@@ -24,10 +24,14 @@ Provides common utility for developing cross-platform applications, supporting C
   * **ini**: Section operations (enum, has, add, remove), key-value operations (enum, has, get, set, remove).
   * **json**: Define a struct and dump to or parse from json string. (using rapidjson)
   * **xml**: Define a struct and dump to or parse from xml string. (using rapidxml)
-* **log**: A light-weight logger, supporting levels and std::stringstream based serializing (no formatter). (not in seperated thread currently)
+* **log**: A light-weight logger, supporting levels and std::stringstream based serializing (no formatter).
 * **process**
   * **process utility**: executable_path, pid, tid, start, wait, kill, sleep, etc.
   * **cmdline_options**: Parse argc and argv, or a full command line string, and extract arguments.
+* **thread**
+  * **synchronous**: Provides event, locker, auto_locker, etc. Like <mutex> and <conditinal_variable>, supports Windows XP.
+  * **task_thread**: A thread accepting tasks and executing tasks.
+  * **thread**: Like <thread>, supports Windows XP.
 * **net**
   * **url**: Extract url parts, RFC 3986 encode and decode.
   * **http**: A light-weight http client, using WinHTTP for window and cURL for POSIX.

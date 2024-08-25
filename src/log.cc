@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <cassert>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -29,11 +30,12 @@
 #include <xl/encoding>
 #include <xl/ini>
 #include <xl/log>
-#include <xl/log_init>
+#include <xl/log_setup>
 #include <xl/native_string>
 #include <xl/process>
 #include <xl/scope_exit>
 #include <xl/string>
+#include <xl/task_thread>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -41,9 +43,11 @@
 
 namespace xl {
 
-namespace logging {
+namespace log {
 
 namespace {
+
+xl::task_thread log_thread_;
 
 struct GlobalLogContext {
   std::string app_name = "";
@@ -64,53 +68,19 @@ GlobalLogContext log_context_;
 
 static const char *LOG_LEVEL_STRING[] = {"OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
 
-void thread_setup(native_string app_name, int level, int content, int target, FILE *log_file) {
-  if (log_context_.log_file != NULL) {
-    fclose(log_context_.log_file);
-    log_context_.log_file = NULL;
-  }
-#if defined(_WIN32) && defined(_UNICODE)
-  log_context_.app_name = std::move(encoding::utf16_to_utf8(app_name));
-#else
-  log_context_.app_name = std::move(app_name);
-#endif
-  log_context_.level = level;
-  log_context_.content = content;
-  log_context_.target = target;
-  log_context_.log_file = log_file;
-}
-
-template <typename FromCharType, typename ToCharType>
-std::basic_string<ToCharType> transform_string(const std::basic_string<FromCharType> &s);
-
-template <>
-std::string transform_string(const std::string &s) {
-  return s;
-}
-template <>
-std::string transform_string(const std::wstring &s) {
-  return encoding::utf16_to_utf8(s);
-}
-
-template <>
-std::wstring transform_string(const std::string &s) {
-  return encoding::utf8_to_utf16(s);
-}
-
-template <>
-std::wstring transform_string(const std::wstring &s) {
-  return s;
-}
-
-std::string format(int level, const char *file, const char *function, int line, std::basic_string<char> message) {
+std::string format(std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> time,
+                   int level,
+                   const char *file,
+                   const char *function,
+                   int line,
+                   std::vector<std::string> messages) {
   std::basic_stringstream<char> ss;
   const char GROUP_BEGIN = '[';
   const char GROUP_END = ']';
   if ((log_context_.content & LOG_CONTENT_TIME) != 0) {
     ss << GROUP_BEGIN;
-    const auto now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-    time_t now_t = std::chrono::system_clock::to_time_t(now);
-    ss << std::put_time(std::localtime(&now_t), "%F %T.") << (now.time_since_epoch().count() % 1000);
+    time_t now_t = std::chrono::system_clock::to_time_t(time);
+    ss << std::put_time(std::localtime(&now_t), "%F %T.") << (time.time_since_epoch().count() % 1000);
     ss << GROUP_END;
   }
   if ((log_context_.content & LOG_CONTENT_LEVEL) != 0) {
@@ -156,7 +126,9 @@ std::string format(int level, const char *file, const char *function, int line, 
   if ((log_context_.content & LOG_CONTENT_TID) != 0) {
     ss << GROUP_BEGIN << 'T' << xl::process::tid() << GROUP_END;
   }
-  ss << message.c_str() << std::endl;
+  for (auto &message : messages) {
+    ss << message.c_str() << std::endl;
+  }
   return ss.str();
 }
 
@@ -178,32 +150,59 @@ void print(std::string log) {
   }
 }
 
-void thread_log(int level, const char *file, const char *function, int line, std::string message) {
-  std::string log = format(level, file, function, line, std::move(message));
+void thread_log(std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> time,
+                int level,
+                const char *file,
+                const char *function,
+                int line,
+                std::vector<std::string> messages) {
+  std::string log = format(time, level, file, function, line, std::move(messages));
   print(std::move(log));
 }
 
 } // namespace
 
-void log(int level, const char *file, const char *function, int line, std::string message) {
+void log(int level, const char *file, const char *function, int line, std::vector<std::string> messages) {
   if (log_context_.level < level || log_context_.target == 0) {
     return;
   }
-  thread_log(level, file, function, line, std::move(message));
+  log_thread_.post_task(
+      std::bind(thread_log, std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()),
+                level, file, function, line, std::move(messages)));
+}
+
+void thread_setup(native_string app_name, int level, int content, int target, native_string log_file) {
+  if (level <= LOG_LEVEL_OFF) {
+    return;
+  }
+
+  FILE *f = NULL;
+  if ((target & LOG_TARGET_FILE) != 0 && !log_file.empty()) {
+    f = _tfopen(log_file.c_str(), _T("a"));
+    if (f == NULL) {
+      return;
+    }
+  }
+
+  assert(log_context_.log_file == NULL);
+#if defined(_WIN32) && defined(_UNICODE)
+  log_context_.app_name = std::move(encoding::utf16_to_utf8(app_name));
+#else
+  log_context_.app_name = std::move(app_name);
+#endif
+  log_context_.level = level;
+  log_context_.content = content;
+  log_context_.target = target;
+  log_context_.log_file = f;
 }
 
 bool setup(const TCHAR *app_name, int level, int content, int target, const TCHAR *log_file) {
   if (level <= LOG_LEVEL_OFF) {
     return false;
   }
-  FILE *f = NULL;
-  if ((target & LOG_TARGET_FILE) != 0 && log_file != NULL) {
-    f = _tfopen(log_file, _T("a"));
-    if (f == NULL) {
-      return false;
-    }
-  }
-  thread_setup(app_name, level, content, target, f);
+
+  log_thread_.post_task(std::bind(thread_setup, native_string(app_name == nullptr ? _T("") : app_name), level, content,
+                                  target, native_string(log_file == nullptr ? _T("") : log_file)));
   return true;
 }
 
@@ -392,6 +391,19 @@ bool setup_from_file(const TCHAR *log_setting_file) {
   return setup(app_name.c_str(), level, content, target, log_file.c_str());
 }
 
-} // namespace logging
+void thread_shutdown() {
+  if (log_context_.log_file != NULL) {
+    fclose(log_context_.log_file);
+    log_context_.log_file = NULL;
+  }
+  log_thread_.quit();
+}
+
+void shutdown() {
+  log_thread_.post_task(thread_shutdown);
+  log_thread_.join();
+}
+
+} // namespace log
 
 } // namespace xl

@@ -27,7 +27,7 @@
 
 namespace xl {
 
-namespace logging {
+namespace log {
 
 enum LogTarget {
   LOG_TARGET_STDOUT = 0x01,
@@ -64,6 +64,7 @@ bool setup(const TCHAR *app_name,
            int target = LOG_TARGET_DEFAULT,
            const TCHAR *log_file = NULL);
 bool setup_from_file(const TCHAR *log_setting_file);
+void shutdown();
 
 /**
  * Log Setting File Format
@@ -82,6 +83,6 @@ bool setup_from_file(const TCHAR *log_setting_file);
  * LogFile    = <Path>  ; If LogTarget contains File, LogFile specifies which file to save the log.
  */
 
-} // namespace logging
+} // namespace log
 
 } // namespace xl

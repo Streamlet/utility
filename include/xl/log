@@ -45,77 +45,74 @@
 #endif
 
 namespace xl {
-namespace logging {
 
-void log(int level, const char *file, const char *function, int line, std::string message);
+namespace log {
+
+void log(int level, const char *file, const char *function, int line, std::vector<std::string> messages);
 
 template <typename... T>
-inline void log_va_ss(std::stringstream &ss, int level, const char *file, const char *function, int line, T... args);
+inline void log_collect_messages(std::vector<std::string> &messages, T... args);
 
 template <>
-inline void log_va_ss(std::stringstream &ss, int level, const char *file, const char *function, int line) {
-  log(level, file, function, line, std::move(ss.str()));
+inline void log_collect_messages(std::vector<std::string> &messages) {
 }
 
-template <typename T0, typename... T>
-inline void
-log_va_ss(std::stringstream &ss, int level, const char *file, const char *function, int line, T0 arg0, T... rest) {
-  ss << arg0;
-  log_va_ss(ss, level, file, function, line, std::forward<T>(rest)...);
+template <typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, const char *arg, R... rest) {
+  messages.push_back(arg);
+  log_collect_messages(messages, std::forward<R>(rest)...);
 }
 
-template <typename... T>
-inline void log_va_ss(std::stringstream &ss,
-                      int level,
-                      const char *file,
-                      const char *function,
-                      int line,
-                      const wchar_t *arg0,
-                      T... rest) {
-  ss << encoding::utf16_to_utf8(arg0);
-  log_va_ss(ss, level, file, function, line, std::forward<T>(rest)...);
+template <typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, const wchar_t *arg, R... rest) {
+  messages.push_back(encoding::utf16_to_utf8(arg));
+  log_collect_messages(messages, std::forward<R>(rest)...);
+}
+
+template <typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, const std::string &arg, R... rest) {
+  messages.push_back(arg);
+  log_collect_messages(messages, std::forward<R>(rest)...);
+}
+
+template <typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, const std::wstring &arg, R... rest) {
+  messages.push_back(encoding::utf16_to_utf8(arg));
+  log_collect_messages(messages, std::forward<R>(rest)...);
 }
 
 #if __cplusplus >= 201703L
-template <typename... T>
-inline void log_va_ss(std::stringstream &ss,
-                      int level,
-                      const char *file,
-                      const char *function,
-                      int line,
-                      const std::wstring_view &arg0,
-                      T... rest) {
-  ss << encoding::utf16_to_utf8(arg0.data(), arg0.length());
-  log_va_ss(ss, level, file, function, line, std::forward<T>(rest)...);
+
+template <typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, const std::wstring_view &arg, R... rest) {
+  messages.push_back(encoding::utf16_to_utf8(arg.data(), arg.length()));
+  log_collect_messages(messages, std::forward<R>(rest)...);
 }
+
+template <typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, const std::string_view &arg, R... rest) {
+  messages.push_back(std::string(arg.data(), arg.length()));
+  log_collect_messages(messages, std::forward<R>(rest)...);
+}
+
 #endif
 
-template <typename... T>
-inline void log_va_ss(std::stringstream &ss,
-                      int level,
-                      const char *file,
-                      const char *function,
-                      int line,
-                      const std::wstring &arg0,
-                      T... rest) {
-  ss << encoding::utf16_to_utf8(arg0);
-  log_va_ss(ss, level, file, function, line, std::forward<T>(rest)...);
-}
-
-template <typename... T>
-inline void
-log_va_ss(std::stringstream &ss, int level, const char *file, const char *function, int line, wchar_t arg0, T... rest) {
-  ss << encoding::utf16_to_utf8(&arg0, 1);
-  log_va_ss(ss, level, file, function, line, std::forward<T>(rest)...);
+template <typename T, typename... R>
+inline void log_collect_messages(std::vector<std::string> &messages, T arg, R... rest) {
+  std::stringstream ss;
+  ss << arg;
+  messages.push_back(ss.str());
+  log_collect_messages(messages, std::forward<R>(rest)...);
 }
 
 template <typename... T>
 inline void log_va(int level, const char *file, const char *function, int line, T... args) {
-  std::stringstream ss;
-  log_va_ss(ss, level, file, function, line, std::forward<T>(args)...);
+  std::vector<std::string> messages;
+  log_collect_messages(messages, std::forward<T>(args)...);
+  log(level, file, function, line, std::move(messages));
 }
 
-} // namespace logging
+} // namespace log
 
 } // namespace xl
 

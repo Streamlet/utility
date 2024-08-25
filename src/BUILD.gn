@@ -103,7 +103,7 @@ source_set("log") {
 
   inputs = [
     "../include/xl/log",
-    "../include/xl/log_init",
+    "../include/xl/log_setup",
   ]
 
   cflags = []

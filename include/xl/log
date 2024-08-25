@@ -26,6 +26,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #define XL_LOG_LEVEL_OFF   0
 #define XL_LOG_LEVEL_FATAL 1

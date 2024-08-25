@@ -129,7 +129,7 @@ std::string format(std::chrono::time_point<std::chrono::system_clock, std::chron
   for (auto &message : messages) {
     ss << message.c_str();
   }
-  ss << "\r\n";
+  ss << std::endl;
   return ss.str();
 }
 

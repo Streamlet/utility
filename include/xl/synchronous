@@ -20,63 +20,49 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <xl/task_thread>
+#pragma once
+
+//
+// <condition_variable> and <mutex> are not supported on Windows XP
+//
 
 namespace xl {
 
-task_thread::task_thread() : thread_(std::bind(&task_thread::run, this)) {
-}
+class event {
+public:
+  event(bool init_signaled, bool auto_reset);
+  ~event();
 
-task_thread::~task_thread() {
-  quit();
-  join();
-}
+  void wait() const;
+  bool timed_wait(unsigned long milliseconds) const;
 
-bool task_thread::post_task(std::function<void()> &&task) {
-  lock_guard lock(locker_);
-  if (quit_) {
-    return false;
-  }
-  tasks_.push(std::move(task));
-  return true;
-}
+  void set() const;
+  void reset() const;
 
-void task_thread::quit() {
-  lock_guard lock(locker_);
-  quit_ = true;
-}
+private:
+  void *platform_context_ = nullptr;
+};
 
-void task_thread::join() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
-}
+class locker {
+public:
+  locker();
+  ~locker();
 
-void task_thread::run() {
-  bool run = true;
-  while (run) {
-    std::queue<std::function<void()>> tasks;
-    {
-      lock_guard lock(locker_);
-      run = !quit_;
-      std::swap(tasks, tasks_);
-    }
-    if (!run) {
-      break;
-    }
+  bool try_lock();
+  void lock();
+  void unlock();
 
-    while (!tasks.empty()) {
-      {
-        lock_guard lock(locker_);
-        run = !quit_;
-      }
-      if (!run) {
-        break;
-      }
-      tasks.front()();
-      tasks.pop();
-    }
-  }
-}
+private:
+  event event_;
+};
+
+class lock_guard {
+public:
+  lock_guard(locker &locker);
+  ~lock_guard();
+
+private:
+  locker &locker_;
+};
 
 } // namespace xl

@@ -20,63 +20,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <xl/task_thread>
+#include <cassert>
+#include <xl/synchronous>
 
 namespace xl {
 
-task_thread::task_thread() : thread_(std::bind(&task_thread::run, this)) {
+locker::locker() : event_(true, true) {
 }
 
-task_thread::~task_thread() {
-  quit();
-  join();
+locker::~locker() {
 }
 
-bool task_thread::post_task(std::function<void()> &&task) {
-  lock_guard lock(locker_);
-  if (quit_) {
-    return false;
-  }
-  tasks_.push(std::move(task));
-  return true;
+bool locker::try_lock() {
+  return event_.timed_wait(0);
 }
 
-void task_thread::quit() {
-  lock_guard lock(locker_);
-  quit_ = true;
+void locker::lock() {
+  event_.wait();
 }
 
-void task_thread::join() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
+void locker::unlock() {
+  event_.set();
 }
 
-void task_thread::run() {
-  bool run = true;
-  while (run) {
-    std::queue<std::function<void()>> tasks;
-    {
-      lock_guard lock(locker_);
-      run = !quit_;
-      std::swap(tasks, tasks_);
-    }
-    if (!run) {
-      break;
-    }
+lock_guard::lock_guard(locker &locker) : locker_(locker) {
+  locker_.lock();
+}
 
-    while (!tasks.empty()) {
-      {
-        lock_guard lock(locker_);
-        run = !quit_;
-      }
-      if (!run) {
-        break;
-      }
-      tasks.front()();
-      tasks.pop();
-    }
-  }
+lock_guard ::~lock_guard() {
+  locker_.unlock();
 }
 
 } // namespace xl

@@ -20,63 +20,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <xl/task_thread>
+#include <cassert>
+#include <process.h>
+#include <xl/thread>
 
 namespace xl {
 
-task_thread::task_thread() : thread_(std::bind(&task_thread::run, this)) {
+thread::thread(std::function<void()> &&thread_routine) : thread_routine_(std::move(thread_routine)) {
+  handle_ = (HANDLE)_beginthreadex(nullptr, 0, run, this, 0, nullptr);
+  assert(handle_ != NULL);
 }
 
-task_thread::~task_thread() {
-  quit();
-  join();
+thread::~thread() {
+  assert(!joinable());
+  detach();
 }
 
-bool task_thread::post_task(std::function<void()> &&task) {
-  lock_guard lock(locker_);
-  if (quit_) {
-    return false;
+HANDLE thread::native_handle() const {
+  return handle_;
+}
+
+bool thread::joinable() const {
+  return handle_ != NULL && ::WaitForSingleObject(handle_, 0) == WAIT_TIMEOUT;
+}
+
+void thread::join() {
+  ::WaitForSingleObject(handle_, INFINITE);
+  ::CloseHandle(handle_);
+  handle_ = nullptr;
+}
+
+void thread::detach() {
+  if (handle_ != NULL) {
+    ::CloseHandle(handle_);
+    handle_ = nullptr;
   }
-  tasks_.push(std::move(task));
-  return true;
 }
 
-void task_thread::quit() {
-  lock_guard lock(locker_);
-  quit_ = true;
-}
-
-void task_thread::join() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
-}
-
-void task_thread::run() {
-  bool run = true;
-  while (run) {
-    std::queue<std::function<void()>> tasks;
-    {
-      lock_guard lock(locker_);
-      run = !quit_;
-      std::swap(tasks, tasks_);
-    }
-    if (!run) {
-      break;
-    }
-
-    while (!tasks.empty()) {
-      {
-        lock_guard lock(locker_);
-        run = !quit_;
-      }
-      if (!run) {
-        break;
-      }
-      tasks.front()();
-      tasks.pop();
-    }
-  }
+unsigned thread::run(void *context) {
+  ((thread *)context)->thread_routine_();
+  return 0;
 }
 
 } // namespace xl

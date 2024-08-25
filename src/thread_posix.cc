@@ -20,63 +20,44 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <xl/task_thread>
+#include <cassert>
+#include <thread>
+#include <xl/thread>
 
 namespace xl {
 
-task_thread::task_thread() : thread_(std::bind(&task_thread::run, this)) {
+thread::thread(std::function<void()> &&thread_routine) : thread_routine_(std::move(thread_routine)) {
+  int r = pthread_create(&handle_, nullptr, run, this);
+  assert(r == 0);
 }
 
-task_thread::~task_thread() {
-  quit();
-  join();
+thread::~thread() {
+  assert(!joinable());
+  detach();
 }
 
-bool task_thread::post_task(std::function<void()> &&task) {
-  lock_guard lock(locker_);
-  if (quit_) {
-    return false;
-  }
-  tasks_.push(std::move(task));
-  return true;
+pthread_t thread::native_handle() const {
+  return handle_;
 }
 
-void task_thread::quit() {
-  lock_guard lock(locker_);
-  quit_ = true;
+bool thread::joinable() const {
+  return handle_ != 0;
 }
 
-void task_thread::join() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
+void thread::join() {
+  void *thread_return = nullptr;
+  pthread_join(handle_, &thread_return);
+  handle_ = 0;
 }
 
-void task_thread::run() {
-  bool run = true;
-  while (run) {
-    std::queue<std::function<void()>> tasks;
-    {
-      lock_guard lock(locker_);
-      run = !quit_;
-      std::swap(tasks, tasks_);
-    }
-    if (!run) {
-      break;
-    }
+void thread::detach() {
+  pthread_detach(handle_);
+  handle_ = 0;
+}
 
-    while (!tasks.empty()) {
-      {
-        lock_guard lock(locker_);
-        run = !quit_;
-      }
-      if (!run) {
-        break;
-      }
-      tasks.front()();
-      tasks.pop();
-    }
-  }
+void *thread::run(void *context) {
+  ((thread *)context)->thread_routine_();
+  return nullptr;
 }
 
 } // namespace xl

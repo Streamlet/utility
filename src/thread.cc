@@ -20,63 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <xl/task_thread>
+#include <xl/thread>
 
-namespace xl {
-
-task_thread::task_thread() : thread_(std::bind(&task_thread::run, this)) {
-}
-
-task_thread::~task_thread() {
-  quit();
-  join();
-}
-
-bool task_thread::post_task(std::function<void()> &&task) {
-  lock_guard lock(locker_);
-  if (quit_) {
-    return false;
-  }
-  tasks_.push(std::move(task));
-  return true;
-}
-
-void task_thread::quit() {
-  lock_guard lock(locker_);
-  quit_ = true;
-}
-
-void task_thread::join() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
-}
-
-void task_thread::run() {
-  bool run = true;
-  while (run) {
-    std::queue<std::function<void()>> tasks;
-    {
-      lock_guard lock(locker_);
-      run = !quit_;
-      std::swap(tasks, tasks_);
-    }
-    if (!run) {
-      break;
-    }
-
-    while (!tasks.empty()) {
-      {
-        lock_guard lock(locker_);
-        run = !quit_;
-      }
-      if (!run) {
-        break;
-      }
-      tasks.front()();
-      tasks.pop();
-    }
-  }
-}
-
-} // namespace xl
+namespace xl {} // namespace xl

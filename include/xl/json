@@ -70,6 +70,10 @@ template <>
 class json_accessor<bool> {
 public:
   static bool read(bool &ref, const ::rapidjson::Value &json_value) {
+    if (json_value.IsNull()) {
+      ref = false;
+      return true;
+    }
     if (!json_value.IsBool()) {
       return false;
     }
@@ -93,6 +97,10 @@ public:
   class json_accessor<type> {                                                                                          \
   public:                                                                                                              \
     static bool read(type &ref, const ::rapidjson::Value &json_value) {                                                \
+      if (json_value.IsNull()) {                                                                                       \
+        ref = 0;                                                                                                       \
+        return true;                                                                                                   \
+      }                                                                                                                \
       if (!json_value.IsNumber()) {                                                                                    \
         return false;                                                                                                  \
       }                                                                                                                \
@@ -142,6 +150,10 @@ template <>
 class json_accessor<std::string> {
 public:
   static bool read(std::string &ref, const ::rapidjson::Value &json_value) {
+    if (json_value.IsNull()) {
+      ref.clear();
+      return true;
+    }
     if (!json_value.IsString()) {
       return false;
     }
@@ -167,6 +179,10 @@ template <>
 class json_accessor<std::string_view> {
 public:
   static bool read(std::string_view &ref, const ::rapidjson::Value &json_value) {
+    if (json_value.IsNull()) {
+      ref = std::string_view();
+      return true;
+    }
     if (!json_value.IsString()) {
       return false;
     }
@@ -269,6 +285,10 @@ public:
   class json_accessor<container<T>> {                                                                                  \
   public:                                                                                                              \
     static bool read(container<T> &ref, const ::rapidjson::Value &json_value) {                                        \
+      if (json_value.IsNull()) {                                                                                       \
+        ref.clear();                                                                                                   \
+        return true;                                                                                                   \
+      }                                                                                                                \
       if (!json_value.IsArray()) {                                                                                     \
         return false;                                                                                                  \
       }                                                                                                                \
@@ -316,6 +336,10 @@ JSON_ACCESSOR_CONTAINER(std::unordered_multiset);
   class json_accessor<map<std::string, T>> {                                                                           \
   public:                                                                                                              \
     static bool read(map<std::string, T> &ref, const ::rapidjson::Value &json_value) {                                 \
+      if (json_value.IsNull()) {                                                                                       \
+        ref.clear();                                                                                                   \
+        return true;                                                                                                   \
+      }                                                                                                                \
       if (!json_value.IsObject()) {                                                                                    \
         return false;                                                                                                  \
       }                                                                                                                \
@@ -388,6 +412,8 @@ private:                                                                        
     static bool read(Type &ref, const ::rapidjson::Value &json_value) {                                                \
       if (json_value.HasMember(#field_name)) {                                                                         \
         return ::xl::json_accessor<field_type>::read(ref.field_name, json_value[#field_name]);                         \
+      } else {                                                                                                         \
+        return ::xl::json_accessor<field_type>::read(ref.field_name, ::rapidjson::Value());                            \
       }                                                                                                                \
       return true;                                                                                                     \
     }                                                                                                                  \
@@ -417,7 +443,7 @@ private:                                                                        
   template <size_t Begin, size_t End>                                                                                  \
   struct fields_json_accessor_walker {                                                                                 \
     static bool read(Type &ref, const ::rapidjson::Value &json_value) {                                                \
-      if (!json_value.IsObject()) {                                                                                    \
+      if (!json_value.IsObject() && !json_value.IsNull()) {                                                            \
         return false;                                                                                                  \
       }                                                                                                                \
       if (!field_json_accessor<Begin>::read(ref, json_value)) {                                                        \

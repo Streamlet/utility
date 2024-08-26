@@ -192,6 +192,23 @@ XL_JSON_END()
 
 #endif
 
+const char *ZERO_VALUES_JSON = R"({
+    "boolValue": false,
+    "charValue": 0,
+    "ucharValue": 0,
+    "shortValue": 0,
+    "ushortValue": 0,
+    "intValue": 0,
+    "uintValue": 0,
+    "longValue": 0,
+    "ulongValue": 0,
+    "llongValue": 0,
+    "ullongValue": 0,
+    "floatValue": 0.0,
+    "doubleValue": 0.0,
+    "stringValue": ""
+})";
+
 const char *NULL_VALUES_JSON = R"({
     "boolValue": null,
     "charValue": null,
@@ -242,6 +259,28 @@ const char *HALF_NULL_VALUES_JSON = R"({
 } // namespace
 
 TEST(json_test, nullable_values) {
+  {
+    SingleValues json;
+    ASSERT_EQ(json.json_parse(EMPTY_JSON), true);
+    ASSERT_EQ(json.boolValue, false);
+    ASSERT_EQ(json.charValue, 0);
+    ASSERT_EQ(json.ucharValue, 0);
+    ASSERT_EQ(json.shortValue, 0);
+    ASSERT_EQ(json.ushortValue, 0);
+    ASSERT_EQ(json.intValue, 0);
+    ASSERT_EQ(json.uintValue, 0);
+    ASSERT_EQ(json.longValue, 0);
+    ASSERT_EQ(json.ulongValue, 0);
+    ASSERT_EQ(json.llongValue, 0);
+    ASSERT_EQ(json.ullongValue, 0);
+    ASSERT_EQ(json.floatValue, 0.0);
+    ASSERT_EQ(json.doubleValue, 0.0);
+    ASSERT_EQ(json.stringValue, "");
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY), ZERO_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(), remove_blanks(ZERO_VALUES_JSON));
+    ASSERT_EQ(json.json_dump(::xl::json::WRITE_FLAG_PRETTY | xl::json::WRITE_FLAG_WRITE_NULL_VALUES), ZERO_VALUES_JSON);
+    ASSERT_EQ(json.json_dump(xl::json::WRITE_FLAG_WRITE_NULL_VALUES), remove_blanks(ZERO_VALUES_JSON));
+  }
   {
     NullableValues json;
     ASSERT_EQ(json.json_parse(EMPTY_JSON), true);

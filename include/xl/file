@@ -104,7 +104,7 @@ bool remove(const TCHAR *path);
 
 bool remove_all(const TCHAR *path);
 
-bool rename(const TCHAR *path, const TCHAR *new_path);
+bool move(const TCHAR *path, const TCHAR *new_path);
 
 } // namespace fs
 

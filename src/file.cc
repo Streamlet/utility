@@ -485,7 +485,7 @@ bool remove_all(const TCHAR *path) {
   return rmdir(path);
 }
 
-bool rename(const TCHAR *path, const TCHAR *new_path) {
+bool move(const TCHAR *path, const TCHAR *new_path) {
   return ::_trename(path, new_path) == 0;
 }
 

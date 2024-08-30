@@ -67,7 +67,7 @@ TEST(file_test, fs_operation) {
   ASSERT_EQ(xl::fs::touch(_T("f")), true);
   ASSERT_EQ(xl::fs::exists(_T("f")), true);
   ASSERT_EQ(xl::fs::size(_T("f")), 0);
-  ASSERT_EQ(xl::fs::rename(_T("f"), _T("f1")), true);
+  ASSERT_EQ(xl::fs::move(_T("f"), _T("f1")), true);
   ASSERT_EQ(xl::fs::exists(_T("f")), false);
   ASSERT_EQ(xl::fs::exists(_T("f1")), true);
   ASSERT_EQ(xl::fs::size(_T("f1")), 0);
@@ -78,7 +78,7 @@ TEST(file_test, fs_operation) {
   ASSERT_EQ(xl::fs::exists(_T("d")), false);
   ASSERT_EQ(xl::fs::mkdir(_T("d")), true);
   ASSERT_EQ(xl::fs::exists(_T("d")), true);
-  ASSERT_EQ(xl::fs::rename(_T("d"), _T("d1")), true);
+  ASSERT_EQ(xl::fs::move(_T("d"), _T("d1")), true);
   ASSERT_EQ(xl::fs::exists(_T("d")), false);
   ASSERT_EQ(xl::fs::exists(_T("d1")), true);
   ASSERT_EQ(xl::fs::mkdirs(xl::path::join(_T("d1"), _T("d2"), _T("d3")).c_str()), true);

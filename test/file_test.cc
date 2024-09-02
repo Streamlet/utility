@@ -233,7 +233,11 @@ TEST(file_test, fs_env) {
   if (xl::fs::env_var("LOGNAME") == "root") {
     ASSERT_EQ(xl::fs::env_var(_T("HOME")), "/root");
   } else {
+#ifdef __APPLE__
+    ASSERT_EQ(xl::fs::env_var(_T("HOME")).substr(0, 7), "/Users/");
+#else
     ASSERT_EQ(xl::fs::env_var(_T("HOME")).substr(0, 6), "/home/");
+#endif
   }
   ASSERT_EQ(xl::fs::tmp_dir().empty(), false);
 #endif

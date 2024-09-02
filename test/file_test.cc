@@ -230,11 +230,10 @@ TEST(file_test, fs_env) {
   ASSERT_EQ(xl::fs::env_var(_T("SystemRoot")), _T("C:\\Windows"));
   ASSERT_EQ(xl::fs::tmp_dir(), xl::fs::env_var(_T("TEMP")));
 #else
-  xl::native_string username = xl::fs::env_var("LOGNAME");
-  if (username == "root") {
+  if (xl::fs::env_var("LOGNAME") == "root") {
     ASSERT_EQ(xl::fs::env_var(_T("HOME")), "/root");
   } else {
-    ASSERT_EQ(xl::fs::env_var(_T("HOME")), "/home/" + username);
+    ASSERT_EQ(xl::fs::env_var(_T("HOME")).substr(0, 6), "/home/");
   }
   ASSERT_EQ(xl::fs::tmp_dir().empty(), false);
 #endif

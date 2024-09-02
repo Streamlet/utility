@@ -469,24 +469,123 @@ bool remove(const TCHAR *path) {
 }
 
 bool remove_all(const TCHAR *path) {
-  if (!enum_dir(
-          path,
-          [path](const native_string &sub_path, bool is_dir) -> bool {
-            native_string p = path + path::SEP_STR + sub_path;
-            if (is_dir) {
-              return rmdir(p.c_str());
-            } else {
-              return unlink(p.c_str());
-            }
-          },
-          true, true)) {
-    return false;
+  if (is_dir(path)) {
+    if (!enum_dir(
+            path,
+            [path](const native_string &sub_path, bool is_dir) -> bool {
+              native_string p = path + path::SEP_STR + sub_path;
+              if (is_dir) {
+                return rmdir(p.c_str());
+              } else {
+                return unlink(p.c_str());
+              }
+            },
+            true, true)) {
+      return false;
+    }
+    return rmdir(path);
+  } else {
+    return remove(path);
   }
-  return rmdir(path);
 }
 
 bool move(const TCHAR *path, const TCHAR *new_path) {
   return ::_trename(path, new_path) == 0;
+}
+
+bool copy_file(const TCHAR *path, const TCHAR *new_path) {
+  FILE *fin = _tfopen(path, _T("r"));
+  if (fin == NULL) {
+    return false;
+  }
+  XL_ON_BLOCK_EXIT(fclose, fin);
+  FILE *fout = _tfopen(new_path, _T("w"));
+  if (fin == NULL) {
+    return false;
+  }
+  XL_ON_BLOCK_EXIT(fclose, fout);
+  char buffer[1024] = {};
+  while (!feof(fin)) {
+    size_t bytes_read = fread(buffer, 1, sizeof(buffer), fin);
+    size_t bytes_written = fwrite(buffer, 1, bytes_read, fout);
+    if (bytes_written != bytes_read) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool copy_dir(const TCHAR *path, const TCHAR *new_path) {
+  mkdirs(new_path);
+  return enum_dir(path, [path, new_path](const native_string &sub_path, bool is_dir) -> bool {
+    if (is_dir) {
+      return xl::fs::mkdirs(path::join(path, sub_path).c_str());
+    } else {
+      return copy_file(path::join(path, sub_path).c_str(), path::join(new_path, sub_path).c_str());
+    }
+  });
+}
+
+bool copy(const TCHAR *path, const TCHAR *new_path) {
+  if (is_dir(path)) {
+    return copy_dir(path, new_path);
+  } else {
+    return copy_file(path, new_path);
+  }
+}
+
+native_string env_var(const TCHAR *name) {
+#ifdef _WIN32
+  DWORD dwSize = ::GetEnvironmentVariable(name, NULL, 0);
+  if (dwSize == 0) {
+    return _T("");
+  }
+  native_string buffer;
+  buffer.resize(dwSize);
+  if (::GetEnvironmentVariable(name, &buffer[0], dwSize) != dwSize - 1) {
+    return _T("");
+  }
+  buffer.pop_back();
+  return buffer;
+#else
+  char *env = getenv(name);
+  return env == nullptr ? "" : env;
+#endif
+}
+
+native_string tmp_dir() {
+#ifdef _WIN32
+  DWORD dwSize = ::GetTempPath(0, NULL);
+  if (dwSize == 0) {
+    return _T("");
+  }
+  native_string buffer;
+  buffer.resize(dwSize);
+  if (::GetTempPath(dwSize, &buffer[0]) != dwSize - 1) {
+    return _T("");
+  }
+  buffer.pop_back();
+  while (buffer.back() == path::SEP) {
+    buffer.pop_back();
+  }
+  return buffer;
+#else
+  // ISO/IEC 9945 (POSIX): The path supplied by the first environment variable found in the list
+  //     TMPDIR, TMP, TEMP, TEMPDIR.
+  // If none of these are found, "/tmp", or, if macro __ANDROID__ is defined, "/data/local/tmp"
+  const char *TMPDIR_VARS[] = {"TMPDIR", "TMP", "TEMP", "TEMPDIR"};
+  for (auto env_name : TMPDIR_VARS) {
+    const char *env_value = getenv(env_name);
+    if (env_value != NULL) {
+      return env_value;
+    }
+  }
+#ifdef __ANDROID__
+  return "/data/local/tmp";
+#else
+  return "/tmp";
+#endif
+#endif
 }
 
 } // namespace fs

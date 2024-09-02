@@ -106,6 +106,14 @@ bool remove_all(const TCHAR *path);
 
 bool move(const TCHAR *path, const TCHAR *new_path);
 
+bool copy_file(const TCHAR *path, const TCHAR *new_path);
+bool copy_dir(const TCHAR *path, const TCHAR *new_path);
+bool copy(const TCHAR *path, const TCHAR *new_path);
+
+native_string env_var(const TCHAR *env_name);
+
+native_string tmp_dir();
+
 } // namespace fs
 
 namespace path {
@@ -122,18 +130,30 @@ native_string extname(const TCHAR *path);  // /path/to/file.ext => .ext
 
 template <typename... T>
 native_string join(T... args);
+template <typename... T>
+inline native_string join(const TCHAR *first, T... rest);
+template <typename... T>
+inline native_string join(const native_string &first, T... rest);
+template <typename... T>
+inline native_string join(native_string &&first, T... rest);
+template <>
+inline native_string join(const TCHAR *last);
+template <>
+inline native_string join(const native_string &last);
+template <>
+inline native_string join(native_string &&last);
 
 template <typename... T>
 inline native_string join(const TCHAR *first, T... rest) {
-  return native_string(first) + native_string(1, SEP) + join(rest...);
+  return native_string(first) + native_string(1, SEP) + join<>(rest...);
 }
 template <typename... T>
 inline native_string join(const native_string &first, T... rest) {
-  return first + native_string(1, SEP) + join(rest...);
+  return first + native_string(1, SEP) + join<>(rest...);
 }
 template <typename... T>
 inline native_string join(native_string &&first, T... rest) {
-  return std::move(first) + native_string(1, SEP) + join(rest...);
+  return std::move(first) + native_string(1, SEP) + join<>(rest...);
 }
 template <>
 inline native_string join(const TCHAR *last) {

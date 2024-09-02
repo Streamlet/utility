@@ -71,16 +71,33 @@ TEST(file_test, fs_operation) {
   ASSERT_EQ(xl::fs::exists(_T("f")), false);
   ASSERT_EQ(xl::fs::exists(_T("f1")), true);
   ASSERT_EQ(xl::fs::size(_T("f1")), 0);
+  ASSERT_EQ(xl::fs::copy(_T("f1"), _T("f2")), true);
+  ASSERT_EQ(xl::fs::exists(_T("f")), false);
+  ASSERT_EQ(xl::fs::exists(_T("f1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("f2")), true);
+  ASSERT_EQ(xl::fs::size(_T("f1")), 0);
+  ASSERT_EQ(xl::fs::size(_T("f2")), 0);
   ASSERT_EQ(xl::fs::unlink(_T("f1")), true);
+  ASSERT_EQ(xl::fs::unlink(_T("f2")), true);
   ASSERT_EQ(xl::fs::exists(_T("f")), false);
   ASSERT_EQ(xl::fs::exists(_T("f1")), false);
+  ASSERT_EQ(xl::fs::exists(_T("f2")), false);
 
   ASSERT_EQ(xl::fs::exists(_T("d")), false);
   ASSERT_EQ(xl::fs::mkdir(_T("d")), true);
+  ASSERT_EQ(xl::fs::touch(xl::path::join(_T("d"), _T("f")).c_str()), true);
   ASSERT_EQ(xl::fs::exists(_T("d")), true);
+  ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d"), _T("f")).c_str()), true);
   ASSERT_EQ(xl::fs::move(_T("d"), _T("d1")), true);
   ASSERT_EQ(xl::fs::exists(_T("d")), false);
   ASSERT_EQ(xl::fs::exists(_T("d1")), true);
+  ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d1"), _T("f")).c_str()), true);
+  ASSERT_EQ(xl::fs::copy(_T("d1"), _T("d2")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d")), false);
+  ASSERT_EQ(xl::fs::exists(_T("d1")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d2")), true);
+  ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d1"), _T("f")).c_str()), true);
+  ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d2"), _T("f")).c_str()), true);
   ASSERT_EQ(xl::fs::mkdirs(xl::path::join(_T("d1"), _T("d2"), _T("d3")).c_str()), true);
   ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d1"), _T("d2")).c_str()), true);
   ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d1"), _T("d2"), _T("d3")).c_str()), true);
@@ -90,8 +107,12 @@ TEST(file_test, fs_operation) {
   ASSERT_EQ(xl::fs::rmdir(xl::path::join(_T("d1"), _T("d2")).c_str()), true);
   ASSERT_EQ(xl::fs::exists(_T("d1")), true);
   ASSERT_EQ(xl::fs::exists(xl::path::join(_T("d1"), _T("d2")).c_str()), false);
+  ASSERT_EQ(xl::fs::unlink(xl::path::join(_T("d1"), _T("f")).c_str()), true);
   ASSERT_EQ(xl::fs::rmdir(_T("d1")), true);
   ASSERT_EQ(xl::fs::exists(_T("d1")), false);
+  ASSERT_EQ(xl::fs::unlink(xl::path::join(_T("d2"), _T("f")).c_str()), true);
+  ASSERT_EQ(xl::fs::rmdir(_T("d2")), true);
+  ASSERT_EQ(xl::fs::exists(_T("d2")), false);
 }
 
 TEST(file_test, fs_enum_remove_all) {
@@ -202,6 +223,21 @@ TEST(file_test, fs_enum_remove_all) {
 
   ASSERT_EQ(xl::fs::remove_all(_T("d1")), true);
   ASSERT_EQ(xl::fs::exists(_T("d1")), false);
+}
+
+TEST(file_test, fs_env) {
+#ifdef _WIN32
+  ASSERT_EQ(xl::fs::env_var(_T("SystemRoot")), _T("C:\\Windows"));
+  ASSERT_EQ(xl::fs::tmp_dir(), xl::fs::env_var(_T("TEMP")));
+#else
+  xl::native_string username = xl::fs::env_var("LOGNAME");
+  if (username == "root") {
+    ASSERT_EQ(xl::fs::env_var(_T("HOME")), "/root");
+  } else {
+    ASSERT_EQ(xl::fs::env_var(_T("HOME")), "/home/" + username);
+  }
+  ASSERT_EQ(xl::fs::tmp_dir().empty(), false);
+#endif
 }
 
 TEST(file_test, bin_and_utf8) {

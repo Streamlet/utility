@@ -500,7 +500,7 @@ bool copy_file(const TCHAR *path, const TCHAR *new_path) {
   }
   XL_ON_BLOCK_EXIT(fclose, fin);
   FILE *fout = _tfopen(new_path, _T("w"));
-  if (fin == NULL) {
+  if (fout == NULL) {
     return false;
   }
   XL_ON_BLOCK_EXIT(fclose, fout);

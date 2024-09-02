@@ -494,12 +494,12 @@ bool move(const TCHAR *path, const TCHAR *new_path) {
 }
 
 bool copy_file(const TCHAR *path, const TCHAR *new_path) {
-  FILE *fin = _tfopen(path, _T("r"));
+  FILE *fin = _tfopen(path, _T("rb"));
   if (fin == NULL) {
     return false;
   }
   XL_ON_BLOCK_EXIT(fclose, fin);
-  FILE *fout = _tfopen(new_path, _T("w"));
+  FILE *fout = _tfopen(new_path, _T("wb"));
   if (fout == NULL) {
     return false;
   }

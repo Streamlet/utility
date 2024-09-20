@@ -386,7 +386,8 @@ inline std::basic_string<CharType> replace(const std::basic_string<CharType> &st
                                            const std::basic_string<CharType> &search,
                                            const std::basic_string<CharType> &replace_with,
                                            size_t max = 0) {
-  return replace(string.c_str(), search, replace_with, max, string.length(), search.length(), replace_with.length());
+  return replace(string.c_str(), search.c_str(), replace_with.c_str(), max, string.length(), search.length(),
+                 replace_with.length());
 }
 
 } // namespace string

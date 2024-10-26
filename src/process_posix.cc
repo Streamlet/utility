@@ -79,6 +79,13 @@ std::string executable_path() {
 
 #endif
 
+std::string current_workdir() {
+  char *buffer = ::getcwd(NULL, 0);
+  std::string cwd = buffer;
+  ::free(buffer);
+  return cwd;
+}
+
 long pid() {
   return ::getpid();
 }
@@ -109,19 +116,22 @@ long start(const std::string &executable,
     argv.push_back(&argument[0]);
   }
   argv.push_back(NULL);
-  pid_t pid = fork();
+  std::string cwd = current_workdir();
+  if (!start_dir.empty() && start_dir != cwd) {
+    chdir(start_dir.c_str());
+  }
+  pid_t pid = ::vfork();
   if (pid == -1) {
+    chdir(cwd.c_str());
     return 0;
   }
 
   if (pid == 0) {
-    if (!start_dir.empty()) {
-      chdir(start_dir.c_str());
-    }
-    int exit_code = execvp(executable.c_str(), &argv[0]);
-    exit(exit_code);
+    int exit_code = ::execvp(executable.c_str(), &argv[0]);
+    ::exit(exit_code);
   }
 
+  chdir(cwd.c_str());
   if (milliseconds > 0) {
     wait(pid, milliseconds);
   }

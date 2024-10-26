@@ -31,6 +31,7 @@ namespace xl {
 namespace process {
 
 native_string executable_path();
+native_string current_workdir();
 
 long pid();
 long tid();

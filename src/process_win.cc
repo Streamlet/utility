@@ -49,6 +49,17 @@ native_string executable_path() {
   return long_path;
 }
 
+native_string current_workdir() {
+  DWORD size = ::GetCurrentDirectory(0, NULL);
+  native_string cwd;
+  cwd.resize(size - 1);
+  DWORD length = ::GetCurrentDirectory(size, &cwd[0]);
+  if (length != cwd.length()) {
+    return _T("");
+  }
+  return cwd;
+}
+
 long pid() {
   return ::GetCurrentProcessId();
 }

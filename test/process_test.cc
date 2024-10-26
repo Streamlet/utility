@@ -45,6 +45,9 @@ int _tmain(int argc, const TCHAR *argv[]) {
   xl::native_string exe_path = xl::process::executable_path();
   _tprintf(_T("Exe Path: %s\n"), exe_path.c_str());
 
+  xl::native_string work_dir = xl::process::current_workdir();
+  _tprintf(_T("Work Dir: %s\n"), work_dir.c_str());
+
   long pid = xl::process::start(SHELL_CMD, {SHELL_SWITCH, PING_CMD_10S});
   _tprintf(_T("New Process for 10s: %ld\n"), pid);
 

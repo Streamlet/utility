@@ -66,6 +66,7 @@ source_set("file") {
   if (is_posix) {
     cflags += [ "-Wno-unused-result" ]
   }
+
   deps = [ "../thirdparty:minizip" ]
 
   public_configs = [ ":utility_public_config" ]
@@ -92,11 +93,7 @@ source_set("config") {
     "../thirdparty:rapidxml",
   ]
 
-  public_configs = [
-    ":utility_public_config",
-    "../thirdparty:rapidjson_public_config",
-    "../thirdparty:rapidxml_public_config",
-  ]
+  public_configs = [ ":utility_public_config" ]
 }
 
 source_set("log") {
@@ -121,7 +118,6 @@ source_set("thread") {
     "task_thread.cc",
     "thread.cc",
   ]
-
   if (is_win) {
     sources += [
       "synchronous_win.cc",
@@ -145,16 +141,16 @@ source_set("thread") {
 source_set("process") {
   sources = [ "cmdline_options.cc" ]
 
-  inputs = [
-    "../include/xl/cmdline_options",
-    "../include/xl/process",
-  ]
-
   if (is_win) {
     sources += [ "process_win.cc" ]
   } else {
     sources += [ "process_posix.cc" ]
   }
+
+  inputs = [
+    "../include/xl/cmdline_options",
+    "../include/xl/process",
+  ]
 
   cflags = []
   if (is_posix) {
@@ -169,12 +165,6 @@ source_set("net") {
     "http.cc",
     "url.cc",
   ]
-
-  inputs = [
-    "../include/xl/url",
-    "../include/xl/http",
-  ]
-
   if (is_win) {
     sources += [
       "http_win.cc",
@@ -186,6 +176,11 @@ source_set("net") {
       "url_posix.cc",
     ]
   }
+
+  inputs = [
+    "../include/xl/url",
+    "../include/xl/http",
+  ]
 
   cflags = []
   if (is_posix) {

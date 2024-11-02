@@ -2,214 +2,37 @@ config("utility_public_config") {
   include_dirs = [ "../include" ]
 }
 
-source_set("meta") {
-  sources = []
-
-  inputs = [
-    "../include/xl/scope_exit",
-    "../include/xl/reflect",
-  ]
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("string") {
-  sources = []
-  if (is_win) {
-    sources += [ "encoding_win.cc" ]
-  } else {
-    sources += [ "encoding_posix.cc" ]
-  }
-
-  inputs = [
-    "../include/xl/encoding",
-    "../include/xl/native_string",
-    "../include/xl/string",
-  ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("crypto") {
-  sources = [ "crypto.cc" ]
-
-  inputs = [ "../include/xl/crypto" ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  deps = [ "../thirdparty:libressl_crypto" ]
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("file") {
-  sources = [
-    "byte_order.h",
-    "file.cc",
-    "zip.cc",
-  ]
-
-  inputs = [
-    "../include/xl/file",
-    "../include/xl/zip",
-  ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  deps = [ "../thirdparty:minizip" ]
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("config") {
-  sources = [ "ini.cc" ]
-
-  inputs = [
-    "../include/xl/ini",
-    "../include/xl/json",
-    "../include/xl/xml",
-  ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  deps = [ ":file" ]
-
-  public_deps = [
-    "../thirdparty:rapidjson",
-    "../thirdparty:rapidxml",
-  ]
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("log") {
-  sources = [ "log.cc" ]
-
-  inputs = [
-    "../include/xl/log",
-    "../include/xl/log_setup",
-  ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("thread") {
-  sources = [
-    "synchronous.cc",
-    "task_thread.cc",
-    "thread.cc",
-  ]
-  if (is_win) {
-    sources += [
-      "synchronous_win.cc",
-      "thread_win.cc",
-    ]
-  } else {
-    sources += [
-      "synchronous_posix.cc",
-      "thread_posix.cc",
-    ]
-  }
-
-  inputs = [
-    "../include/xl/task_thread",
-    "../include/xl/synchronous",
-  ]
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("process") {
-  sources = [ "cmdline_options.cc" ]
-
-  if (is_win) {
-    sources += [ "process_win.cc" ]
-  } else {
-    sources += [ "process_posix.cc" ]
-  }
-
-  inputs = [
-    "../include/xl/cmdline_options",
-    "../include/xl/process",
-  ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  public_configs = [ ":utility_public_config" ]
-}
-
-source_set("net") {
-  sources = [
-    "http.cc",
-    "url.cc",
-  ]
-  if (is_win) {
-    sources += [
-      "http_win.cc",
-      "url_win.cc",
-    ]
-  } else {
-    sources += [
-      "http_posix.cc",
-      "url_posix.cc",
-    ]
-  }
-
-  inputs = [
-    "../include/xl/url",
-    "../include/xl/http",
-  ]
-
-  cflags = []
-  if (is_posix) {
-    cflags += [ "-Wno-unused-result" ]
-  }
-
-  libs = []
-  if (is_win) {
-    libs += [ "winhttp.lib" ]
-  } else {
-    libs += [ "curl" ]
-  }
-
-  deps = [ ":string" ]
-
-  public_configs = [ ":utility_public_config" ]
-}
-
 group("src") {
   public_deps = [
-    ":config",
-    ":crypto",
-    ":file",
-    ":log",
-    ":meta",
-    ":net",
-    ":process",
-    ":string",
-    ":thread",
+    "config",
+    "crypto",
+    "file",
+    "log",
+    "meta",
+    "net",
+    "process",
+    "string",
+    "thread",
   ]
   public_configs = [ ":utility_public_config" ]
+}
+
+executable("unittest") {
+  testonly = true
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "unittest.cc" ]
+  deps = [
+    "../thirdparty:googletest",
+    "config:test",
+    "crypto:test",
+    "file:test",
+    "log:test",
+    "meta:test",
+    "net:test",
+    "process:test",
+    "string:test",
+    "thread:thread",
+  ]
 }

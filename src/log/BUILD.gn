@@ -1,0 +1,26 @@
+source_set("log") {
+  sources = [ "log.cc" ]
+
+  inputs = [
+    "../../include/xl/log",
+    "../../include/xl/log_setup",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [ "log_test.cc" ]
+
+  public_deps = [
+    ":log",
+    "../../thirdparty:googletest",
+  ]
+}

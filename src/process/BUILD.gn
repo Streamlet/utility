@@ -1,0 +1,32 @@
+source_set("process") {
+  sources = [ "cmdline_options.cc" ]
+
+  if (is_win) {
+    sources += [ "process_win.cc" ]
+  } else {
+    sources += [ "process_posix.cc" ]
+  }
+
+  inputs = [
+    "../../include/xl/cmdline_options",
+    "../../include/xl/process",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [ "cmdline_options_test.cc" ]
+
+  public_deps = [
+    ":process",
+    "../../thirdparty:googletest",
+  ]
+}

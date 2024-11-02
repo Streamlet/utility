@@ -1,0 +1,35 @@
+source_set("string") {
+  sources = []
+  if (is_win) {
+    sources += [ "encoding_win.cc" ]
+  } else {
+    sources += [ "encoding_posix.cc" ]
+  }
+
+  inputs = [
+    "../../include/xl/encoding",
+    "../../include/xl/native_string",
+    "../../include/xl/string",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [
+    "encoding_test.cc",
+    "string_test.cc",
+  ]
+
+  public_deps = [
+    ":string",
+    "../../thirdparty:googletest",
+  ]
+}

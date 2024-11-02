@@ -1,0 +1,39 @@
+copy("http_echo_server") {
+  sources = [ "http_echo.py" ]
+  outputs = [ "$root_out_dir/http_echo.py" ]
+}
+
+executable("process_test") {
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "process_test.cc" ]
+  deps = [ "../src/process" ]
+}
+
+executable("cmdline_options_echo") {
+  if (is_win) {
+    configs += [ "../build/config/win:console_subsystem" ]
+  }
+  sources = [ "cmdline_options_echo.cc" ]
+  deps = [ "../src/process" ]
+  if (is_win) {
+    deps += [ ":cmdline_options_echo_win" ]
+  }
+}
+
+if (is_win) {
+  executable("cmdline_options_echo_win") {
+    configs += [ "../build/config/win:windows_subsystem" ]
+    sources = [ "cmdline_options_echo_win.cc" ]
+    deps = [ "../src/process" ]
+  }
+}
+
+group("tools") {
+  deps = [
+    ":cmdline_options_echo",
+    ":http_echo_server",
+    ":process_test",
+  ]
+}

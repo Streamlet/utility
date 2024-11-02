@@ -1,0 +1,38 @@
+source_set("config") {
+  sources = [ "ini.cc" ]
+
+  inputs = [
+    "../../include/xl/ini",
+    "../../include/xl/json",
+    "../../include/xl/xml",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../file" ]
+
+  public_deps = [
+    "../../thirdparty:rapidjson",
+    "../../thirdparty:rapidxml",
+  ]
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [
+    "ini_test.cc",
+    "json_test.cc",
+    "xml_test.cc",
+  ]
+
+  public_deps = [
+    ":config",
+    "../../thirdparty:googletest",
+  ]
+}

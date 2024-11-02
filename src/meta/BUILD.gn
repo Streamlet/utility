@@ -1,0 +1,24 @@
+source_set("meta") {
+  sources = []
+
+  inputs = [
+    "../../include/xl/scope_exit",
+    "../../include/xl/reflect",
+  ]
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [
+    "reflect_test.cc",
+    "scope_exit_test.cc",
+  ]
+
+  public_deps = [
+    ":meta",
+    "../../thirdparty:googletest",
+  ]
+}

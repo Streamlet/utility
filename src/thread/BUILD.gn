@@ -1,0 +1,36 @@
+source_set("thread") {
+  sources = [
+    "synchronous.cc",
+    "task_thread.cc",
+    "thread.cc",
+  ]
+  if (is_win) {
+    sources += [
+      "synchronous_win.cc",
+      "thread_win.cc",
+    ]
+  } else {
+    sources += [
+      "synchronous_posix.cc",
+      "thread_posix.cc",
+    ]
+  }
+
+  inputs = [
+    "../../include/xl/task_thread",
+    "../../include/xl/synchronous",
+  ]
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [ "task_thread_test.cc" ]
+
+  public_deps = [
+    ":thread",
+    "../../thirdparty:googletest",
+  ]
+}

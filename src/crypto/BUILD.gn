@@ -1,0 +1,25 @@
+source_set("crypto") {
+  sources = [ "crypto.cc" ]
+
+  inputs = [ "../../include/xl/crypto" ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  deps = [ "../../thirdparty:libressl_crypto" ]
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [ "crypto_test.cc" ]
+
+  public_deps = [
+    ":crypto",
+    "../../thirdparty:googletest",
+  ]
+}

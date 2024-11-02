@@ -1,0 +1,53 @@
+source_set("net") {
+  sources = [
+    "http.cc",
+    "url.cc",
+  ]
+  if (is_win) {
+    sources += [
+      "http_win.cc",
+      "url_win.cc",
+    ]
+  } else {
+    sources += [
+      "http_posix.cc",
+      "url_posix.cc",
+    ]
+  }
+
+  inputs = [
+    "../../include/xl/url",
+    "../../include/xl/http",
+  ]
+
+  cflags = []
+  if (is_posix) {
+    cflags += [ "-Wno-unused-result" ]
+  }
+
+  libs = []
+  if (is_win) {
+    libs += [ "winhttp.lib" ]
+  } else {
+    libs += [ "curl" ]
+  }
+
+  deps = [ "../string" ]
+
+  public_configs = [ "..:utility_public_config" ]
+}
+
+source_set("test") {
+  testonly = true
+
+  sources = [
+    "http_test.cc",
+    "url_test.cc",
+  ]
+
+  public_deps = [
+    ":net",
+    "../../thirdparty:googletest",
+    "../config",
+  ]
+}

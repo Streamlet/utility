@@ -3,7 +3,6 @@ static_library("utility") {
   deps = [ "src" ]
 }
 
-group("test") {
-  testonly = true
-  deps = [ "test" ]
+group("tools") {
+  deps = [ "tools" ]
 }

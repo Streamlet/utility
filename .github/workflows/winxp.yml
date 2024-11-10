@@ -35,11 +35,12 @@ jobs:
       - name: Fetch gn and ninja
         run: |
           python build\\fetch_binaries.py
+          COPY /Y build\\bin\\* %WINDIR%\
 
       - name: Compile
         run: |
-          build\\bin\\gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" cc_std=\"${{ matrix.cc_std }}\" is_debug=${{ matrix.config == 'debug' }} is_winxp=true"
-          build\\bin\\ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
+          gn gen out/${{ matrix.config }}_${{ matrix.arch }} --args="target_cpu=\"${{ matrix.arch }}\" cc_std=\"${{ matrix.cc_std }}\" is_debug=${{ matrix.config == 'debug' }} is_winxp=true"
+          ninja -C out/${{ matrix.config }}_${{ matrix.arch }}
 
       - name: Unittest
         run: |

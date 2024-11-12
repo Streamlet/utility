@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "../config/ini.h"
 #include <cassert>
 #include <chrono>
 #include <cstdio>
@@ -280,8 +281,12 @@ const char *VALUE_LOG_TARGET_DEBUGGER = "Debugger";
 const char *VALUE_LOG_TARGET_ALL = "All";
 const char *VALUE_LOG_TARGET_DEFAULT = "Default";
 
-void parse_settings(
-    const ini &ini_file, native_string &app_name, int &level, int &content, int &target, native_string &log_file) {
+void parse_settings(const ini_t<char> &ini_file,
+                    native_string &app_name,
+                    int &level,
+                    int &content,
+                    int &target,
+                    native_string &log_file) {
   std::string ini_app_name = ini_file.get_value(SECTION_LOG, KEY_APP_NAME);
 #if defined(_WIN32) && defined(_UNICODE)
   app_name = encoding::utf8_to_utf16(ini_app_name);
@@ -377,7 +382,7 @@ void parse_settings(
 } // namespace
 
 bool setup_from_file(const TCHAR *log_setting_file) {
-  ini ini_file;
+  ini_t<char> ini_file;
   if (!ini_file.load(log_setting_file)) {
     return false;
   }

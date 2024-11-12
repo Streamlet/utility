@@ -30,51 +30,39 @@
 
 namespace xl {
 
-class ini {
-public:
-  struct ini_line {
-    std::string key;
-    std::string value;
-    std::string comment;
-  };
-  struct ini_section {
-    std::string name;
-    std::string comment;
-    std::list<ini_line> lines;
-    std::map<std::string, std::list<ini_line>::iterator> line_map;
-  };
-  struct ini_data {
-    std::list<ini_section> sections;
-    std::map<std::string, std::list<ini_section>::iterator> section_map;
-  };
+namespace ini {
 
-public:
-  bool load(const TCHAR *path);
-  bool save(const TCHAR *path) const;
+std::vector<std::string> enum_sections(const TCHAR *path);
+std::vector<std::wstring> enum_sections_w(const TCHAR *path);
+bool has_section(const TCHAR *path, const std::string &section);
+bool has_section(const TCHAR *path, const std::wstring &section);
+bool add_section(const TCHAR *path, const std::string &section, const std::string &comment = {});
+bool add_section(const TCHAR *path, const std::wstring &section, const std::wstring &comment = {});
+bool remove_section(const TCHAR *path, const std::string &section);
+bool remove_section(const TCHAR *path, const std::wstring &section);
 
-  bool parse(const std::string &content);
-  std::string dump() const;
+std::vector<std::string> enum_keys(const TCHAR *path, const std::string &section);
+std::vector<std::wstring> enum_keys(const TCHAR *path, const std::wstring &section);
+std::vector<std::pair<std::string, std::string>> enum_key_values(const TCHAR *path, const std::string &section);
+std::vector<std::pair<std::wstring, std::wstring>> enum_key_values(const TCHAR *path, const std::wstring &section);
 
-  const ini_data &data() const;
+bool has_key(const TCHAR *path, const std::string &section, const std::string &key);
+bool has_key(const TCHAR *path, const std::wstring &section, const std::wstring &key);
+std::string get_value(const TCHAR *path, const std::string &section, const std::string &key);
+std::wstring get_value(const TCHAR *path, const std::wstring &section, const std::wstring &key);
+bool set_value(const TCHAR *path,
+               const std::string &section,
+               const std::string &key,
+               const std::string &value,
+               const std::string &comment = {});
+bool set_value(const TCHAR *path,
+               const std::wstring &section,
+               const std::wstring &key,
+               const std::wstring &value,
+               const std::wstring &comment = {});
+bool remove_value(const TCHAR *path, const std::string &section, const std::string &key);
+bool remove_value(const TCHAR *path, const std::wstring &section, const std::wstring &key);
 
-  std::vector<std::string> enum_sections() const;
-  bool has_section(const std::string &section) const;
-  bool add_section(const std::string &section, const std::string &comment = "", bool save = true);
-  bool remove_section(const std::string &section, bool save = true);
-
-  std::vector<std::string> enum_keys(const std::string &section) const;
-  bool has_key(const std::string &section, const std::string &key) const;
-  std::string get_value(const std::string &section, const std::string &key) const;
-  bool set_value(const std::string &section,
-                 const std::string &key,
-                 const std::string &value,
-                 const std::string &comment = "",
-                 bool save = true);
-  bool remove_value(const std::string &section, const std::string &key, bool save = true);
-
-private:
-  native_string path_;
-  ini_data data_;
-};
+} // namespace ini
 
 } // namespace xl

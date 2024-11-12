@@ -21,9 +21,11 @@
 // SOFTWARE.
 
 #include <gtest/gtest.h>
-#include <xl/ini>
+#include <ini.h>
 
 namespace {
+
+using ini_file = xl::ini_t<char>;
 
 const char *CONTENT = "[section1]    ;section1 comment\r\n"
                       "key1 = value1 ;comment1\r\n"
@@ -36,9 +38,9 @@ const char *CONTENT = "[section1]    ;section1 comment\r\n"
 } // namespace
 
 TEST(ini_test, normal) {
-  xl::ini ini;
+  ini_file ini;
   ASSERT_EQ(ini.parse(CONTENT), true);
-  xl::ini::ini_data data = ini.data();
+  ini_file::ini_data data = ini.data();
   ASSERT_EQ(data.sections.size(), 2);
   {
     const auto &section = data.sections.front();
@@ -81,9 +83,9 @@ TEST(ini_test, global_section) {
                         "key2 = value2 ; comment2\r\n"
                         "\r\n";
 
-  xl::ini ini;
+  ini_file ini;
   ASSERT_EQ(ini.parse(content), true);
-  xl::ini::ini_data data = ini.data();
+  ini_file::ini_data data = ini.data();
   ASSERT_EQ(data.sections.size(), 2);
   {
     const auto &section = data.sections.front();
@@ -130,9 +132,9 @@ TEST(ini_test, duplicated_sections_and_keys) {
                         "key3 = value3 ;comment3\r\n"
                         "\r\n";
 
-  xl::ini ini;
+  ini_file ini;
   ASSERT_EQ(ini.parse(content), true);
-  xl::ini::ini_data data = ini.data();
+  ini_file::ini_data data = ini.data();
   ASSERT_EQ(data.sections.size(), 2);
   {
     const auto &section = data.sections.front();
@@ -182,9 +184,9 @@ TEST(ini_test, dump_pretty) {
                         "   key3    =    value3    ;comment3\r\n"
                         "   \r\n   ";
 
-  xl::ini ini;
+  ini_file ini;
   ASSERT_EQ(ini.parse(content), true);
-  xl::ini::ini_data data = ini.data();
+  ini_file::ini_data data = ini.data();
   ASSERT_EQ(data.sections.size(), 2);
   {
     const auto &section = data.sections.front();
@@ -220,7 +222,7 @@ TEST(ini_test, dump_pretty) {
 }
 
 TEST(ini_test, read_api) {
-  xl::ini ini;
+  ini_file ini;
   ASSERT_EQ(ini.parse(CONTENT), true);
   ASSERT_EQ(ini.has_section("section0"), false);
   ASSERT_EQ(ini.has_section("section1"), true);
@@ -262,7 +264,7 @@ TEST(ini_test, read_api) {
 }
 
 TEST(ini_test, write_api) {
-  xl::ini ini;
+  ini_file ini;
   ini.add_section("section1", "section1 comment");
   ini.set_value("section1", "key1", "value1", "comment1");
   ini.set_value("section1", "key2", "value2", "comment2");

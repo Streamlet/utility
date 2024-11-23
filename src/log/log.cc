@@ -314,58 +314,62 @@ void parse_settings(const ini_t<char> &ini_file,
   }
 
   std::string ini_log_content = ini_file.get_value(SECTION_LOG, KEY_LOG_CONTENT);
-  content = 0;
-  auto contents = string::split_ref(ini_log_content, ",");
-  for (auto &ref : contents) {
-    ref = trim_spaces(ref);
-    if (ref == VALUE_LOG_CONTENT_TIME) {
-      content |= LOG_CONTENT_TIME;
-    } else if (ref == VALUE_LOG_CONTENT_LEVEL) {
-      content |= LOG_CONTENT_LEVEL;
-    } else if (ref == VALUE_LOG_CONTENT_APP_NAME) {
-      content |= LOG_CONTENT_APP_NAME;
-    } else if (ref == VALUE_LOG_CONTENT_FULL_FILE_NAME) {
-      content |= LOG_CONTENT_FULL_FILE_NAME;
-    } else if (ref == VALUE_LOG_CONTENT_FILE_NAME) {
-      content |= LOG_CONTENT_FILE_NAME;
-    } else if (ref == VALUE_LOG_CONTENT_FULL_FUNC_NAME) {
-      content |= LOG_CONTENT_FULL_FUNC_NAME;
-    } else if (ref == VALUE_LOG_CONTENT_FUNC_NAME) {
-      content |= LOG_CONTENT_FUNC_NAME;
-    } else if (ref == VALUE_LOG_CONTENT_LINE) {
-      content |= LOG_CONTENT_LINE;
-    } else if (ref == VALUE_LOG_CONTENT_PID) {
-      content |= LOG_CONTENT_PID;
-    } else if (ref == VALUE_LOG_CONTENT_TID) {
-      content |= LOG_CONTENT_TID;
-    } else if (ref == VALUE_LOG_CONTENT_DEFAULT) {
-      content = LOG_CONTENT_DEFAULT;
-    } else if (ref == VALUE_LOG_CONTENT_ALL) {
-      content = LOG_CONTENT_ALL;
-    } else {
-      // ignore illegal values
+  if (!ini_log_content.empty()) {
+    content = 0;
+    auto contents = string::split_ref(ini_log_content, ",");
+    for (auto &ref : contents) {
+      ref = trim_spaces(ref);
+      if (ref == VALUE_LOG_CONTENT_TIME) {
+        content |= LOG_CONTENT_TIME;
+      } else if (ref == VALUE_LOG_CONTENT_LEVEL) {
+        content |= LOG_CONTENT_LEVEL;
+      } else if (ref == VALUE_LOG_CONTENT_APP_NAME) {
+        content |= LOG_CONTENT_APP_NAME;
+      } else if (ref == VALUE_LOG_CONTENT_FULL_FILE_NAME) {
+        content |= LOG_CONTENT_FULL_FILE_NAME;
+      } else if (ref == VALUE_LOG_CONTENT_FILE_NAME) {
+        content |= LOG_CONTENT_FILE_NAME;
+      } else if (ref == VALUE_LOG_CONTENT_FULL_FUNC_NAME) {
+        content |= LOG_CONTENT_FULL_FUNC_NAME;
+      } else if (ref == VALUE_LOG_CONTENT_FUNC_NAME) {
+        content |= LOG_CONTENT_FUNC_NAME;
+      } else if (ref == VALUE_LOG_CONTENT_LINE) {
+        content |= LOG_CONTENT_LINE;
+      } else if (ref == VALUE_LOG_CONTENT_PID) {
+        content |= LOG_CONTENT_PID;
+      } else if (ref == VALUE_LOG_CONTENT_TID) {
+        content |= LOG_CONTENT_TID;
+      } else if (ref == VALUE_LOG_CONTENT_DEFAULT) {
+        content = LOG_CONTENT_DEFAULT;
+      } else if (ref == VALUE_LOG_CONTENT_ALL) {
+        content = LOG_CONTENT_ALL;
+      } else {
+        // ignore illegal values
+      }
     }
   }
 
   std::string ini_log_target = ini_file.get_value(SECTION_LOG, KEY_LOG_TARGET);
-  target = 0;
-  auto targets = string::split_ref(ini_log_target, ",");
-  for (auto &ref : targets) {
-    ref = trim_spaces(ref);
-    if (ref == VALUE_LOG_TARGET_STDOUT) {
-      target |= LOG_TARGET_STDOUT;
-    } else if (ref == VALUE_LOG_TARGET_FILE) {
-      target |= LOG_TARGET_FILE;
+  if (!ini_log_target.empty()) {
+    target = 0;
+    auto targets = string::split_ref(ini_log_target, ",");
+    for (auto &ref : targets) {
+      ref = trim_spaces(ref);
+      if (ref == VALUE_LOG_TARGET_STDOUT) {
+        target |= LOG_TARGET_STDOUT;
+      } else if (ref == VALUE_LOG_TARGET_FILE) {
+        target |= LOG_TARGET_FILE;
 #ifdef _WIN32
-    } else if (ref == VALUE_LOG_TARGET_DEBUGGER) {
-      target |= LOG_TARGET_DEBUGGER;
+      } else if (ref == VALUE_LOG_TARGET_DEBUGGER) {
+        target |= LOG_TARGET_DEBUGGER;
 #endif
-    } else if (ref == VALUE_LOG_TARGET_DEFAULT) {
-      target = LOG_TARGET_DEFAULT;
-    } else if (ref == VALUE_LOG_TARGET_ALL) {
-      target = LOG_TARGET_ALL;
-    } else {
-      // ignore illegal values
+      } else if (ref == VALUE_LOG_TARGET_DEFAULT) {
+        target = LOG_TARGET_DEFAULT;
+      } else if (ref == VALUE_LOG_TARGET_ALL) {
+        target = LOG_TARGET_ALL;
+      } else {
+        // ignore illegal values
+      }
     }
   }
 

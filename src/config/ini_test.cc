@@ -175,6 +175,29 @@ TEST(ini_test, duplicated_sections_and_keys) {
                         "\r\n");
 }
 
+TEST(ini_test, unescape) {
+  const char *content = "[section1]            ;section1 comment\r\n"
+                        "\" key1 \" = \" value1 \" ; comment1 \r\n"
+                        "\r\n";
+  ini_file ini;
+  ASSERT_EQ(ini.parse(content), true);
+  ini_file::ini_data data = ini.data();
+  ASSERT_EQ(data.sections.size(), 1);
+  {
+    const auto &section = data.sections.front();
+    ASSERT_EQ(section.name, "section1");
+    ASSERT_EQ(section.comment, "section1 comment");
+    ASSERT_EQ(section.lines.size(), 1);
+    {
+      const auto &line = section.lines.front();
+      ASSERT_EQ(line.key, " key1 ");
+      ASSERT_EQ(line.value, " value1 ");
+      ASSERT_EQ(line.comment, " comment1 ");
+    }
+  }
+  ASSERT_EQ(ini.dump(), content);
+}
+
 TEST(ini_test, dump_pretty) {
   const char *content = "[section1];section1 comment\r\n"
                         "key1=value1;comment1\r\n"

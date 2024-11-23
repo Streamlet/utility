@@ -25,6 +25,7 @@
 #include <xl/encoding>
 #include <xl/file>
 #include <xl/ini>
+#include <xl/string>
 
 namespace xl {
 
@@ -128,6 +129,45 @@ namespace {
  */
 
 template <typename CharType>
+std::basic_string<CharType> escape(const std::basic_string<CharType> &content) {
+  if (content.empty()) {
+    return content;
+  }
+  if (content.front() != ' ' && content.front() != '\t' && content.back() != ' ' && content.back() != '\t') {
+    return content;
+  }
+  std::basic_string<CharType> escaped;
+  escaped.reserve(content.length() + 2);
+  escaped.push_back('"');
+  for (size_t i = 0; i < content.length(); ++i) {
+    if (content[i] == '\\' || content[i] == '"') {
+      escaped.push_back('\\');
+    }
+    escaped.push_back(content[i]);
+  }
+  escaped.push_back('"');
+  return escaped;
+}
+
+template <typename CharType>
+std::basic_string<CharType> unescape(const std::basic_string<CharType> &content) {
+  if (content.length() < 2 || content.front() != '"' || content.back() != '"') {
+    return content;
+  }
+  std::basic_string<CharType> unescaped;
+  unescaped.reserve(content.length());
+  for (size_t i = 1; i < content.length() - 1; ++i) {
+    if (content[i] == '\\' && i + 1 < content.length() - 1) {
+      ++i;
+      unescaped.push_back(content[i]);
+    } else {
+      unescaped.push_back(content[i]);
+    }
+  }
+  return unescaped;
+}
+
+template <typename CharType>
 void pass_blank(const std::basic_string<CharType> &content, size_t &pos, bool back = false) {
   if ((!back && pos >= content.length()) || (back && pos == 0)) {
     return;
@@ -172,6 +212,7 @@ bool match_key(const std::basic_string<CharType> &content, size_t &pos, std::bas
     ++end;
   }
   key = content.substr(begin, end - begin);
+  key = unescape(key);
   return true;
 }
 
@@ -199,6 +240,7 @@ bool match_value(const std::basic_string<CharType> &content, size_t &pos, std::b
     ++end;
   }
   value = content.substr(begin, end - begin);
+  value = unescape(value);
   return true;
 }
 
@@ -371,7 +413,7 @@ size_t calc_aligment(const std::list<typename ini_t<CharType>::ini_line> &lines,
       ++it;
       break;
     }
-    alignment = std::max(alignment, it->key.length() + 3 + it->value.length());
+    alignment = std::max(alignment, escape(it->key).length() + 3 + escape(it->value).length());
     ++it;
   }
   return alignment;
@@ -397,8 +439,9 @@ template <typename CharType>
 std::basic_string<CharType> dump_line(const typename ini_t<CharType>::ini_line &line, size_t alignment = 0) {
   std::basic_stringstream<CharType> ss;
   if (!line.key.empty() || !line.value.empty()) {
-    ss << line.key << ' ' << '=' << ' ' << line.value
-       << dump_comment<CharType>(line.comment, line.key.length() + 3 + line.value.length(), alignment);
+    std::basic_string<CharType> key = escape(line.key), value = escape(line.value);
+    ss << key << ' ' << '=' << ' ' << value
+       << dump_comment<CharType>(line.comment, key.length() + 3 + value.length(), alignment);
   } else if (!line.comment.empty()) {
     ss << dump_comment<CharType>(line.comment, 0, 0);
   }

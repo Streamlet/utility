@@ -40,6 +40,7 @@ source_set("zlib") {
     cflags = [
       "-Wno-implicit-function-declaration",
       "-Wno-deprecated-non-prototype",
+      "-Wno-unknown-warning-option",
     ]
   }
   public_configs = [ ":zlib_public_config" ]
@@ -64,7 +65,10 @@ source_set("minizip") {
     ]
     cflags = [ "/wd5105" ]
   } else {
-    cflags = [ "-Wno-deprecated-non-prototype" ]
+    cflags = [
+      "-Wno-deprecated-non-prototype",
+      "-Wno-unknown-warning-option",
+    ]
   }
   deps = [ ":zlib" ]
   public_configs = [ ":zlib_public_config" ]
@@ -75,7 +79,10 @@ source_set("minizip") {
 config("libressl_crypto_public_config") {
   include_dirs = [ "libressl/include" ]
   if (is_posix) {
-    cflags = [ "-Wno-deprecated-declarations" ]
+    cflags = [
+      "-Wno-deprecated-declarations",
+      "-Wno-unknown-warning-option",
+    ]
   }
 }
 

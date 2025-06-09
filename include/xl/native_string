@@ -55,6 +55,12 @@ inline native_string to_native_string(T _Val) {
 
 } // namespace xl
 
+#ifdef _WIN32
+#define _tmain wmain
+#else
+#define _tmain main
+#endif
+
 #ifndef _WIN32
 
 // Cross platfoem

@@ -34,7 +34,7 @@ namespace xl {
 namespace http {
 
 enum Method {
-  MEHOD_OPTIONS = 0,
+  METHOD_OPTIONS = 0,
   METHOD_HEAD,
   METHOD_GET,
   METHOD_POST,
@@ -70,7 +70,6 @@ enum Status {
   STATUS_SWITCH_PROXY = 306,
   STATUS_TEMPORARY_REDIRECT = 307,
   STATUS_PERMANENT_REDIRECT = 308,
-  STATUSERRORON_WIKIMEDIA = 404,
   STATUS_BAD_REQUEST = 400,
   STATUS_UNAUTHORIZED = 401,
   STATUS_PAYMENT_REQUIRED = 402,
@@ -119,15 +118,15 @@ typedef std::multimap<std::string, std::string> Headers;
  * @param buffer buffer to receive data
  * @param size buffer size
  * @param total_size total size of data
- * @return bytes written. returns 0 incicates no more data.
+ * @return bytes written. returns 0 indicates no more data.
  */
 typedef std::function<size_t(void *buffer, size_t size, long long *total_size)> DataReader;
 
 /**
  * @param buffer data to be process
  * @param size size of data. size == 0 indicates no more data.
- * @return return bytes that processed. return value must be equal to the augument size.
- *         If not, it will cause failre and abort the receiving progress.
+ * @return return bytes that processed. return value must be equal to the argument size.
+ *         If not, it will cause failure and abort the receiving progress.
  */
 typedef std::function<size_t(const void *buffer, size_t size)> DataWriter;
 
@@ -147,7 +146,7 @@ DataReader file_reader(const TCHAR *path);
 DataWriter buffer_writer(std::string *string_buffer);
 
 /**
- * DataWriter wrapper for faile
+ * DataWriter wrapper for file
  */
 DataWriter file_writer(const TCHAR *path);
 
@@ -165,12 +164,12 @@ struct Response {
 
 struct Option {
   /**
-   * user agent. default: empty string, simulatiing common web browser's user agent.
+   * user agent. default: empty string, simulating common web browser's user agent.
    */
   std::string user_agent;
 
   /**
-   * timeout in milliseconds. default: 0, depends on upstream library, curl for posix and WihHTTP for windows.
+   * timeout in milliseconds. default: 0, depends on upstream library, curl for posix and WinHTTP for windows.
    */
   unsigned int timeout = 0;
 
@@ -186,7 +185,7 @@ std::string build_query(const FormData &form_data);
 FormData parse_query(const std::string &query_string);
 
 /**
- * @brief performance an HTTP request
+ * @brief perform an HTTP request
  * @param request request data
  * @param response  response data
  * @param option options

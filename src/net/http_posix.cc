@@ -83,7 +83,7 @@ int send(const Request &request, Response *response, const Option *option) {
   }
 
   switch (request.method) {
-  case MEHOD_OPTIONS:
+  case METHOD_OPTIONS:
   case METHOD_HEAD:
     error = curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
     break;

@@ -38,7 +38,7 @@ jobs:
         run: |
           python build/fetch_binaries.py
           sudo ln -s $(realpath build/bin/gn) /usr/local/bin/gn
-          sudo ln -s $(realpath build/bin/ninja) /usr/local/bin/ninja
+          # sudo ln -s $(realpath build/bin/ninja) /usr/local/bin/ninja
 
       - name: Compile
         run: |

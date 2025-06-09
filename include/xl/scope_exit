@@ -53,15 +53,19 @@ typedef const scope_guard_impl_base &scope_guard;
 template <typename F>
 class scope_guard_impl : public scope_guard_impl_base {
 public:
-  scope_guard_impl(F fn) : scope_guard_impl_base(), fn_(fn) {
+  scope_guard_impl(F fn) : scope_guard_impl_base(), fn_(std::move(fn)) {
   }
   scope_guard_impl(scope_guard_impl &&that) : scope_guard_impl_base(that), fn_(std::move(that.fn_)) {
   }
   ~scope_guard_impl() {
     static_execute(*this);
   }
+
   void execute() {
-    fn_();
+    try {
+      fn_();
+    } catch (...) {
+    }
   }
 
 private:
@@ -77,4 +81,8 @@ inline scope_guard_impl<F> make_guard(F f) {
 #define XL_BLOCK_EXIT_CONN_(s, t) s##t
 #define XL_BLOCK_EXIT_CONN(s, t)  XL_BLOCK_EXIT_CONN_(s, t)
 #define XL_ON_BLOCK_EXIT(...)                                                                                          \
-  ::xl::scope_guard XL_BLOCK_EXIT_CONN(sg, __LINE__) = ::xl::make_guard(::std::bind(__VA_ARGS__))
+  auto XL_BLOCK_EXIT_CONN(sg, __LINE__) = ::xl::make_guard(::std::bind(__VA_ARGS__))
+#define XL_DEFER(...)                                                                                                  \
+  auto XL_BLOCK_EXIT_CONN(defer_, __LINE__) = ::xl::make_guard([&]() {                                                 \
+    __VA_ARGS__;                                                                                                       \
+  })

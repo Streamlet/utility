@@ -55,9 +55,7 @@ inline native_string to_native_string(T _Val) {
 
 } // namespace xl
 
-#ifdef _WIN32
-#define _tmain wmain
-#else
+#ifndef _WIN32
 #define _tmain main
 #endif
 

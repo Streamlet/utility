@@ -22,6 +22,7 @@
 
 #include <cstring>
 #include <cwchar>
+#include <vector>
 #include <xl/cmdline_options>
 #include <xl/native_string>
 #include <xl/scope_exit>
@@ -97,16 +98,16 @@ parsed_options parse(const wchar_t *cmdline) {
 #else
 
 parsed_options parse(const char *cmdline) {
-  std::wstring wstr = encoding::ANSIToUCS2(cmdline);
+  std::wstring wstr = encoding::ansi_to_utf16(cmdline);
   int argc = 0;
-  LPWSTR *argv = ::CommandLineToArgvW(cmdline, &argc);
+  LPWSTR *argv = ::CommandLineToArgvW(wstr.c_str(), &argc);
   if (argv == NULL) {
     return {};
   }
   XL_ON_BLOCK_EXIT(::LocalFree, argv);
   std::vector<std::string> argv_str;
   for (int i = 0; i < argc; ++i) {
-    argv_str.push_back(encoding::UCS2ToANSI(argv[i]));
+    argv_str.push_back(encoding::utf16_to_ansi(argv[i]));
   }
   std::vector<const char *> argv_cstr;
   for (int i = 0; i < argc; ++i) {

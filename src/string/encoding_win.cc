@@ -78,27 +78,51 @@ std::string utf16_to_utf8(const std::wstring &ucs2) {
 }
 
 native_string utf8_to_native(const char *utf8, size_t length) {
+#ifdef _UNICODE
   return utf8_to_utf16(utf8, length);
+#else
+  return native_string(utf8, length);
+#endif
 }
 
 native_string utf8_to_native(const char *utf8) {
+#ifdef _UNICODE
   return utf8_to_utf16(utf8);
+#else
+  return utf8;
+#endif
 }
 
 native_string utf8_to_native(const std::string &utf8) {
+#ifdef _UNICODE
   return utf8_to_utf16(utf8);
+#else
+  return utf8;
+#endif
 }
 
 std::string native_to_utf8(const TCHAR *native, size_t length) {
+#ifdef _UNICODE
   return utf16_to_utf8(native, length);
+#else
+  return std::string(native, length);
+#endif
 }
 
 std::string native_to_utf8(const TCHAR *native) {
+#ifdef _UNICODE
   return utf16_to_utf8(native);
+#else
+  return native;
+#endif
 }
 
 std::string native_to_utf8(const native_string &native) {
+#ifdef _UNICODE
   return utf16_to_utf8(native);
+#else
+  return native;
+#endif
 }
 
 std::wstring ansi_to_utf16(const char *ansi, size_t length) {

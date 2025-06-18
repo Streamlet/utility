@@ -133,7 +133,7 @@ typedef std::function<size_t(const void *buffer, size_t size)> DataWriter;
 /**
  * DataReader wrapper for memory data
  */
-DataReader buffer_reader(const std::string &string_buffer);
+DataReader buffer_reader(std::string string_buffer);
 
 /**
  * DataReader wrapper for file
@@ -181,8 +181,8 @@ struct Option {
 
 typedef std::multimap<std::string, std::string> FormData;
 
-std::string build_query(const FormData &form_data);
-FormData parse_query(const std::string &query_string);
+std::string build_query_string(const FormData &form_data);
+FormData parse_query_string(const std::string &query_string);
 
 /**
  * @brief perform an HTTP request
@@ -227,15 +227,15 @@ typedef std::map<std::string, MultiPartFormValue> MultiPartFormData;
 
 int post_multipart_form(const std::string &url,
                         const Headers &request_headers,
-                        const MultiPartFormData form_data,
+                        const MultiPartFormData &form_data,
                         Response *response,
                         const Option *option = nullptr);
 
-int post_multipart_form(const std::string &url, const MultiPartFormData form_data, DataWriter response_writer);
+int post_multipart_form(const std::string &url, const MultiPartFormData &form_data, DataWriter response_writer);
 
 int post_multipart_form(const std::string &url,
                         const Headers &request_headers,
-                        const MultiPartFormData form_data,
+                        const MultiPartFormData &form_data,
                         Headers &response_headers,
                         DataWriter response_body);
 

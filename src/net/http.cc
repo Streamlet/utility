@@ -21,9 +21,9 @@
 // SOFTWARE.
 
 #include <cstring>
+#include <random>
 #include <sstream>
 #include <utility>
-#include <xl/crypto>
 #include <xl/encoding>
 #include <xl/file>
 #include <xl/http>
@@ -48,16 +48,16 @@ const char *DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; MSIE 7.0; Windows NT 
                                  "Safari/500.00 "
                                  "Edg/100.0.0.0";
 
-DataReader buffer_reader(const std::string &string_buffer) {
+DataReader buffer_reader(std::string string_buffer) {
   size_t bytes_read = 0;
-  return [string_buffer, bytes_read](void *buffer, size_t size, long long *total_size) mutable -> size_t {
-    size_t bytes_copy = std::min(size, string_buffer.length() - bytes_read);
+  return [sb = std::move(string_buffer), bytes_read](void *buffer, size_t size, long long *total_size) mutable -> size_t {
+    size_t bytes_copy = std::min(size, sb.length() - bytes_read);
     if (bytes_copy > 0) {
-      memcpy(buffer, string_buffer.c_str() + bytes_read, bytes_copy);
+      memcpy(buffer, sb.c_str() + bytes_read, bytes_copy);
       bytes_read += bytes_copy;
     }
     if (total_size != nullptr) {
-      *total_size = string_buffer.length();
+      *total_size = sb.length();
     }
     return bytes_copy;
   };
@@ -138,22 +138,50 @@ FormData parse_query_string(const std::string &query_string) {
 }
 
 void parse_header(const std::string &raw_headers, Headers &parsed_headers) {
-  for (size_t i = 0; i < raw_headers.length();) {
-    const char *p = raw_headers.c_str() + i;
+  for (const char *p = raw_headers.c_str(); *p != '\0';) {
+    while (*p == ' ' || *p == '\t') {
+      ++p;
+    }
     const char *crlf = strstr(p, "\r\n");
     if (crlf == nullptr) {
       break;
     }
-    const char *colon = strstr(p, ": ");
+    const char *colon = (const char *)memchr(p, ':', crlf - p);
     if (colon != nullptr && colon <= crlf) {
-      parsed_headers.insert(std::make_pair(std::string(p, colon), std::string(colon + 2, crlf)));
+      const char *key_end = colon;
+      while (key_end > p && (*(key_end - 1) == ' ' || *(key_end - 1) == '\t')) {
+        --key_end;
+      }
+      const char *value = colon + 1;
+      while (value < crlf && (*value == ' ' || *value == '\t')) {
+        ++value;
+      }
+      const char *value_end = crlf;
+      while (value_end > value && (*(value_end - 1) == ' ' || *(value_end - 1) == '\t')) {
+        --value_end;
+      }
+      parsed_headers.emplace(std::string(p, key_end), std::string(value, value_end));
     }
-    i += crlf - p + 2;
+    p = crlf + 2;
   }
 }
 
 std::string escape_quoted_value(const std::string &value) {
   return xl::string::replace(xl::string::replace(value, "\\", "\\\\"), "\"", "\\\"");
+}
+
+std::string generate_boundary() {
+  static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                 "abcdefghijklmnopqrstuvwxyz"
+                                 "0123456789"
+                                 "+/=";
+  thread_local std::mt19937_64 rng(std::random_device{}());
+  static std::uniform_int_distribution<> dist(0, sizeof(alphabet) - 2);
+  std::stringstream ss;
+  for (int i = 0; i < 30; ++i) {
+    ss << alphabet[dist(rng)];
+  }
+  return ss.str();
 }
 
 std::string encode_multipart_form(const MultiPartFormData &form_data, std::string &boundary) {
@@ -176,10 +204,9 @@ std::string encode_multipart_form(const MultiPartFormData &form_data, std::strin
     flat_data.push_back(ss.str());
   }
   std::string content = xl::string::join(flat_data, "\r\n");
-  boundary = xl::crypto::md5(content);
-  if (content.find(boundary) != std::string::npos) {
-    boundary = xl::crypto::sha1(content);
-  }
+  do {
+    boundary = generate_boundary();
+  } while (content.find(boundary) != std::string::npos);
   content = xl::string::join(flat_data, "--" + boundary + "\r\n");
   return "--" + boundary + "\r\n" + content + "--" + boundary + "--\r\n";
 }
@@ -263,7 +290,7 @@ int post_form(const std::string &url,
 
 int post_multipart_form(const std::string &url,
                         const Headers &request_headers,
-                        const MultiPartFormData form_data,
+                        const MultiPartFormData &form_data,
                         Response *response,
                         const Option *option) {
   Request request;
@@ -273,11 +300,11 @@ int post_multipart_form(const std::string &url,
   std::string boundary;
   std::string request_body = encode_multipart_form(form_data, boundary);
   request.headers.insert(std::make_pair("Content-Type", "multipart/form-data; boundary=" + boundary));
-  request.body = buffer_reader(request_body);
+  request.body = buffer_reader(std::move(request_body));
   return send(request, response, option);
 }
 
-int post_multipart_form(const std::string &url, const MultiPartFormData form_data, DataWriter response_body) {
+int post_multipart_form(const std::string &url, const MultiPartFormData &form_data, DataWriter response_body) {
   Response response;
   response.body = response_body;
   return post_multipart_form(url, {}, form_data, &response);
@@ -285,7 +312,7 @@ int post_multipart_form(const std::string &url, const MultiPartFormData form_dat
 
 int post_multipart_form(const std::string &url,
                         const Headers &request_headers,
-                        const MultiPartFormData form_data,
+                        const MultiPartFormData &form_data,
                         Headers &response_headers,
                         DataWriter response_body) {
   Response response;

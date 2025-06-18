@@ -168,19 +168,18 @@ TEST_F(http_test, post_multipart_form) {
   ASSERT_EQ(echo_result.method, "POST");
   ASSERT_EQ(echo_result.path, "/echo");
   ASSERT_EQ(echo_result.header.find("Host")->second, "localhost:8080");
-  ASSERT_EQ(echo_result.header.find("Content-Type")->second,
-            "multipart/form-data; boundary=0e46906c66aae1fcbf6443d8d937a5ce");
-  ASSERT_EQ(*echo_result.body, "--0e46906c66aae1fcbf6443d8d937a5ce\r\n"
+  std::string boundary = xl::string::split(echo_result.header.find("Content-Type")->second, "=", 2)[1];
+  ASSERT_EQ(*echo_result.body, "--" + boundary + "\r\n"
                                "Content-Disposition: form-data; name=\"key1\"\r\n"
                                "\r\n"
                                "value1\r\n"
-                               "--0e46906c66aae1fcbf6443d8d937a5ce\r\n"
+                               "--" + boundary + "\r\n"
                                "Content-Disposition: form-data; name=\"key2\"; filename=\"upload.txt\"\r\n"
                                "\r\n"
                                "upload_content\r\n"
-                               "--0e46906c66aae1fcbf6443d8d937a5ce\r\n"
+                               "--" + boundary + "\r\n"
                                "Content-Disposition: form-data; name=\"key\\\\3\\\"\"\r\n"
                                "\r\n"
                                "value3\r\n"
-                               "--0e46906c66aae1fcbf6443d8d937a5ce--\r\n");
+                               "--" + boundary + "--\r\n");
 }

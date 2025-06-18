@@ -34,7 +34,8 @@ namespace {
 
 size_t read_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
   DataReader *reader = static_cast<DataReader *>(userdata);
-  return (*reader)(buffer, size * nitems, nullptr);
+  size_t read = (*reader)(buffer, size * nitems, nullptr);
+  return read == -1 ? CURL_READFUNC_ABORT : read;
 }
 
 size_t write_callback(char *buffer, size_t size, size_t nitems, void *userdata) {

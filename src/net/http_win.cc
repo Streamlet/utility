@@ -114,9 +114,9 @@ int receive_headers(HINTERNET hRequest, Status *status, Headers *headers) {
       }
     }
     std::wstring status_code;
-    status_code.resize(status_code_size * sizeof(wchar_t));
+    status_code.resize(status_code_size / sizeof(wchar_t) - 1);
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX,
-                               (void *)status_code.data(), &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
+                               &status_code[0], &status_code_size, WINHTTP_NO_HEADER_INDEX)) {
       return ::GetLastError();
     }
     *status = (Status)_wtoi(status_code.c_str());
@@ -132,9 +132,9 @@ int receive_headers(HINTERNET hRequest, Status *status, Headers *headers) {
       }
     }
     std::wstring headers_buffer;
-    headers_buffer.resize(headers_size);
+    headers_buffer.resize(headers_size / sizeof(wchar_t) - 1);
     if (!::WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX,
-                               (void *)headers_buffer.data(), &headers_size, WINHTTP_NO_HEADER_INDEX)) {
+                               &headers_buffer[0], &headers_size, WINHTTP_NO_HEADER_INDEX)) {
       return ::GetLastError();
     }
     std::string raw_headers = xl::encoding::utf16_to_utf8(headers_buffer);

@@ -410,7 +410,7 @@ private:                                                                        
   template <typename T>                                                                                                \
   struct field_json_accessor_t<T, __COUNTER__ - SEQUENCE - 1> {                                                        \
     static bool read(Type &ref, const ::rapidjson::Value &json_value) {                                                \
-      if (json_value.HasMember(#field_name)) {                                                                         \
+      if (json_value.IsObject() && json_value.HasMember(#field_name)) {                                                \
         return ::xl::json_accessor<field_type>::read(ref.field_name, json_value[#field_name]);                         \
       } else {                                                                                                         \
         return ::xl::json_accessor<field_type>::read(ref.field_name, ::rapidjson::Value());                            \

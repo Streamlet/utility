@@ -22,7 +22,7 @@ Provides common utility for developing cross-platform applications, supporting C
   * **zip**: touch, add file, compress folder, read file, extract all, etc.
 * **config**
   * **ini**: Section operations (enum, has, add, remove), key-value operations (enum, has, get, set, remove).
-  * **json**: Define a struct and dump to or parse from json string. (using rapidjson)
+  * **json**: Define a struct and dump to or parse from json string. (using yyjson)
   * **xml**: Define a struct and dump to or parse from xml string. (using rapidxml)
 * **log**: A light-weight logger, supporting levels and std::stringstream based serializing (no formatter).
 * **process**

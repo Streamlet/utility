@@ -1,4 +1,4 @@
-config("utility_public_config") {
+config("xlatform_public_config") {
   include_dirs = [ "../include" ]
 }
 
@@ -14,7 +14,7 @@ group("src") {
     "string",
     "thread",
   ]
-  public_configs = [ ":utility_public_config" ]
+  public_configs = [ ":xlatform_public_config" ]
 }
 
 executable("unittest") {

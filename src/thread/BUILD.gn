@@ -21,7 +21,7 @@ source_set("thread") {
     "../../include/xl/synchronous",
   ]
 
-  public_configs = [ "..:utility_public_config" ]
+  public_configs = [ "..:xlatform_public_config" ]
 }
 
 source_set("test") {

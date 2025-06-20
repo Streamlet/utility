@@ -1,7 +1,9 @@
-# Utility
+# xlatform
+xl Cross Platform Library
+
 提供开发跨平台应用程序所需的通用功能，支持 C++11, 14, 17, 20 以及最新语言标准。
 
-![](https://github.com/Streamlet/utility/actions/workflows/windows.yml/badge.svg) ![](https://github.com/Streamlet/utility/actions/workflows/winxp.yml/badge.svg) ![](https://github.com/Streamlet/utility/actions/workflows/linux.yml/badge.svg) ![](https://github.com/Streamlet/utility/actions/workflows/macos.yml/badge.svg)
+![](https://github.com/Streamlet/xlatform/actions/workflows/windows.yml/badge.svg) ![](https://github.com/Streamlet/xlatform/actions/workflows/winxp.yml/badge.svg) ![](https://github.com/Streamlet/xlatform/actions/workflows/linux.yml/badge.svg) ![](https://github.com/Streamlet/xlatform/actions/workflows/macos.yml/badge.svg)
 ---
 [(Here is the English Version)](README.md)
 

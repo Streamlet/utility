@@ -1,4 +1,4 @@
-static_library("utility") {
+static_library("xlatform") {
   complete_static_lib = true
   deps = [ "src" ]
 }

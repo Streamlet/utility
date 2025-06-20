@@ -17,7 +17,7 @@ source_set("string") {
     cflags += [ "-Wno-unused-result" ]
   }
 
-  public_configs = [ "..:utility_public_config" ]
+  public_configs = [ "..:xlatform_public_config" ]
 }
 
 source_set("test") {

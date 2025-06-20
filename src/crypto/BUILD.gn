@@ -10,7 +10,7 @@ source_set("crypto") {
 
   deps = [ "../../thirdparty:libressl_crypto" ]
 
-  public_configs = [ "..:utility_public_config" ]
+  public_configs = [ "..:xlatform_public_config" ]
 }
 
 source_set("test") {
